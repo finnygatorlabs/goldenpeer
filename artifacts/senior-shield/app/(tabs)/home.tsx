@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -40,16 +40,16 @@ function VoiceOrb({ onPress, isListening }: { onPress: () => void; isListening: 
     if (isListening) {
       scale.value = withRepeat(
         withSequence(
-          withTiming(1.08, { duration: 600 }),
-          withTiming(1.0, { duration: 600 })
+          withTiming(1.12, { duration: 500 }),
+          withTiming(1.0, { duration: 500 })
         ),
         -1,
         false
       );
       glowOpacity.value = withRepeat(
         withSequence(
-          withTiming(0.7, { duration: 600 }),
-          withTiming(0.3, { duration: 600 })
+          withTiming(0.8, { duration: 500 }),
+          withTiming(0.3, { duration: 500 })
         ),
         -1,
         false
@@ -115,8 +115,14 @@ function MessageBubble({ message, theme }: { message: Message; theme: any }) {
   );
 }
 
+function getWebSpeechRecognition(): any {
+  if (Platform.OS !== "web") return null;
+  if (typeof window === "undefined") return null;
+  return (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition || null;
+}
+
 export default function HomeScreen() {
-  const { theme, isDark } = useTheme();
+  const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
   const { user } = useAuth();
@@ -132,8 +138,17 @@ export default function HomeScreen() {
   const [isListening, setIsListening] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [showTextInput, setShowTextInput] = useState(false);
+  const [interimText, setInterimText] = useState("");
+  const [voiceSupported, setVoiceSupported] = useState(true);
 
   const scrollRef = useRef<ScrollView>(null);
+  const recognitionRef = useRef<any>(null);
+  const inputRef = useRef<TextInput>(null);
+
+  useEffect(() => {
+    const SR = getWebSpeechRecognition();
+    if (!SR) setVoiceSupported(false);
+  }, []);
 
   async function sendMessage(text: string) {
     if (!text.trim() || isSending) return;
@@ -143,7 +158,6 @@ export default function HomeScreen() {
       text: text.trim(),
       isUser: true,
     };
-
     const loadingMsg: Message = {
       id: (Date.now() + 1).toString(),
       text: "",
@@ -153,6 +167,7 @@ export default function HomeScreen() {
 
     setMessages(prev => [...prev, userMsg, loadingMsg]);
     setInputText("");
+    setInterimText("");
     setIsSending(true);
 
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
@@ -168,9 +183,7 @@ export default function HomeScreen() {
         },
         body: JSON.stringify({ request_text: text.trim() }),
       });
-
       const data = await response.json();
-
       setMessages(prev =>
         prev.map(m =>
           m.id === loadingMsg.id
@@ -178,7 +191,7 @@ export default function HomeScreen() {
             : m
         )
       );
-    } catch (err) {
+    } catch {
       setMessages(prev =>
         prev.map(m =>
           m.id === loadingMsg.id
@@ -192,16 +205,98 @@ export default function HomeScreen() {
     }
   }
 
+  function stopRecognition() {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+    }
+    setIsListening(false);
+  }
+
+  function startVoiceRecognition() {
+    const SpeechRecognition = getWebSpeechRecognition();
+    if (!SpeechRecognition) {
+      setShowTextInput(true);
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.lang = "en-US";
+      recognitionRef.current = recognition;
+
+      recognition.onstart = () => {
+        setIsListening(true);
+        setInterimText("");
+        if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      };
+
+      recognition.onresult = (event: any) => {
+        let interim = "";
+        let final = "";
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const t = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            final += t;
+          } else {
+            interim += t;
+          }
+        }
+        if (final) {
+          setInterimText(final);
+        } else {
+          setInterimText(interim);
+        }
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+        recognitionRef.current = null;
+        setInterimText(prev => {
+          if (prev.trim()) {
+            sendMessage(prev);
+            return "";
+          }
+          setShowTextInput(true);
+          return "";
+        });
+      };
+
+      recognition.onerror = (event: any) => {
+        setIsListening(false);
+        recognitionRef.current = null;
+        setInterimText("");
+        if (event.error !== "aborted" && event.error !== "no-speech") {
+          setShowTextInput(true);
+        } else if (event.error === "no-speech") {
+          setShowTextInput(true);
+        }
+      };
+
+      recognition.start();
+    } catch {
+      setShowTextInput(true);
+      setVoiceSupported(false);
+    }
+  }
+
   function handleOrbPress() {
     if (isListening) {
-      setIsListening(false);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      setShowTextInput(true);
+      stopRecognition();
+      if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     } else {
-      setIsListening(true);
-      setShowTextInput(true);
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      startVoiceRecognition();
     }
+  }
+
+  function handleMicButtonInInputBar() {
+    setShowTextInput(false);
+    setInputText("");
+    setInterimText("");
+    startVoiceRecognition();
   }
 
   const firstName = user?.first_name || "Friend";
@@ -226,7 +321,7 @@ export default function HomeScreen() {
         style={styles.messages}
         contentContainerStyle={[
           styles.messagesContent,
-          { paddingBottom: tabBarHeight + (showTextInput ? 80 : 200) },
+          { paddingBottom: tabBarHeight + (showTextInput ? 80 : 220) },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -236,11 +331,29 @@ export default function HomeScreen() {
       </ScrollView>
 
       {!showTextInput && (
-        <View style={[styles.orbSection, { bottom: tabBarHeight + insets.bottom + 24 }]}>
-          <Text style={[styles.orbHint, { color: theme.textSecondary }]}>
-            Tap to ask for help
-          </Text>
+        <View style={[styles.orbSection, { bottom: tabBarHeight + insets.bottom + 20 }]}>
+          {isListening && interimText ? (
+            <View style={[styles.interimBox, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+              <Text style={[styles.interimText, { color: theme.text }]}>{interimText}</Text>
+            </View>
+          ) : (
+            <Text style={[styles.orbHint, { color: theme.textSecondary }]}>
+              {isListening ? "Listening… speak now" : "Tap to ask for help"}
+            </Text>
+          )}
           <VoiceOrb onPress={handleOrbPress} isListening={isListening} />
+          {!voiceSupported && (
+            <Text style={[styles.voiceUnsupported, { color: theme.textTertiary }]}>
+              Voice not available — use the keyboard below
+            </Text>
+          )}
+          <Pressable
+            onPress={() => { setShowTextInput(true); stopRecognition(); }}
+            style={styles.keyboardToggle}
+          >
+            <Ionicons name="keyboard-outline" size={18} color={theme.textTertiary} />
+            <Text style={[styles.keyboardToggleText, { color: theme.textTertiary }]}>Type instead</Text>
+          </Pressable>
         </View>
       )}
 
@@ -256,16 +369,14 @@ export default function HomeScreen() {
           ]}
         >
           <Pressable
-            onPress={() => {
-              setIsListening(false);
-              setShowTextInput(false);
-            }}
+            onPress={handleMicButtonInInputBar}
             style={styles.micButton}
           >
-            <Ionicons name="mic-outline" size={24} color="#2563EB" />
+            <Ionicons name="mic" size={24} color="#2563EB" />
           </Pressable>
 
           <TextInput
+            ref={inputRef}
             style={[styles.textInput, { backgroundColor: theme.inputBackground, color: theme.text }]}
             value={inputText}
             onChangeText={setInputText}
@@ -273,7 +384,9 @@ export default function HomeScreen() {
             placeholderTextColor={theme.placeholder}
             multiline
             maxLength={500}
+            returnKeyType="send"
             onSubmitEditing={() => sendMessage(inputText)}
+            autoFocus
           />
 
           <Pressable
@@ -285,7 +398,11 @@ export default function HomeScreen() {
               pressed && styles.pressed,
             ]}
           >
-            <Ionicons name="send" size={20} color="#FFFFFF" />
+            {isSending ? (
+              <ActivityIndicator size="small" color="#FFF" />
+            ) : (
+              <Ionicons name="send" size={20} color="#FFFFFF" />
+            )}
           </Pressable>
         </View>
       )}
@@ -350,9 +467,27 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     alignItems: "center",
-    gap: 12,
+    gap: 10,
   },
   orbHint: { fontSize: 15, fontFamily: "Inter_400Regular" },
+  interimBox: {
+    marginHorizontal: 24,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 16,
+    borderWidth: 1,
+    maxWidth: 320,
+  },
+  interimText: { fontSize: 15, fontFamily: "Inter_400Regular", textAlign: "center", fontStyle: "italic" },
+  voiceUnsupported: { fontSize: 12, fontFamily: "Inter_400Regular", textAlign: "center", marginTop: -4 },
+  keyboardToggle: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  keyboardToggleText: { fontSize: 13, fontFamily: "Inter_400Regular" },
   orbWrapper: { alignItems: "center", justifyContent: "center" },
   orbGlow: {
     position: "absolute",

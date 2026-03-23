@@ -53,12 +53,15 @@ router.post("/signup", async (req, res) => {
 
     const token = generateToken({ userId: newUser.id, email: newUser.email, userType: newUser.user_type });
 
-    req.log.info({ email, verificationToken: email_verification_token }, "New user signup — sending verification email");
+    const domain = process.env.REPLIT_DEV_DOMAIN || "localhost:8080";
+    const verifyUrl = `https://${domain}/api/auth/verify-email?token=${email_verification_token}`;
+    req.log.info({ email, verifyUrl }, "New user signup — verification URL (use this if email not received)");
 
     try {
       await sendVerificationEmail(email, email_verification_token, first_name);
+      req.log.info({ email }, "Verification email sent via Resend");
     } catch (emailErr) {
-      req.log.warn({ emailErr, email }, "Verification email failed to send — account created anyway");
+      req.log.warn({ emailErr, email, verifyUrl }, "Verification email failed (Resend sandbox may block non-owner emails) — account created, use verifyUrl above to manually verify");
     }
 
     res.status(201).json({
