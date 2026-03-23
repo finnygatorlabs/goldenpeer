@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -15,7 +15,6 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
-import { useGoogleAuth } from "@/hooks/useGoogleAuth";
 
 const USER_TYPES = [
   { value: "senior", label: "Senior (65+)", icon: "person" as const, description: "I want tech help & scam protection" },
@@ -25,8 +24,7 @@ const USER_TYPES = [
 
 export default function SignupScreen() {
   const { theme } = useTheme();
-  const { signup, loginWithGoogle } = useAuth();
-  const { request, response, promptAsync, isConfigured } = useGoogleAuth();
+  const { signup } = useAuth();
 
   const [step, setStep] = useState<"type" | "details">("type");
   const [userType, setUserType] = useState("senior");
@@ -36,38 +34,6 @@ export default function SignupScreen() {
   const [lastName, setLastName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-
-  useEffect(() => {
-    if (response?.type === "success") {
-      const { authentication } = response;
-      if (authentication?.accessToken) {
-        handleGoogleSuccess(authentication.accessToken);
-      }
-    }
-  }, [response]);
-
-  async function handleGoogleSuccess(accessToken: string) {
-    setGoogleLoading(true);
-    try {
-      await loginWithGoogle(accessToken, userType);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch (err: any) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert("Google sign-in failed", err.message || "Please try again or use email instead.");
-    } finally {
-      setGoogleLoading(false);
-    }
-  }
-
-  async function handleGooglePress() {
-    if (!isConfigured) {
-      Alert.alert("Coming Soon", "Google sign-in is being set up. Please use email for now.");
-      return;
-    }
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    await promptAsync();
-  }
 
   async function handleSignup() {
     if (!email || !password || !firstName) {
@@ -156,20 +122,13 @@ export default function SignupScreen() {
 
           <View style={styles.signInOptions}>
             <Pressable
-              style={({ pressed }) => [styles.googleButton, pressed && styles.pressed, googleLoading && styles.disabled]}
-              onPress={handleGooglePress}
-              disabled={googleLoading || !request}
+              style={[styles.googleButton, styles.googleButtonDisabled]}
+              onPress={() => Alert.alert("Coming Soon", "Google sign-in is being set up. Please use email for now.")}
             >
-              {googleLoading ? (
-                <ActivityIndicator color="#374151" />
-              ) : (
-                <>
-                  <View style={styles.googleIconCircle}>
-                    <Text style={styles.googleG}>G</Text>
-                  </View>
-                  <Text style={[styles.googleButtonText, { color: theme.text }]}>Continue with Google</Text>
-                </>
-              )}
+              <View style={styles.googleIconCircle}>
+                <Text style={styles.googleG}>G</Text>
+              </View>
+              <Text style={[styles.googleButtonText, { color: theme.textSecondary }]}>Continue with Google</Text>
             </Pressable>
 
             <View style={styles.dividerRow}>
@@ -368,14 +327,15 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1.5,
     borderColor: "#D1D5DB",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#F9FAFB",
     paddingVertical: 16,
   },
+  googleButtonDisabled: { opacity: 0.6 },
   googleIconCircle: {
     width: 26,
     height: 26,
     borderRadius: 13,
-    backgroundColor: "#4285F4",
+    backgroundColor: "#9CA3AF",
     alignItems: "center",
     justifyContent: "center",
   },

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -15,49 +15,15 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
-import { useGoogleAuth } from "@/hooks/useGoogleAuth";
 
 export default function LoginScreen() {
   const { theme } = useTheme();
-  const { login, loginWithGoogle } = useAuth();
-  const { request, response, promptAsync, isConfigured } = useGoogleAuth();
+  const { login } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-
-  useEffect(() => {
-    if (response?.type === "success") {
-      const { authentication } = response;
-      if (authentication?.accessToken) {
-        handleGoogleSuccess(authentication.accessToken);
-      }
-    }
-  }, [response]);
-
-  async function handleGoogleSuccess(accessToken: string) {
-    setGoogleLoading(true);
-    try {
-      await loginWithGoogle(accessToken);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch (err: any) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert("Google sign-in failed", err.message || "Please try again or use email instead.");
-    } finally {
-      setGoogleLoading(false);
-    }
-  }
-
-  async function handleGooglePress() {
-    if (!isConfigured) {
-      Alert.alert("Coming Soon", "Google sign-in is being set up. Please sign in with your email for now.");
-      return;
-    }
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    await promptAsync();
-  }
 
   async function handleLogin() {
     if (!email || !password) {
@@ -77,30 +43,25 @@ export default function LoginScreen() {
   }
 
   async function handleForgotPassword() {
-    Alert.prompt(
-      "Forgot Password?",
-      "Enter your email and we'll send a reset link.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Send Reset Link",
-          onPress: async (inputEmail?: string) => {
-            if (!inputEmail?.trim()) return;
-            try {
-              const domain = process.env.EXPO_PUBLIC_DOMAIN;
-              const base = domain ? `https://${domain}` : "";
-              await fetch(`${base}/api/auth/forgot-password`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email: inputEmail.trim().toLowerCase() }),
-              });
-            } catch {}
-            Alert.alert("Check your email", `If an account exists for ${inputEmail?.trim()}, you'll receive a reset link shortly.`);
-          },
-        },
-      ],
-      "plain-text",
-      email
+    if (!email.trim()) {
+      Alert.alert(
+        "Forgot Password",
+        "Enter your email address above, then tap Forgot Password again."
+      );
+      return;
+    }
+    try {
+      const domain = process.env.EXPO_PUBLIC_DOMAIN;
+      const base = domain ? `https://${domain}` : "";
+      await fetch(`${base}/api/auth/forgot-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
+      });
+    } catch {}
+    Alert.alert(
+      "Check your email",
+      `If an account exists for ${email.trim()}, you'll receive a password reset link shortly.`
     );
   }
 
@@ -131,24 +92,13 @@ export default function LoginScreen() {
         </View>
 
         <Pressable
-          onPress={handleGooglePress}
-          disabled={googleLoading || !request}
-          style={({ pressed }) => [
-            styles.googleButton,
-            pressed && styles.pressed,
-            (googleLoading) && styles.disabled,
-          ]}
+          style={[styles.googleButton]}
+          onPress={() => Alert.alert("Coming Soon", "Google sign-in is being set up. Please sign in with email for now.")}
         >
-          {googleLoading ? (
-            <ActivityIndicator color="#374151" />
-          ) : (
-            <>
-              <View style={styles.googleIconCircle}>
-                <Text style={styles.googleG}>G</Text>
-              </View>
-              <Text style={[styles.googleButtonText, { color: theme.text }]}>Continue with Google</Text>
-            </>
-          )}
+          <View style={styles.googleIconCircle}>
+            <Text style={styles.googleG}>G</Text>
+          </View>
+          <Text style={[styles.googleButtonText, { color: theme.textSecondary }]}>Continue with Google</Text>
         </Pressable>
 
         <View style={styles.dividerRow}>
@@ -251,14 +201,15 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1.5,
     borderColor: "#D1D5DB",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#F9FAFB",
     paddingVertical: 16,
+    opacity: 0.6,
   },
   googleIconCircle: {
     width: 26,
     height: 26,
     borderRadius: 13,
-    backgroundColor: "#4285F4",
+    backgroundColor: "#9CA3AF",
     alignItems: "center",
     justifyContent: "center",
   },
