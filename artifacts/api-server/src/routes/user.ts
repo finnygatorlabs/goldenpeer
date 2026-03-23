@@ -81,6 +81,7 @@ router.get("/preferences", requireAuth, async (req: AuthRequest, res) => {
       haptic_feedback: user.haptic_feedback,
       captions_enabled: user.captions_enabled,
       data_collection_enabled: user.data_collection_enabled,
+      assistant_name: (user as any).assistant_name ?? null,
     });
   } catch (err) {
     req.log.error({ err }, "Get preferences error");
@@ -93,7 +94,7 @@ router.put("/preferences", requireAuth, async (req: AuthRequest, res) => {
     const allowed = [
       "preferred_voice", "voice_speed", "voice_volume", "color_scheme",
       "high_contrast_enabled", "font_size", "haptic_feedback",
-      "captions_enabled", "data_collection_enabled"
+      "captions_enabled", "data_collection_enabled", "assistant_name"
     ];
 
     const updates: Record<string, unknown> = { updated_at: new Date() };
@@ -117,6 +118,7 @@ router.put("/preferences", requireAuth, async (req: AuthRequest, res) => {
       haptic_feedback: updated.haptic_feedback,
       captions_enabled: updated.captions_enabled,
       data_collection_enabled: updated.data_collection_enabled,
+      assistant_name: (updated as any).assistant_name ?? null,
     });
   } catch (err) {
     req.log.error({ err }, "Update preferences error");

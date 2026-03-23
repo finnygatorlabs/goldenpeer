@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   Alert,
   Platform,
   ActivityIndicator,
+  TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -17,6 +18,8 @@ import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
+
+const DEFAULT_NAMES: Record<string, string> = { female: "Aria", male: "Max" };
 
 interface Preferences {
   preferred_voice: string;
@@ -28,6 +31,7 @@ interface Preferences {
   haptic_feedback: boolean;
   captions_enabled: boolean;
   data_collection_enabled: boolean;
+  assistant_name: string;
 }
 
 function SettingRow({
@@ -85,7 +89,9 @@ export default function SettingsScreen() {
     haptic_feedback: true,
     captions_enabled: true,
     data_collection_enabled: true,
+    assistant_name: "Aria",
   });
+  const [nameInput, setNameInput] = useState("Aria");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -104,8 +110,10 @@ export default function SettingsScreen() {
       });
       const data = await response.json();
       if (!data.error) {
+        const gender = data.preferred_voice || "female";
+        const name = data.assistant_name || DEFAULT_NAMES[gender] || "Aria";
         setPrefs({
-          preferred_voice: data.preferred_voice || "female",
+          preferred_voice: gender,
           voice_speed: parseFloat(data.voice_speed) || 1.0,
           voice_volume: parseFloat(data.voice_volume) || 0.8,
           color_scheme: data.color_scheme || "light",
@@ -114,7 +122,9 @@ export default function SettingsScreen() {
           haptic_feedback: data.haptic_feedback !== false,
           captions_enabled: data.captions_enabled !== false,
           data_collection_enabled: data.data_collection_enabled !== false,
+          assistant_name: name,
         });
+        setNameInput(name);
       }
     } catch {}
     setLoading(false);
@@ -223,10 +233,44 @@ export default function SettingsScreen() {
         <SettingRow
           icon="mic"
           label="Voice Gender"
-          subtitle={prefs.preferred_voice === "female" ? "Female voice" : "Male voice"}
-          onPress={() => updatePref("preferred_voice", prefs.preferred_voice === "female" ? "male" : "female")}
+          subtitle={prefs.preferred_voice === "female" ? "Female (Aria)" : "Male (Max)"}
+          onPress={() => {
+            const newGender = prefs.preferred_voice === "female" ? "male" : "female";
+            updatePref("preferred_voice", newGender);
+            if (prefs.assistant_name === DEFAULT_NAMES[prefs.preferred_voice]) {
+              const newName = DEFAULT_NAMES[newGender];
+              updatePref("assistant_name", newName);
+              setNameInput(newName);
+            }
+          }}
           theme={theme}
         />
+
+        <View style={[styles.settingRow, { borderBottomColor: theme.border }]}>
+          <View style={[styles.settingIcon, { backgroundColor: "#DBEAFE" }]}>
+            <Ionicons name="person" size={20} color="#2563EB" />
+          </View>
+          <View style={styles.settingText}>
+            <Text style={[styles.settingLabel, { color: theme.text }]}>Assistant Name</Text>
+            <Text style={[styles.settingSubtitle, { color: theme.textSecondary }]}>
+              What your assistant is called
+            </Text>
+          </View>
+          <TextInput
+            style={[styles.nameInput, { color: theme.text, borderColor: theme.border, backgroundColor: theme.inputBackground }]}
+            value={nameInput}
+            onChangeText={setNameInput}
+            maxLength={20}
+            placeholder={DEFAULT_NAMES[prefs.preferred_voice]}
+            placeholderTextColor={theme.placeholder}
+            returnKeyType="done"
+            onEndEditing={() => {
+              const trimmed = nameInput.trim() || DEFAULT_NAMES[prefs.preferred_voice];
+              setNameInput(trimmed);
+              updatePref("assistant_name", trimmed);
+            }}
+          />
+        </View>
         <SettingRow
           icon="speedometer"
           label="Speaking Speed"
@@ -415,6 +459,16 @@ const styles = StyleSheet.create({
   settingText: { flex: 1 },
   settingLabel: { fontSize: 15, fontFamily: "Inter_500Medium" },
   settingSubtitle: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2 },
+  nameInput: {
+    fontSize: 14,
+    fontFamily: "Inter_500Medium",
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    minWidth: 80,
+    textAlign: "center",
+  },
   logoutButton: {
     flexDirection: "row",
     alignItems: "center",
