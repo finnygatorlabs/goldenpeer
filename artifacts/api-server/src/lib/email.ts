@@ -1,0 +1,135 @@
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+const FROM_EMAIL = "SeniorShield <onboarding@resend.dev>";
+const APP_NAME = "SeniorShield";
+
+export async function sendVerificationEmail(email: string, token: string, firstName?: string | null) {
+  const domain = process.env.REPLIT_DEV_DOMAIN || "localhost:8080";
+  const verifyUrl = `https://${domain}/api/auth/verify-email?token=${token}`;
+
+  const name = firstName || "there";
+
+  const { data, error } = await resend.emails.send({
+    from: FROM_EMAIL,
+    to: [email],
+    subject: `Verify your ${APP_NAME} account`,
+    html: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Verify your email – ${APP_NAME}</title>
+</head>
+<body style="margin:0;padding:0;background:#F1F5F9;font-family:Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#F1F5F9;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table width="560" cellpadding="0" cellspacing="0" style="background:#FFFFFF;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#1D4ED8,#3B82F6);padding:36px 40px;text-align:center;">
+              <div style="display:inline-block;background:rgba(255,255,255,0.2);border-radius:50%;width:64px;height:64px;line-height:64px;font-size:32px;margin-bottom:12px;">🛡️</div>
+              <h1 style="color:#FFFFFF;margin:8px 0 0 0;font-size:26px;font-weight:700;">${APP_NAME}</h1>
+              <p style="color:rgba(255,255,255,0.85);margin:6px 0 0 0;font-size:14px;">Your safety companion</p>
+            </td>
+          </tr>
+          <!-- Body -->
+          <tr>
+            <td style="padding:40px;">
+              <h2 style="color:#1E293B;font-size:22px;margin:0 0 12px 0;">Hello, ${name}! 👋</h2>
+              <p style="color:#475569;font-size:16px;line-height:26px;margin:0 0 24px 0;">
+                Welcome to ${APP_NAME}! Please confirm your email address to activate your account and start using your voice assistant, scam protection, and family alerts.
+              </p>
+              <div style="text-align:center;margin:32px 0;">
+                <a href="${verifyUrl}" style="display:inline-block;background:#2563EB;color:#FFFFFF;text-decoration:none;font-size:17px;font-weight:700;padding:16px 40px;border-radius:12px;letter-spacing:0.3px;">
+                  ✓ Verify My Email
+                </a>
+              </div>
+              <p style="color:#94A3B8;font-size:13px;text-align:center;margin:0 0 16px 0;">
+                This link expires in 24 hours. If you didn't create an account, you can safely ignore this email.
+              </p>
+              <hr style="border:none;border-top:1px solid #E2E8F0;margin:24px 0;" />
+              <p style="color:#94A3B8;font-size:12px;text-align:center;margin:0;">
+                Having trouble with the button above? Copy and paste this link into your browser:<br />
+                <span style="color:#2563EB;word-break:break-all;">${verifyUrl}</span>
+              </p>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="background:#F8FAFC;padding:20px 40px;text-align:center;">
+              <p style="color:#94A3B8;font-size:12px;margin:0;">
+                © 2026 ${APP_NAME} · Protecting seniors from scams and tech confusion
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `,
+  });
+
+  if (error) {
+    throw new Error(`Email send failed: ${error.message}`);
+  }
+
+  return data;
+}
+
+export async function sendPasswordResetEmail(email: string, token: string, firstName?: string | null) {
+  const domain = process.env.REPLIT_DEV_DOMAIN || "localhost:8080";
+  const resetUrl = `https://${domain}/api/auth/reset-password?token=${token}`;
+  const name = firstName || "there";
+
+  const { data, error } = await resend.emails.send({
+    from: FROM_EMAIL,
+    to: [email],
+    subject: `Reset your ${APP_NAME} password`,
+    html: `
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#F1F5F9;font-family:Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#F1F5F9;padding:40px 0;">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="background:#FFFFFF;border-radius:16px;overflow:hidden;">
+        <tr>
+          <td style="background:linear-gradient(135deg,#1D4ED8,#3B82F6);padding:36px 40px;text-align:center;">
+            <h1 style="color:#FFFFFF;margin:0;font-size:26px;">🛡️ ${APP_NAME}</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:40px;">
+            <h2 style="color:#1E293B;font-size:22px;margin:0 0 12px 0;">Hi ${name},</h2>
+            <p style="color:#475569;font-size:16px;line-height:26px;margin:0 0 24px 0;">
+              We received a request to reset your password. Click the button below to choose a new password.
+            </p>
+            <div style="text-align:center;margin:32px 0;">
+              <a href="${resetUrl}" style="display:inline-block;background:#2563EB;color:#FFFFFF;text-decoration:none;font-size:17px;font-weight:700;padding:16px 40px;border-radius:12px;">
+                Reset My Password
+              </a>
+            </div>
+            <p style="color:#94A3B8;font-size:13px;text-align:center;">
+              This link expires in 1 hour. If you didn't request a password reset, you can safely ignore this email.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
+    `,
+  });
+
+  if (error) {
+    throw new Error(`Email send failed: ${error.message}`);
+  }
+
+  return data;
+}

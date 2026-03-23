@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { usersTable, userTiersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { hashPassword, verifyPassword, generateToken, requireAuth, AuthRequest } from "../lib/auth.js";
+import { sendVerificationEmail, sendPasswordResetEmail } from "../lib/email.js";
 import crypto from "crypto";
 
 const router: IRouter = Router();
@@ -52,7 +53,13 @@ router.post("/signup", async (req, res) => {
 
     const token = generateToken({ userId: newUser.id, email: newUser.email, userType: newUser.user_type });
 
-    req.log.info({ email, verificationToken: email_verification_token }, "New user signup — verification token generated");
+    req.log.info({ email, verificationToken: email_verification_token }, "New user signup — sending verification email");
+
+    try {
+      await sendVerificationEmail(email, email_verification_token, first_name);
+    } catch (emailErr) {
+      req.log.warn({ emailErr, email }, "Verification email failed to send — account created anyway");
+    }
 
     res.status(201).json({
       user_id: newUser.id,
@@ -109,9 +116,17 @@ router.post("/forgot-password", async (req, res) => {
       res.status(400).json({ error: "Bad Request", message: "email is required" });
       return;
     }
-    const [user] = await db.select({ id: usersTable.id, email: usersTable.email })
+    const [user] = await db.select({ id: usersTable.id, email: usersTable.email, first_name: usersTable.first_name })
       .from(usersTable).where(eq(usersTable.email, email.trim().toLowerCase())).limit(1);
     req.log.info({ email, found: !!user }, "Forgot password request");
+    if (user) {
+      const resetToken = generateVerificationToken();
+      try {
+        await sendPasswordResetEmail(user.email, resetToken, user.first_name);
+      } catch (emailErr) {
+        req.log.warn({ emailErr, email }, "Password reset email failed to send");
+      }
+    }
     res.json({ success: true, message: "If an account exists, a reset link has been sent." });
   } catch (err) {
     req.log.error({ err }, "Forgot password error");
@@ -138,7 +153,12 @@ router.post("/resend-verification", async (req, res) => {
     }
     const newToken = generateVerificationToken();
     await db.update(usersTable).set({ email_verification_token: newToken }).where(eq(usersTable.id, user.id));
-    req.log.info({ email, token: newToken }, "Verification email resent");
+    req.log.info({ email, token: newToken }, "Resending verification email");
+    try {
+      await sendVerificationEmail(email, newToken, user.first_name);
+    } catch (emailErr) {
+      req.log.warn({ emailErr, email }, "Resend verification email failed");
+    }
     res.json({ success: true });
   } catch (err) {
     req.log.error({ err }, "Resend verification error");
