@@ -3,8 +3,13 @@ import { db } from "@workspace/db";
 import { usersTable, userTiersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { hashPassword, verifyPassword, generateToken, requireAuth, AuthRequest } from "../lib/auth.js";
+import crypto from "crypto";
 
 const router: IRouter = Router();
+
+function generateVerificationToken() {
+  return crypto.randomBytes(32).toString("hex");
+}
 
 router.post("/signup", async (req, res) => {
   try {
@@ -27,6 +32,7 @@ router.post("/signup", async (req, res) => {
     }
 
     const password_hash = hashPassword(password);
+    const email_verification_token = generateVerificationToken();
 
     const [newUser] = await db.insert(usersTable).values({
       email,
@@ -34,6 +40,8 @@ router.post("/signup", async (req, res) => {
       user_type,
       first_name: first_name || null,
       last_name: last_name || null,
+      email_verified: false,
+      email_verification_token,
     }).returning();
 
     await db.insert(userTiersTable).values({
@@ -44,6 +52,8 @@ router.post("/signup", async (req, res) => {
 
     const token = generateToken({ userId: newUser.id, email: newUser.email, userType: newUser.user_type });
 
+    req.log.info({ email, verificationToken: email_verification_token }, "New user signup — verification token generated");
+
     res.status(201).json({
       user_id: newUser.id,
       token,
@@ -51,6 +61,7 @@ router.post("/signup", async (req, res) => {
       first_name: newUser.first_name,
       last_name: newUser.last_name,
       onboarding_completed: newUser.onboarding_completed,
+      email_verified: false,
     });
   } catch (err) {
     req.log.error({ err }, "Signup error");
@@ -83,6 +94,7 @@ router.post("/login", async (req, res) => {
       first_name: user.first_name,
       last_name: user.last_name,
       onboarding_completed: user.onboarding_completed,
+      email_verified: user.email_verified,
     });
   } catch (err) {
     req.log.error({ err }, "Login error");
@@ -107,6 +119,56 @@ router.post("/forgot-password", async (req, res) => {
   }
 });
 
+router.post("/resend-verification", async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      res.status(400).json({ error: "email required" });
+      return;
+    }
+    const [user] = await db.select().from(usersTable)
+      .where(eq(usersTable.email, email.trim().toLowerCase())).limit(1);
+    if (!user) {
+      res.json({ success: true });
+      return;
+    }
+    if (user.email_verified) {
+      res.json({ success: true, already_verified: true });
+      return;
+    }
+    const newToken = generateVerificationToken();
+    await db.update(usersTable).set({ email_verification_token: newToken }).where(eq(usersTable.id, user.id));
+    req.log.info({ email, token: newToken }, "Verification email resent");
+    res.json({ success: true });
+  } catch (err) {
+    req.log.error({ err }, "Resend verification error");
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.get("/verify-email", async (req, res) => {
+  try {
+    const { token } = req.query;
+    if (!token || typeof token !== "string") {
+      res.status(400).json({ error: "Invalid token" });
+      return;
+    }
+    const [user] = await db.select().from(usersTable)
+      .where(eq(usersTable.email_verification_token, token)).limit(1);
+    if (!user) {
+      res.status(404).json({ error: "Invalid or expired verification link" });
+      return;
+    }
+    await db.update(usersTable)
+      .set({ email_verified: true, email_verification_token: null })
+      .where(eq(usersTable.id, user.id));
+    res.json({ success: true, message: "Email verified successfully" });
+  } catch (err) {
+    req.log.error({ err }, "Email verification error");
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 router.get("/verify", requireAuth, async (req: AuthRequest, res) => {
   try {
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.user!.userId)).limit(1);
@@ -114,7 +176,7 @@ router.get("/verify", requireAuth, async (req: AuthRequest, res) => {
       res.status(401).json({ error: "Unauthorized", message: "User not found" });
       return;
     }
-    res.json({ user_id: user.id, email: user.email, user_type: user.user_type });
+    res.json({ user_id: user.id, email: user.email, user_type: user.user_type, email_verified: user.email_verified });
   } catch (err) {
     req.log.error({ err }, "Token verify error");
     res.status(500).json({ error: "Internal Server Error" });

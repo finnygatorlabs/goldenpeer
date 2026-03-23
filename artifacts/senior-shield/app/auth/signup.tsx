@@ -8,11 +8,10 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
-  Platform,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
@@ -25,7 +24,6 @@ const USER_TYPES = [
 
 export default function SignupScreen() {
   const { theme } = useTheme();
-  const insets = useSafeAreaInsets();
   const { signup } = useAuth();
 
   const [email, setEmail] = useState("");
@@ -49,6 +47,10 @@ export default function SignupScreen() {
     try {
       await signup(email.trim().toLowerCase(), password, userType, firstName, lastName);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      router.replace({
+        pathname: "/auth/verify-email",
+        params: { email: email.trim().toLowerCase() },
+      });
     } catch (err: any) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert("Signup failed", err.message || "Could not create account. Please try again.");
@@ -59,35 +61,28 @@ export default function SignupScreen() {
 
   function handleGoogleSignup() {
     Alert.alert(
-      "Google Sign-In",
-      "Google sign-in requires connecting your Google account. Please ask your family member to help set this up, or use the email option below.",
-      [{ text: "OK" }]
+      "Google Sign-In Coming Soon",
+      "Google sign-in is being set up. For now, please create an account with your email below — it only takes 30 seconds!",
+      [{ text: "OK, use email" }]
     );
   }
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: theme.background }]}
-      contentContainerStyle={[
-        styles.content,
-        { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 40 },
-      ]}
-      keyboardShouldPersistTaps="handled"
-      horizontal={false}
-      showsHorizontalScrollIndicator={false}
-    >
-      <Pressable onPress={() => router.back()} style={styles.backButton}>
-        <Ionicons name="arrow-back" size={24} color={theme.text} />
-      </Pressable>
-
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.text }]}>Create your account</Text>
-        <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-          Join thousands of protected seniors
-        </Text>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={["top", "bottom"]}>
+      <View style={[styles.header, { borderBottomColor: theme.border }]}>
+        <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={10}>
+          <Ionicons name="arrow-back" size={24} color={theme.text} />
+        </Pressable>
+        <Text style={[styles.headerTitle, { color: theme.text }]}>Create account</Text>
+        <View style={{ width: 44 }} />
       </View>
 
-      <View style={styles.form}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <Pressable
           onPress={handleGoogleSignup}
           style={({ pressed }) => [
@@ -160,7 +155,10 @@ export default function SignupScreen() {
         </View>
 
         <View style={styles.field}>
-          <Text style={[styles.label, { color: theme.text }]}>Last Name <Text style={[styles.optional, { color: theme.textTertiary }]}>(optional)</Text></Text>
+          <Text style={[styles.label, { color: theme.text }]}>
+            Last Name{" "}
+            <Text style={[styles.optional, { color: theme.textTertiary }]}>(optional)</Text>
+          </Text>
           <View style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.border }]}>
             <Ionicons name="person-outline" size={20} color={theme.textTertiary} />
             <TextInput
@@ -208,7 +206,7 @@ export default function SignupScreen() {
               returnKeyType="done"
               onSubmitEditing={handleSignup}
             />
-            <Pressable onPress={() => setShowPassword(!showPassword)} style={styles.eyeButton}>
+            <Pressable onPress={() => setShowPassword(!showPassword)} style={styles.eyeButton} hitSlop={8}>
               <Ionicons
                 name={showPassword ? "eye-off-outline" : "eye-outline"}
                 size={20}
@@ -240,19 +238,25 @@ export default function SignupScreen() {
             <Text style={{ color: "#2563EB", fontFamily: "Inter_600SemiBold" }}>Sign in</Text>
           </Text>
         </Pressable>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  content: { paddingHorizontal: 24, flexGrow: 1 },
+  safeArea: { flex: 1 },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 0,
+  },
   backButton: { width: 44, height: 44, justifyContent: "center" },
-  header: { marginTop: 16, marginBottom: 28 },
-  title: { fontSize: 28, fontFamily: "Inter_700Bold", marginBottom: 8 },
-  subtitle: { fontSize: 16, fontFamily: "Inter_400Regular" },
-  form: { gap: 18 },
+  headerTitle: { fontSize: 17, fontFamily: "Inter_600SemiBold" },
+  scroll: { flex: 1 },
+  content: { paddingHorizontal: 24, paddingTop: 20, paddingBottom: 40, gap: 18 },
   field: { gap: 8 },
   label: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
   optional: { fontSize: 12, fontFamily: "Inter_400Regular" },
@@ -266,10 +270,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
-  typeOptionSelected: {
-    borderColor: "#2563EB",
-    backgroundColor: "#DBEAFE",
-  },
+  typeOptionSelected: { borderColor: "#2563EB", backgroundColor: "#DBEAFE" },
   typeLabel: { fontSize: 15, fontFamily: "Inter_500Medium" },
   typeLabelSelected: { color: "#2563EB", fontFamily: "Inter_600SemiBold" },
   input: {
@@ -293,19 +294,14 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   googleIcon: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     backgroundColor: "#4285F4",
     alignItems: "center",
     justifyContent: "center",
   },
-  googleG: {
-    fontSize: 14,
-    fontFamily: "Inter_700Bold",
-    color: "#FFFFFF",
-    lineHeight: 16,
-  },
+  googleG: { fontSize: 15, fontFamily: "Inter_700Bold", color: "#FFFFFF", lineHeight: 18 },
   googleButtonText: { fontSize: 16, fontFamily: "Inter_600SemiBold" },
   dividerRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   dividerLine: { flex: 1, height: 1 },
@@ -315,11 +311,10 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingVertical: 18,
     alignItems: "center",
-    marginTop: 4,
   },
   signupButtonText: { fontSize: 17, fontFamily: "Inter_700Bold", color: "#FFFFFF" },
   pressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
   disabled: { opacity: 0.6 },
-  switchLink: { alignItems: "center", paddingVertical: 8 },
+  switchLink: { alignItems: "center", paddingVertical: 4 },
   switchText: { fontSize: 15, fontFamily: "Inter_400Regular" },
 });
