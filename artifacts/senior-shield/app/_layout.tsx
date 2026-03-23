@@ -8,7 +8,7 @@ import {
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack, router } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -27,9 +27,13 @@ if (process.env.EXPO_PUBLIC_DOMAIN) {
 
 function RootLayoutNav() {
   const { user, isLoading } = useAuth();
+  const hasInitialRouted = useRef(false);
 
   useEffect(() => {
-    if (!isLoading) {
+    if (isLoading) return;
+
+    if (!hasInitialRouted.current) {
+      hasInitialRouted.current = true;
       if (!user) {
         router.replace("/auth/welcome");
       } else if (!user.onboarding_completed) {
@@ -37,6 +41,11 @@ function RootLayoutNav() {
       } else {
         router.replace("/(tabs)/home");
       }
+      return;
+    }
+
+    if (!user) {
+      router.replace("/auth/welcome");
     }
   }, [user, isLoading]);
 
@@ -45,6 +54,9 @@ function RootLayoutNav() {
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="auth" options={{ headerShown: false }} />
       <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+      <Stack.Screen name="emergency" options={{ headerShown: false }} />
+      <Stack.Screen name="support" options={{ headerShown: false }} />
+      <Stack.Screen name="subscription" options={{ headerShown: false }} />
     </Stack>
   );
 }

@@ -26,7 +26,7 @@ const USER_TYPES = [
 export default function SignupScreen() {
   const { theme } = useTheme();
   const { signup, loginWithGoogle } = useAuth();
-  const { request, response, promptAsync, getUserInfo, isConfigured } = useGoogleAuth();
+  const { request, response, promptAsync, isConfigured } = useGoogleAuth();
 
   const [step, setStep] = useState<"type" | "details">("type");
   const [userType, setUserType] = useState("senior");

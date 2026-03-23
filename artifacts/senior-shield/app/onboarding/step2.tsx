@@ -4,9 +4,6 @@ import {
   Text,
   StyleSheet,
   Pressable,
-  TextInput,
-  Alert,
-  ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -22,8 +19,8 @@ const FONT_SIZES = [
 ];
 
 const VOICE_OPTIONS = [
-  { label: "Female Voice", value: "female", icon: "person" as const },
-  { label: "Male Voice", value: "male", icon: "person" as const },
+  { label: "Female Voice", value: "female" },
+  { label: "Male Voice", value: "male" },
 ];
 
 export default function OnboardingStep2() {
@@ -33,10 +30,23 @@ export default function OnboardingStep2() {
 
   const [fontSize, setFontSize] = useState("large");
   const [voice, setVoice] = useState("female");
-  const [loading, setLoading] = useState(false);
 
   async function handleNext() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    try {
+      const domain = process.env.EXPO_PUBLIC_DOMAIN;
+      const base = domain ? `https://${domain}` : "";
+      await fetch(`${base}/api/user/preferences`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user?.token}`,
+        },
+        body: JSON.stringify({ font_size: fontSize, preferred_voice: voice }),
+      });
+    } catch {}
+
     router.push("/onboarding/step3");
   }
 
@@ -178,10 +188,7 @@ const styles = StyleSheet.create({
   voiceLabel: { fontSize: 15, fontFamily: "Inter_500Medium" },
   selectedOption: { borderColor: "#2563EB", backgroundColor: "#EFF6FF" },
   selectedLabel: { color: "#2563EB", fontFamily: "Inter_600SemiBold" },
-  bottomBar: {
-    paddingHorizontal: 24,
-    paddingTop: 16,
-  },
+  bottomBar: { paddingHorizontal: 24, paddingTop: 16 },
   bottomRow: { flexDirection: "row", gap: 12 },
   backButton: {
     width: 56,
