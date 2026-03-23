@@ -11,7 +11,6 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import * as Haptics from "expo-haptics";
 import Reanimated, {
   useSharedValue,
@@ -40,11 +39,11 @@ interface ConvTurn {
 function VoiceOrb({
   onPress,
   isListening,
-  idle,
+  isSpeaking,
 }: {
   onPress: () => void;
   isListening: boolean;
-  idle: boolean;
+  isSpeaking: boolean;
 }) {
   const scale = useSharedValue(1);
   const glowOpacity = useSharedValue(0.2);
@@ -52,39 +51,52 @@ function VoiceOrb({
   useEffect(() => {
     if (isListening) {
       scale.value = withRepeat(
-        withSequence(withTiming(1.12, { duration: 480 }), withTiming(1.0, { duration: 480 })),
+        withSequence(withTiming(1.14, { duration: 420 }), withTiming(1.0, { duration: 420 })),
         -1, false
       );
       glowOpacity.value = withRepeat(
-        withSequence(withTiming(0.85, { duration: 480 }), withTiming(0.35, { duration: 480 })),
+        withSequence(withTiming(0.9, { duration: 420 }), withTiming(0.3, { duration: 420 })),
         -1, false
       );
-    } else if (idle) {
+    } else if (isSpeaking) {
       scale.value = withRepeat(
-        withSequence(withTiming(1.05, { duration: 1400 }), withTiming(1.0, { duration: 1400 })),
+        withSequence(withTiming(1.07, { duration: 600 }), withTiming(1.0, { duration: 600 })),
         -1, false
       );
       glowOpacity.value = withRepeat(
-        withSequence(withTiming(0.45, { duration: 1400 }), withTiming(0.15, { duration: 1400 })),
+        withSequence(withTiming(0.55, { duration: 600 }), withTiming(0.2, { duration: 600 })),
         -1, false
       );
     } else {
-      scale.value = withSpring(1);
-      glowOpacity.value = withTiming(0.2);
+      scale.value = withRepeat(
+        withSequence(withTiming(1.04, { duration: 1600 }), withTiming(1.0, { duration: 1600 })),
+        -1, false
+      );
+      glowOpacity.value = withRepeat(
+        withSequence(withTiming(0.35, { duration: 1600 }), withTiming(0.12, { duration: 1600 })),
+        -1, false
+      );
     }
-  }, [isListening, idle]);
+  }, [isListening, isSpeaking]);
 
   const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
   const glowStyle = useAnimatedStyle(() => ({ opacity: glowOpacity.value }));
+
+  const orbColor = isListening ? "#DC2626" : "#2563EB";
+  const glowColor = isListening ? "#DC2626" : "#2563EB";
 
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [styles.orbWrapper, pressed && { opacity: 0.85 }]}
     >
-      <Reanimated.View style={[styles.orbGlow, glowStyle]} />
-      <Reanimated.View style={[styles.orb, animStyle]}>
-        <Ionicons name={isListening ? "stop-circle" : "mic"} size={56} color="#FFFFFF" />
+      <Reanimated.View style={[styles.orbGlow, { backgroundColor: glowColor }, glowStyle]} />
+      <Reanimated.View style={[styles.orb, { backgroundColor: orbColor }, animStyle]}>
+        <Ionicons
+          name={isListening ? "stop-circle" : isSpeaking ? "volume-high" : "mic"}
+          size={52}
+          color="#FFFFFF"
+        />
       </Reanimated.View>
     </Pressable>
   );
@@ -105,7 +117,7 @@ function MessageBubble({
     return (
       <View style={styles.userBubbleWrapper}>
         <View style={styles.userBubble}>
-          <Text style={[styles.userBubbleText, { fontSize: ts.base, lineHeight: ts.base * 1.5 }]}>
+          <Text style={[styles.bubbleText, { fontSize: ts.base, lineHeight: ts.base * 1.5, color: "#fff" }]}>
             {message.text}
           </Text>
         </View>
@@ -115,24 +127,24 @@ function MessageBubble({
   return (
     <View style={styles.assistantBubbleWrapper}>
       <View style={[styles.assistantIcon, { backgroundColor: "#DBEAFE" }]}>
-        <Ionicons name="shield-checkmark" size={16} color="#2563EB" />
+        <Ionicons name="shield-checkmark" size={15} color="#2563EB" />
       </View>
       <View style={[styles.assistantBubble, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
         {message.isLoading ? (
-          <View style={styles.typingDots}>
-            <Text style={[styles.assistantBubbleText, { color: theme.textSecondary, fontSize: ts.base }]}>
-              Thinking…
+          <View style={styles.typingRow}>
+            <ActivityIndicator size="small" color="#2563EB" />
+            <Text style={[styles.bubbleText, { color: theme.textSecondary, fontSize: ts.sm }]}>
+              {" "}Thinking…
             </Text>
-            <ActivityIndicator size="small" color="#2563EB" style={{ marginLeft: 8 }} />
           </View>
         ) : (
           <>
-            <Text style={[styles.assistantBubbleText, { color: theme.text, fontSize: ts.base, lineHeight: ts.base * 1.6 }]}>
+            <Text style={[styles.bubbleText, { color: theme.text, fontSize: ts.base, lineHeight: ts.base * 1.55 }]}>
               {message.text}
             </Text>
             {onSpeak && (
-              <Pressable onPress={() => onSpeak(message.text)} style={styles.replayButton}>
-                <Ionicons name="volume-medium-outline" size={14} color="#2563EB" />
+              <Pressable onPress={() => onSpeak(message.text)} style={styles.replayBtn}>
+                <Ionicons name="volume-medium-outline" size={13} color="#2563EB" />
                 <Text style={[styles.replayText, { fontSize: ts.xs }]}>Replay</Text>
               </Pressable>
             )}
@@ -151,7 +163,6 @@ function getWebSpeech(): any {
 export default function HomeScreen() {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
-  const tabBarHeight = useBottomTabBarHeight();
   const { user } = useAuth();
   const { prefs, ts } = usePreferences();
 
@@ -160,7 +171,6 @@ export default function HomeScreen() {
     const domain = process.env.EXPO_PUBLIC_DOMAIN;
     return domain ? `https://${domain}` : "";
   })();
-  const authHeader = { Authorization: `Bearer ${user?.token}` };
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversationHistory, setConversationHistory] = useState<ConvTurn[]>([]);
@@ -170,15 +180,16 @@ export default function HomeScreen() {
   const [showTextInput, setShowTextInput] = useState(false);
   const [interimText, setInterimText] = useState("");
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [voiceSupported] = useState(() => !!getWebSpeech());
   const [greeted, setGreeted] = useState(false);
 
   const scrollRef = useRef<ScrollView>(null);
   const recognitionRef = useRef<any>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const autoRestartRef = useRef(false);
 
-  const speakText = useCallback(async (text: string) => {
-    if (!text.trim()) return;
+  // Speak text; calls onFinished when audio ends
+  const speakText = useCallback(async (text: string, onFinished?: () => void) => {
+    if (!text.trim()) { onFinished?.(); return; }
     setIsSpeaking(true);
 
     if (Platform.OS === "web") {
@@ -186,29 +197,37 @@ export default function HomeScreen() {
         const voice = prefs.preferred_voice === "female" ? "nova" : "onyx";
         const res = await fetch(`${apiBase}/api/voice/tts`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", ...authHeader },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${user?.token}`,
+          },
           body: JSON.stringify({ text: text.slice(0, 800), voice }),
         });
         if (res.ok) {
           const { audio } = await res.json();
-          if (audioRef.current) {
-            audioRef.current.pause();
-            audioRef.current = null;
-          }
-          const src = `data:audio/mpeg;base64,${audio}`;
-          const el = new Audio(src);
+          if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+          const el = new Audio(`data:audio/mpeg;base64,${audio}`);
           audioRef.current = el;
-          el.onended = () => { setIsSpeaking(false); audioRef.current = null; };
-          el.onerror = () => { setIsSpeaking(false); audioRef.current = null; };
+          el.onended = () => {
+            setIsSpeaking(false);
+            audioRef.current = null;
+            onFinished?.();
+          };
+          el.onerror = () => {
+            setIsSpeaking(false);
+            audioRef.current = null;
+            onFinished?.();
+          };
           await el.play();
           return;
         }
       } catch {}
+      // Fallback: browser TTS
       if (typeof window !== "undefined" && window.speechSynthesis) {
         window.speechSynthesis.cancel();
         const utter = new SpeechSynthesisUtterance(text);
-        utter.rate = 0.95;
-        utter.onend = () => setIsSpeaking(false);
+        utter.rate = 0.92;
+        utter.onend = () => { setIsSpeaking(false); onFinished?.(); };
         window.speechSynthesis.speak(utter);
         return;
       }
@@ -218,7 +237,10 @@ export default function HomeScreen() {
         const voice = prefs.preferred_voice === "female" ? "nova" : "onyx";
         const res = await fetch(`${apiBase}/api/voice/tts`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", ...authHeader },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${user?.token}`,
+          },
           body: JSON.stringify({ text: text.slice(0, 800), voice }),
         });
         if (res.ok) {
@@ -231,6 +253,7 @@ export default function HomeScreen() {
             if (status.didJustFinish) {
               sound.unloadAsync();
               setIsSpeaking(false);
+              onFinished?.();
             }
           });
           return;
@@ -239,90 +262,35 @@ export default function HomeScreen() {
       const Speech = await import("expo-speech");
       Speech.default.stop();
       Speech.default.speak(text, {
-        rate: 0.95,
-        pitch: prefs.preferred_voice === "female" ? 1.1 : 0.9,
-        onDone: () => setIsSpeaking(false),
-        onError: () => setIsSpeaking(false),
+        rate: 0.92,
+        pitch: prefs.preferred_voice === "female" ? 1.05 : 0.92,
+        onDone: () => { setIsSpeaking(false); onFinished?.(); },
+        onError: () => { setIsSpeaking(false); onFinished?.(); },
       });
       return;
     }
     setIsSpeaking(false);
+    onFinished?.();
   }, [prefs.preferred_voice, apiBase, user?.token]);
 
   const stopSpeaking = useCallback(() => {
+    autoRestartRef.current = false;
     if (Platform.OS === "web") {
       if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
       window.speechSynthesis?.cancel();
     } else {
       import("expo-speech").then(m => m.default.stop()).catch(() => {});
-      import("expo-av").then(({ Audio }) => Audio.setAudioModeAsync({ allowsRecordingIOS: false })).catch(() => {});
     }
     setIsSpeaking(false);
   }, []);
 
-  useEffect(() => {
-    if (!greeted && assistantName) {
-      const greeting = `Hi${user?.first_name ? ` ${user.first_name}` : ""}! I'm ${assistantName}, your personal SeniorShield assistant. I'm here to help with anything — phone tips, safety questions, or just a friendly chat. Go ahead and tap the microphone and ask me anything!`;
-      setMessages([{ id: "0", text: greeting, isUser: false }]);
-      setConversationHistory([{ role: "assistant", content: greeting }]);
-      setGreeted(true);
-      setTimeout(() => speakText(greeting), 800);
-    }
-  }, [assistantName, greeted]);
-
-  async function sendMessage(text: string) {
-    if (!text.trim() || isSending) return;
-    stopSpeaking();
-
-    const userMsg: Message = { id: Date.now().toString(), text: text.trim(), isUser: true };
-    const loadingId = (Date.now() + 1).toString();
-    const loadingMsg: Message = { id: loadingId, text: "", isUser: false, isLoading: true };
-
-    setMessages(prev => [...prev, userMsg, loadingMsg]);
-    setInputText("");
-    setInterimText("");
-    setIsSending(true);
-    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
-
-    const updatedHistory: ConvTurn[] = [...conversationHistory, { role: "user", content: text.trim() }];
-
-    try {
-      const res = await fetch(`${apiBase}/api/voice/process-request`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...authHeader },
-        body: JSON.stringify({
-          request_text: text.trim(),
-          conversation_history: updatedHistory.slice(-12),
-        }),
-      });
-      const data = await res.json();
-      const replyText = data.response_text || "I'm sorry, I had a little trouble with that. Could you try again?";
-
-      setMessages(prev =>
-        prev.map(m => m.id === loadingId ? { ...m, text: replyText, isLoading: false } : m)
-      );
-      setConversationHistory([...updatedHistory, { role: "assistant", content: replyText }]);
-      speakText(replyText);
-    } catch {
-      const errText = "I'm sorry, I couldn't connect just now. Please check your internet and try again!";
-      setMessages(prev =>
-        prev.map(m => m.id === loadingId ? { ...m, text: errText, isLoading: false } : m)
-      );
-      speakText(errText);
-    } finally {
-      setIsSending(false);
-      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 150);
-    }
-  }
-
-  function stopRecognition() {
-    if (recognitionRef.current) { recognitionRef.current.stop(); recognitionRef.current = null; }
-    setIsListening(false);
-  }
-
-  function startVoiceRecognition() {
+  // Start voice recognition
+  const startVoiceRecognition = useCallback(() => {
     const SpeechRecognition = getWebSpeech();
-    if (!SpeechRecognition) { setShowTextInput(true); return; }
+    if (!SpeechRecognition) {
+      setShowTextInput(true);
+      return;
+    }
     stopSpeaking();
     try {
       const recognition = new SpeechRecognition();
@@ -330,6 +298,7 @@ export default function HomeScreen() {
       recognition.interimResults = true;
       recognition.lang = "en-US";
       recognitionRef.current = recognition;
+
       recognition.onstart = () => {
         setIsListening(true);
         setInterimText("");
@@ -349,27 +318,123 @@ export default function HomeScreen() {
         setIsListening(false);
         recognitionRef.current = null;
         setInterimText(prev => {
-          if (prev.trim()) { sendMessage(prev); return ""; }
-          setShowTextInput(true);
+          if (prev.trim()) {
+            sendMessage(prev);
+            return "";
+          }
           return "";
         });
       };
-      recognition.onerror = () => {
+      recognition.onerror = (e: any) => {
         setIsListening(false);
         recognitionRef.current = null;
         setInterimText("");
-        setShowTextInput(true);
+        // Only fall to text mode for serious errors, not "no-speech"
+        if (e.error !== "no-speech" && e.error !== "aborted") {
+          setShowTextInput(true);
+        }
       };
       recognition.start();
     } catch {
       setShowTextInput(true);
+    }
+  }, [stopSpeaking]);
+
+  const stopRecognition = useCallback(() => {
+    autoRestartRef.current = false;
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+    }
+    setIsListening(false);
+  }, []);
+
+  // Greeting on mount — then auto-start listening when done
+  useEffect(() => {
+    if (!greeted && assistantName) {
+      const greeting = `Hi ${user?.first_name || "there"}! I'm ${assistantName}. I'm here whenever you need me — just speak and I'll listen.`;
+      setMessages([{ id: "0", text: greeting, isUser: false }]);
+      setConversationHistory([{ role: "assistant", content: greeting }]);
+      setGreeted(true);
+      autoRestartRef.current = true;
+      setTimeout(() => {
+        speakText(greeting, () => {
+          // Auto-start listening once greeting finishes
+          if (autoRestartRef.current) startVoiceRecognition();
+        });
+      }, 600);
+    }
+  }, [assistantName, greeted]);
+
+  async function sendMessage(text: string) {
+    if (!text.trim() || isSending) return;
+    stopSpeaking();
+    stopRecognition();
+
+    const userMsg: Message = { id: Date.now().toString(), text: text.trim(), isUser: true };
+    const loadingId = (Date.now() + 1).toString();
+    const loadingMsg: Message = { id: loadingId, text: "", isUser: false, isLoading: true };
+
+    setMessages(prev => [...prev, userMsg, loadingMsg]);
+    setInputText("");
+    setInterimText("");
+    setIsSending(true);
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
+
+    const updatedHistory: ConvTurn[] = [
+      ...conversationHistory,
+      { role: "user", content: text.trim() },
+    ];
+
+    try {
+      const res = await fetch(`${apiBase}/api/voice/process-request`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user?.token}`,
+        },
+        body: JSON.stringify({
+          request_text: text.trim(),
+          conversation_history: updatedHistory.slice(-12),
+        }),
+      });
+      const data = await res.json();
+      const replyText =
+        data.response_text || "I'm sorry, I had a little trouble. Could you try again?";
+
+      setMessages(prev =>
+        prev.map(m => (m.id === loadingId ? { ...m, text: replyText, isLoading: false } : m))
+      );
+      const newHistory: ConvTurn[] = [
+        ...updatedHistory,
+        { role: "assistant", content: replyText },
+      ];
+      setConversationHistory(newHistory);
+
+      // Speak reply, then auto-restart listening
+      autoRestartRef.current = true;
+      speakText(replyText, () => {
+        if (autoRestartRef.current && !showTextInput) {
+          startVoiceRecognition();
+        }
+      });
+    } catch {
+      const errText = "I couldn't connect just now. Please check your internet and try again!";
+      setMessages(prev =>
+        prev.map(m => (m.id === loadingId ? { ...m, text: errText, isLoading: false } : m))
+      );
+      speakText(errText);
+    } finally {
+      setIsSending(false);
+      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 150);
     }
   }
 
   function handleOrbPress() {
     if (isListening) {
       stopRecognition();
-      if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    } else if (isSpeaking) {
+      stopSpeaking();
     } else {
       if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       startVoiceRecognition();
@@ -377,30 +442,41 @@ export default function HomeScreen() {
   }
 
   const firstName = user?.first_name || "Friend";
-  const hintText = isListening
-    ? `Listening… speak to ${assistantName}`
-    : `Tap to speak with ${assistantName}`;
+
+  const orbStatusText = isListening
+    ? `Listening…`
+    : isSpeaking
+    ? `${assistantName} is speaking`
+    : `Tap to speak`;
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={[styles.header, { paddingTop: insets.top + (Platform.OS === "web" ? 67 : 0) }]}>
+      {/* ── Header ── */}
+      <View
+        style={[
+          styles.header,
+          { paddingTop: insets.top + (Platform.OS === "web" ? 67 : 8) },
+        ]}
+      >
         <View>
-          <Text style={[styles.greeting, { color: theme.textSecondary, fontSize: ts.xs }]}>Good day,</Text>
-          <Text style={[styles.name, { color: theme.text, fontSize: ts.h2 }]}>{firstName}</Text>
+          <Text style={[styles.greeting, { color: theme.textSecondary, fontSize: ts.xs }]}>
+            Good day,
+          </Text>
+          <Text style={[styles.name, { color: theme.text, fontSize: ts.h2 }]}>
+            {firstName}
+          </Text>
         </View>
         <View style={[styles.shieldBadge, { backgroundColor: "#DBEAFE" }]}>
-          <Ionicons name="shield-checkmark" size={15} color="#2563EB" />
-          <Text style={[styles.shieldText, { fontSize: ts.sm }]}>Protected</Text>
+          <Ionicons name="shield-checkmark" size={14} color="#2563EB" />
+          <Text style={[styles.shieldText, { fontSize: ts.xs }]}>Protected</Text>
         </View>
       </View>
 
+      {/* ── Messages ── */}
       <ScrollView
         ref={scrollRef}
         style={styles.messages}
-        contentContainerStyle={[
-          styles.messagesContent,
-          { paddingBottom: tabBarHeight + (showTextInput ? 80 : 280) },
-        ]}
+        contentContainerStyle={[styles.messagesContent]}
         showsVerticalScrollIndicator={false}
       >
         {messages.map(msg => (
@@ -414,42 +490,48 @@ export default function HomeScreen() {
         ))}
       </ScrollView>
 
+      {/* ── Orb footer (NOT absolutely positioned) ── */}
       {!showTextInput && (
-        <View style={[styles.orbSection, { bottom: tabBarHeight + insets.bottom + 16 }]}>
+        <View
+          style={[
+            styles.orbFooter,
+            { borderTopColor: theme.border, paddingBottom: insets.bottom + 12 },
+          ]}
+        >
+          {/* Interim text (what mic heard so far) */}
           {isListening && interimText ? (
-            <View style={[styles.interimBox, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-              <Text style={[styles.interimText, { color: theme.text, fontSize: ts.sm }]}>
+            <View style={[styles.interimBubble, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+              <Text style={[styles.interimText, { color: theme.text, fontSize: ts.sm }]} numberOfLines={2}>
                 {interimText}
               </Text>
             </View>
           ) : (
             <Text
-              style={[
-                styles.orbHint,
-                {
-                  color: isListening ? "#2563EB" : theme.textSecondary,
-                  fontSize: ts.sm,
-                },
-              ]}
+              style={[styles.orbStatusText, { color: isListening ? "#DC2626" : theme.textSecondary, fontSize: ts.xs }]}
               numberOfLines={1}
             >
-              {isListening ? "🔴 " : "🎤 "}{hintText}
+              {orbStatusText}
             </Text>
           )}
 
-          <VoiceOrb onPress={handleOrbPress} isListening={isListening} idle={!isListening} />
+          <VoiceOrb onPress={handleOrbPress} isListening={isListening} isSpeaking={isSpeaking} />
 
           <Pressable
-            onPress={() => { setShowTextInput(true); stopRecognition(); }}
-            style={styles.keyboardToggle}
+            onPress={() => {
+              stopRecognition();
+              stopSpeaking();
+              setShowTextInput(true);
+            }}
+            hitSlop={10}
           >
-            <Text style={[styles.keyboardToggleText, { color: theme.textSecondary, fontSize: ts.xs }]}>
+            <Text style={[styles.typeInstead, { color: theme.textSecondary, fontSize: ts.xs }]}>
               Type instead
             </Text>
           </Pressable>
         </View>
       )}
 
+      {/* ── Text input bar ── */}
       {showTextInput && (
         <View
           style={[
@@ -457,7 +539,7 @@ export default function HomeScreen() {
             {
               backgroundColor: theme.surface,
               borderTopColor: theme.border,
-              paddingBottom: tabBarHeight + (Platform.OS === "web" ? 34 : insets.bottom) + 8,
+              paddingBottom: insets.bottom + 8,
             },
           ]}
         >
@@ -466,6 +548,7 @@ export default function HomeScreen() {
               setShowTextInput(false);
               setInputText("");
               setInterimText("");
+              autoRestartRef.current = true;
               startVoiceRecognition();
             }}
             style={styles.micButton}
@@ -483,7 +566,7 @@ export default function HomeScreen() {
             ]}
             value={inputText}
             onChangeText={setInputText}
-            placeholder={`Ask ${assistantName} anything…`}
+            placeholder={`Ask ${assistantName}…`}
             placeholderTextColor={theme.placeholder}
             multiline
             maxLength={500}
@@ -514,131 +597,127 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 24,
-    paddingBottom: 12,
+    paddingHorizontal: 20,
+    paddingBottom: 10,
   },
   greeting: { fontFamily: "Inter_400Regular" },
   name: { fontFamily: "Inter_700Bold" },
   shieldBadge: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+    gap: 5,
+    paddingHorizontal: 11,
+    paddingVertical: 6,
     borderRadius: 20,
   },
   shieldText: { fontFamily: "Inter_600SemiBold", color: "#2563EB" },
+
   messages: { flex: 1 },
-  messagesContent: { paddingHorizontal: 16, paddingTop: 8, gap: 12 },
+  messagesContent: {
+    paddingHorizontal: 14,
+    paddingTop: 6,
+    paddingBottom: 16,
+    gap: 10,
+  },
+
   userBubbleWrapper: { alignItems: "flex-end" },
   userBubble: {
     backgroundColor: "#2563EB",
     borderRadius: 20,
     borderBottomRightRadius: 4,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     maxWidth: "80%",
   },
-  userBubbleText: { fontFamily: "Inter_400Regular", color: "#FFFFFF" },
   assistantBubbleWrapper: {
     flexDirection: "row",
     alignItems: "flex-start",
-    gap: 10,
+    gap: 8,
     maxWidth: "90%",
   },
   assistantIcon: {
-    width: 30,
-    height: 30,
-    borderRadius: 9,
+    width: 28,
+    height: 28,
+    borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 4,
+    marginTop: 2,
     flexShrink: 0,
   },
   assistantBubble: {
     flex: 1,
-    borderRadius: 20,
+    borderRadius: 18,
     borderBottomLeftRadius: 4,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderWidth: 1,
-  },
-  assistantBubbleText: { fontFamily: "Inter_400Regular" },
-  replayButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    marginTop: 8,
-  },
-  replayText: { fontFamily: "Inter_500Medium", color: "#2563EB" },
-  typingDots: { flexDirection: "row", alignItems: "center" },
-  orbSection: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    alignItems: "center",
-    gap: 10,
-  },
-  orbHint: {
-    fontFamily: "Inter_500Medium",
-    textAlign: "center",
-  },
-  interimBox: {
-    marginHorizontal: 24,
-    paddingHorizontal: 18,
+    paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 16,
     borderWidth: 1,
-    maxWidth: 320,
+  },
+  bubbleText: { fontFamily: "Inter_400Regular" },
+  replayBtn: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 6 },
+  replayText: { fontFamily: "Inter_500Medium", color: "#2563EB" },
+  typingRow: { flexDirection: "row", alignItems: "center" },
+
+  // ── Orb footer ──
+  orbFooter: {
+    alignItems: "center",
+    paddingTop: 10,
+    gap: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  orbStatusText: {
+    fontFamily: "Inter_400Regular",
+    letterSpacing: 0.1,
+  },
+  interimBubble: {
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 7,
+    maxWidth: "80%",
   },
   interimText: {
     fontFamily: "Inter_400Regular",
     textAlign: "center",
     fontStyle: "italic",
   },
-  keyboardToggle: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-  },
-  keyboardToggleText: {
+  typeInstead: {
     fontFamily: "Inter_400Regular",
     textDecorationLine: "underline",
+    paddingBottom: 2,
   },
+
   orbWrapper: { alignItems: "center", justifyContent: "center" },
   orbGlow: {
     position: "absolute",
-    width: 148,
-    height: 148,
-    borderRadius: 74,
-    backgroundColor: "#2563EB",
+    width: 140,
+    height: 140,
+    borderRadius: 70,
   },
   orb: {
-    width: 116,
-    height: 116,
-    borderRadius: 58,
-    backgroundColor: "#2563EB",
+    width: 108,
+    height: 108,
+    borderRadius: 54,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#2563EB",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.5,
-    shadowRadius: 20,
-    elevation: 12,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.45,
+    shadowRadius: 18,
+    elevation: 10,
   },
+
+  // ── Text input bar ──
   inputBar: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
     flexDirection: "row",
     alignItems: "flex-end",
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    gap: 10,
+    paddingHorizontal: 14,
+    paddingTop: 10,
+    gap: 8,
     borderTopWidth: 1,
   },
   micButton: {
@@ -650,9 +729,9 @@ const styles = StyleSheet.create({
   },
   textInput: {
     flex: 1,
-    borderRadius: 22,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     fontFamily: "Inter_400Regular",
     maxHeight: 100,
     lineHeight: 22,
