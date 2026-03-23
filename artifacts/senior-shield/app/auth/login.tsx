@@ -6,8 +6,8 @@ import {
   Pressable,
   TextInput,
   ScrollView,
-  Alert,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -15,6 +15,67 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
+
+function InlineError({ message, onDismiss }: { message: string; onDismiss: () => void }) {
+  return (
+    <View style={errStyles.container}>
+      <Ionicons name="alert-circle" size={18} color="#EF4444" />
+      <Text style={errStyles.text}>{message}</Text>
+      <Pressable onPress={onDismiss} hitSlop={8}>
+        <Ionicons name="close" size={18} color="#EF4444" />
+      </Pressable>
+    </View>
+  );
+}
+
+function InlineSuccess({ message }: { message: string }) {
+  return (
+    <View style={successStyles.container}>
+      <Ionicons name="checkmark-circle" size={18} color="#10B981" />
+      <Text style={successStyles.text}>{message}</Text>
+    </View>
+  );
+}
+
+const errStyles = StyleSheet.create({
+  container: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: "#FEF2F2",
+    borderColor: "#FECACA",
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 14,
+  },
+  text: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: "Inter_500Medium",
+    color: "#B91C1C",
+    lineHeight: 20,
+  },
+});
+
+const successStyles = StyleSheet.create({
+  container: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: "#F0FDF4",
+    borderColor: "#BBF7D0",
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 14,
+  },
+  text: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: "Inter_500Medium",
+    color: "#065F46",
+    lineHeight: 20,
+  },
+});
 
 export default function LoginScreen() {
   const { theme } = useTheme();
@@ -24,19 +85,31 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  function showError(msg: string) {
+    setError(msg);
+    setSuccess("");
+    if (Platform.OS !== "web") {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    }
+  }
 
   async function handleLogin() {
-    if (!email || !password) {
-      Alert.alert("Missing info", "Please enter your email and password.");
-      return;
-    }
+    setError("");
+    setSuccess("");
+    if (!email.trim()) { showError("Please enter your email address."); return; }
+    if (!password) { showError("Please enter your password."); return; }
+
     setLoading(true);
     try {
       await login(email.trim().toLowerCase(), password);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      if (Platform.OS !== "web") {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
     } catch (err: any) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert("Login failed", err.message || "Invalid email or password. Please try again.");
+      showError(err?.message || "Invalid email or password. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -44,12 +117,10 @@ export default function LoginScreen() {
 
   async function handleForgotPassword() {
     if (!email.trim()) {
-      Alert.alert(
-        "Forgot Password",
-        "Enter your email address above, then tap Forgot Password again."
-      );
+      showError("Enter your email address above, then tap Forgot Password again.");
       return;
     }
+    setError("");
     try {
       const domain = process.env.EXPO_PUBLIC_DOMAIN;
       const base = domain ? `https://${domain}` : "";
@@ -59,10 +130,7 @@ export default function LoginScreen() {
         body: JSON.stringify({ email: email.trim().toLowerCase() }),
       });
     } catch {}
-    Alert.alert(
-      "Check your email",
-      `If an account exists for ${email.trim()}, you'll receive a password reset link shortly.`
-    );
+    setSuccess(`Reset link sent to ${email.trim()}. Check your inbox (and spam folder).`);
   }
 
   return (
@@ -93,7 +161,7 @@ export default function LoginScreen() {
 
         <Pressable
           style={[styles.googleButton]}
-          onPress={() => Alert.alert("Coming Soon", "Google sign-in is being set up. Please sign in with email for now.")}
+          onPress={() => setSuccess("Google sign-in is coming soon. Please sign in with your email for now.")}
         >
           <View style={styles.googleIconCircle}>
             <Text style={styles.googleG}>G</Text>
@@ -114,7 +182,7 @@ export default function LoginScreen() {
             <TextInput
               style={[styles.textInput, { color: theme.text }]}
               value={email}
-              onChangeText={setEmail}
+              onChangeText={v => { setEmail(v); setError(""); setSuccess(""); }}
               placeholder="your@email.com"
               placeholderTextColor={theme.placeholder}
               keyboardType="email-address"
@@ -137,7 +205,7 @@ export default function LoginScreen() {
             <TextInput
               style={[styles.textInput, { color: theme.text }]}
               value={password}
-              onChangeText={setPassword}
+              onChangeText={v => { setPassword(v); setError(""); setSuccess(""); }}
               placeholder="Your password"
               placeholderTextColor={theme.placeholder}
               secureTextEntry={!showPassword}
@@ -154,6 +222,9 @@ export default function LoginScreen() {
             </Pressable>
           </View>
         </View>
+
+        {!!error && <InlineError message={error} onDismiss={() => setError("")} />}
+        {!!success && <InlineSuccess message={success} />}
 
         <Pressable
           style={({ pressed }) => [styles.loginButton, pressed && styles.pressed, loading && styles.disabled]}

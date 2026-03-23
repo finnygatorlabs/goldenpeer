@@ -8,6 +8,7 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -22,6 +23,38 @@ const USER_TYPES = [
   { value: "staff", label: "Senior Center Staff", icon: "business" as const, description: "I manage a senior care program" },
 ];
 
+function InlineError({ message, onDismiss }: { message: string; onDismiss: () => void }) {
+  return (
+    <View style={errStyles.container}>
+      <Ionicons name="alert-circle" size={18} color="#EF4444" />
+      <Text style={errStyles.text}>{message}</Text>
+      <Pressable onPress={onDismiss} hitSlop={8}>
+        <Ionicons name="close" size={18} color="#EF4444" />
+      </Pressable>
+    </View>
+  );
+}
+
+const errStyles = StyleSheet.create({
+  container: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: "#FEF2F2",
+    borderColor: "#FECACA",
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 14,
+  },
+  text: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: "Inter_500Medium",
+    color: "#B91C1C",
+    lineHeight: 20,
+  },
+});
+
 export default function SignupScreen() {
   const { theme } = useTheme();
   const { signup } = useAuth();
@@ -34,27 +67,39 @@ export default function SignupScreen() {
   const [lastName, setLastName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  function showError(msg: string) {
+    setError(msg);
+    if (Platform.OS !== "web") {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    }
+  }
 
   async function handleSignup() {
-    if (!email || !password || !firstName) {
-      Alert.alert("Missing info", "Please fill in your first name, email, and password.");
-      return;
-    }
-    if (password.length < 8) {
-      Alert.alert("Password too short", "Password must be at least 8 characters.");
-      return;
-    }
+    setError("");
+    if (!firstName.trim()) { showError("Please enter your first name."); return; }
+    if (!email.trim()) { showError("Please enter your email address."); return; }
+    if (!password) { showError("Please enter a password."); return; }
+    if (password.length < 8) { showError("Password must be at least 8 characters."); return; }
+
     setLoading(true);
     try {
-      await signup(email.trim().toLowerCase(), password, userType, firstName, lastName);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      await signup(email.trim().toLowerCase(), password, userType, firstName.trim(), lastName.trim() || undefined);
+      if (Platform.OS !== "web") {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
       router.replace({
         pathname: "/auth/verify-email",
         params: { email: email.trim().toLowerCase() },
       });
     } catch (err: any) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert("Signup failed", err.message || "Could not create account. Please try again.");
+      const msg: string = err?.message || "Could not create account. Please try again.";
+      if (msg.toLowerCase().includes("already")) {
+        showError("This email is already registered. Tap 'Sign in' below to log in instead.");
+      } else {
+        showError(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -93,7 +138,7 @@ export default function SignupScreen() {
                   key={type.value}
                   onPress={() => {
                     setUserType(type.value);
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   }}
                   style={[
                     styles.typeCard,
@@ -140,7 +185,7 @@ export default function SignupScreen() {
             <Pressable
               style={({ pressed }) => [styles.continueButton, pressed && styles.pressed]}
               onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 setStep("details");
               }}
             >
@@ -191,12 +236,11 @@ export default function SignupScreen() {
             <TextInput
               style={[styles.textInput, { color: theme.text }]}
               value={firstName}
-              onChangeText={setFirstName}
+              onChangeText={v => { setFirstName(v); setError(""); }}
               placeholder="Jane"
               placeholderTextColor={theme.placeholder}
               autoCapitalize="words"
               returnKeyType="next"
-              autoFocus
             />
           </View>
         </View>
@@ -226,7 +270,7 @@ export default function SignupScreen() {
             <TextInput
               style={[styles.textInput, { color: theme.text }]}
               value={email}
-              onChangeText={setEmail}
+              onChangeText={v => { setEmail(v); setError(""); }}
               placeholder="your@email.com"
               placeholderTextColor={theme.placeholder}
               keyboardType="email-address"
@@ -244,7 +288,7 @@ export default function SignupScreen() {
             <TextInput
               style={[styles.textInput, { color: theme.text }]}
               value={password}
-              onChangeText={setPassword}
+              onChangeText={v => { setPassword(v); setError(""); }}
               placeholder="Min. 8 characters"
               placeholderTextColor={theme.placeholder}
               secureTextEntry={!showPassword}
@@ -262,12 +306,18 @@ export default function SignupScreen() {
           </View>
         </View>
 
+        {!!error && (
+          <InlineError message={error} onDismiss={() => setError("")} />
+        )}
+
         <Pressable
           style={({ pressed }) => [styles.signupButton, pressed && styles.pressed, loading && styles.disabled]}
           onPress={handleSignup}
           disabled={loading}
         >
-          {loading ? <ActivityIndicator color="#FFFFFF" /> : (
+          {loading ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
             <Text style={styles.signupButtonText}>Create Account — It's Free</Text>
           )}
         </Pressable>
