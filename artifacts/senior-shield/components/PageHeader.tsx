@@ -46,16 +46,6 @@ export default function PageHeader({ showTagline = false, greeting }: PageHeader
           >
             SeniorShield
           </Text>
-          {!!greeting && (
-            <Text
-              style={[styles.greeting, { fontSize: ts.sm }]}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.75}
-            >
-              {greeting}
-            </Text>
-          )}
           {showTagline && (
             <Text
               style={[styles.tagline, { fontSize: ts.xs }]}
@@ -64,6 +54,16 @@ export default function PageHeader({ showTagline = false, greeting }: PageHeader
               minimumFontScale={0.65}
             >
               Your voice assistant for tech help and scam protection
+            </Text>
+          )}
+          {!!greeting && (
+            <Text
+              style={[styles.greeting, { fontSize: ts.sm }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.75}
+            >
+              {greeting}
             </Text>
           )}
         </View>
