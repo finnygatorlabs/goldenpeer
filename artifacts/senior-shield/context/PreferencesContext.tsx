@@ -7,7 +7,7 @@ export const DEFAULT_NAMES: Record<string, string> = { female: "Ava", male: "Max
 export type FontSize = "normal" | "large" | "extra_large";
 export type ColorScheme = "light" | "dark";
 export type VoiceGender = "female" | "male";
-export type TtsVoice = "nova" | "shimmer" | "coral" | "echo" | "verse" | "onyx";
+export type TtsVoice = "nova" | "shimmer" | "coral" | "echo" | "ash" | "onyx";
 
 // All available voices with display names and descriptions
 export const TTS_VOICES: { value: TtsVoice; label: string; gender: VoiceGender; description: string }[] = [
@@ -15,7 +15,7 @@ export const TTS_VOICES: { value: TtsVoice; label: string; gender: VoiceGender; 
   { value: "shimmer", label: "Shimmer", gender: "female", description: "Soft & gentle" },
   { value: "coral",   label: "Coral",   gender: "female", description: "Rich & expressive" },
   { value: "echo",    label: "Echo",    gender: "male",   description: "Energetic & upbeat" },
-  { value: "verse",   label: "Verse",   gender: "male",   description: "Smooth & soulful" },
+  { value: "ash",     label: "Ash",     gender: "male",   description: "Smooth & soulful" },
   { value: "onyx",    label: "Onyx",    gender: "male",   description: "Deep & authoritative" },
 ];
 

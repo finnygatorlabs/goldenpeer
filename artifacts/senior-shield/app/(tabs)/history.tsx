@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -100,51 +101,60 @@ function ConversationCard({
   const preview = userMsgs[0]?.content || "Conversation";
 
   function handleDelete() {
-    Alert.alert(
-      "Delete Conversation",
-      "Are you sure you want to delete this conversation? This cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Delete", style: "destructive", onPress: () => onDelete(session.id) },
-      ]
-    );
+    if (Platform.OS === "web") {
+      // Alert.alert multi-button doesn't work on web — use native confirm dialog
+      if ((window as any).confirm("Delete this conversation? This cannot be undone.")) {
+        onDelete(session.id);
+      }
+    } else {
+      Alert.alert(
+        "Delete Conversation",
+        "Are you sure you want to delete this conversation? This cannot be undone.",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Delete", style: "destructive", onPress: () => onDelete(session.id) },
+        ]
+      );
+    }
   }
 
   return (
     <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-      <Pressable
-        onPress={() => setExpanded((v) => !v)}
-        style={styles.cardHeader}
-        hitSlop={4}
-      >
-        <View style={styles.cardMetaRow}>
-          <Text style={[styles.cardTime, { color: theme.textSecondary, fontSize: ts.xs }]}>
-            {formatTime(session.started_at)}
-          </Text>
-          <View style={styles.cardHeaderRight}>
+      {/* Header row: tap left area to expand, trash button sits outside as a sibling */}
+      <View style={styles.cardHeader}>
+        <Pressable
+          onPress={() => setExpanded((v) => !v)}
+          style={{ flex: 1 }}
+          hitSlop={4}
+        >
+          <View style={styles.cardMetaRow}>
+            <Text style={[styles.cardTime, { color: theme.textSecondary, fontSize: ts.xs }]}>
+              {formatTime(session.started_at)}
+            </Text>
             <Text style={[styles.cardCount, { color: theme.textSecondary, fontSize: ts.xs }]}>
               {userMsgs.length} {userMsgs.length === 1 ? "question" : "questions"}
             </Text>
-            <Pressable onPress={handleDelete} hitSlop={10} style={styles.deleteBtn}>
-              <Ionicons name="trash-outline" size={17} color={theme.textSecondary} />
-            </Pressable>
           </View>
-        </View>
-        <View style={styles.cardPreviewRow}>
-          <Text
-            style={[styles.cardPreview, { color: theme.text, fontSize: ts.sm }]}
-            numberOfLines={expanded ? undefined : 2}
-          >
-            {preview}
-          </Text>
-          <Ionicons
-            name={expanded ? "chevron-up" : "chevron-down"}
-            size={20}
-            color={theme.textSecondary}
-            style={{ marginLeft: 8, marginTop: 2, flexShrink: 0 }}
-          />
-        </View>
-      </Pressable>
+          <View style={styles.cardPreviewRow}>
+            <Text
+              style={[styles.cardPreview, { color: theme.text, fontSize: ts.sm }]}
+              numberOfLines={expanded ? undefined : 2}
+            >
+              {preview}
+            </Text>
+            <Ionicons
+              name={expanded ? "chevron-up" : "chevron-down"}
+              size={20}
+              color={theme.textSecondary}
+              style={{ marginLeft: 8, marginTop: 2, flexShrink: 0 }}
+            />
+          </View>
+        </Pressable>
+        {/* Delete button is a sibling of the expand pressable — no event bubbling */}
+        <Pressable onPress={handleDelete} hitSlop={12} style={styles.deleteBtn}>
+          <Ionicons name="trash-outline" size={19} color={theme.textSecondary} />
+        </Pressable>
+      </View>
 
       {expanded && (
         <View style={[styles.cardBody, { borderTopColor: theme.border }]}>
@@ -242,28 +252,32 @@ export default function HistoryScreen() {
   }
 
   function deleteDayGroup(group: DateGroup) {
-    Alert.alert(
-      `Delete All — ${group.label}`,
-      `Delete all ${group.sessions.length} conversation${group.sessions.length === 1 ? "" : "s"} from ${group.label}? This cannot be undone.`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete All",
-          style: "destructive",
-          onPress: () => {
-            if (!user?.token) return;
-            const ids = group.sessions.map((s) => s.id);
-            setSessions((prev) => prev.filter((s) => !ids.includes(s.id)));
-            ids.forEach((id) => {
-              fetch(`${apiBase}/api/conversations/${id}`, {
-                method: "DELETE",
-                headers: { Authorization: `Bearer ${user.token!}` },
-              }).catch(() => {});
-            });
-          },
-        },
-      ]
-    );
+    const doDelete = () => {
+      if (!user?.token) return;
+      const ids = group.sessions.map((s) => s.id);
+      setSessions((prev) => prev.filter((s) => !ids.includes(s.id)));
+      ids.forEach((id) => {
+        fetch(`${apiBase}/api/conversations/${id}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${user.token!}` },
+        }).catch(() => {});
+      });
+    };
+
+    if (Platform.OS === "web") {
+      if ((window as any).confirm(`Delete all ${group.sessions.length} conversation${group.sessions.length === 1 ? "" : "s"} from ${group.label}? This cannot be undone.`)) {
+        doDelete();
+      }
+    } else {
+      Alert.alert(
+        `Delete All — ${group.label}`,
+        `Delete all ${group.sessions.length} conversation${group.sessions.length === 1 ? "" : "s"} from ${group.label}? This cannot be undone.`,
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Delete All", style: "destructive", onPress: doDelete },
+        ]
+      );
+    }
   }
 
   const groups = groupByDate(sessions);
@@ -419,7 +433,10 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   cardHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
     padding: 14,
+    gap: 8,
   },
   cardMetaRow: {
     flexDirection: "row",
