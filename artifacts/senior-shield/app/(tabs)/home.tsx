@@ -152,8 +152,8 @@ export default function HomeScreen() {
     const d = process.env.EXPO_PUBLIC_DOMAIN;
     return d ? `https://${d}` : "";
   })();
-  // Female: nova (warm, human-like) | Male: onyx (deep, calm)
-  const ttsVoice = prefs.preferred_voice === "female" ? "nova" : "onyx";
+  // Female: nova (warm, human-like) | Male: echo (upbeat, energetic)
+  const ttsVoice = prefs.preferred_voice === "female" ? "nova" : "echo";
   // Ref always holds the latest voice so stale closures (e.g. inside SpeechRecognition) never use the wrong voice
   const ttsVoiceRef = useRef(ttsVoice);
   useEffect(() => { ttsVoiceRef.current = ttsVoice; }, [ttsVoice]);
@@ -539,8 +539,14 @@ export default function HomeScreen() {
 
   function handleOrbPress() {
     if (!audioReady) {
-      // Show branded permission modal instead of raw browser popup
-      setShowMicModal(true);
+      if (Platform.OS === "web") {
+        // Desktop/web: unlock audio directly on first tap — no modal needed.
+        // Desktop Chrome doesn't need the same blessing dance as iOS Safari.
+        unlockAudio();
+      } else {
+        // Native iOS/Android: show the branded permission modal
+        setShowMicModal(true);
+      }
       return;
     }
     if (isListening) { stopListening(); return; }
