@@ -47,6 +47,10 @@ function RootLayoutNav() {
 
     if (!user) {
       router.replace("/auth/welcome");
+    } else if (!user.onboarding_completed) {
+      router.replace("/onboarding/step1");
+    } else {
+      router.replace("/(tabs)/home");
     }
   }, [user, isLoading]);
 
