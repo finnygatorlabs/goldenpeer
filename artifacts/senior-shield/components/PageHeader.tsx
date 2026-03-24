@@ -25,40 +25,41 @@ export default function PageHeader({ showTagline = false }: PageHeaderProps) {
         { paddingTop: insets.top + (Platform.OS === "web" ? 67 : 12) },
       ]}
     >
-      {/* Row 1: logo · name · protected */}
-      <View style={styles.topRow}>
+      <View style={styles.row}>
+        {/* Logo — background-stripped PNG, white checkmark intact */}
         <Image
           source={require("../assets/images/logo-shield.png")}
           style={styles.logo}
           resizeMode="contain"
         />
 
-        <Text
-          style={[styles.appName, { fontSize: ts.h1 }]}
-          numberOfLines={1}
-          adjustsFontSizeToFit
-        >
-          SeniorShield
-        </Text>
+        {/* Brand column: app name + tagline */}
+        <View style={styles.brandCol}>
+          <Text
+            style={[styles.appName, { fontSize: ts.h1 }]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+          >
+            SeniorShield
+          </Text>
+          {showTagline && (
+            <Text
+              style={[styles.tagline, { fontSize: ts.xs }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.68}
+            >
+              Your voice assistant for tech help and scam protection
+            </Text>
+          )}
+        </View>
 
-        {/* Protected — pushed to far right */}
-        <View style={styles.badge}>
+        {/* Protected — raised 5 px above center */}
+        <View style={[styles.badge, { marginBottom: 5 }]}>
           <Ionicons name="shield-checkmark" size={11} color="#FFFFFF" />
           <Text style={[styles.badgeText, { fontSize: ts.xs }]}>Protected</Text>
         </View>
       </View>
-
-      {/* Row 2: tagline spans full header width */}
-      {showTagline && (
-        <Text
-          style={[styles.tagline, { fontSize: ts.sm }]}
-          numberOfLines={1}
-          adjustsFontSizeToFit
-          minimumFontScale={0.68}
-        >
-          Your voice assistant for tech help and scam protection
-        </Text>
-      )}
     </LinearGradient>
   );
 }
@@ -67,14 +68,13 @@ const styles = StyleSheet.create({
   wrapper: {
     paddingHorizontal: 18,
     paddingBottom: 14,
-    gap: 6,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 6,
   },
-  topRow: {
+  row: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
@@ -83,19 +83,20 @@ const styles = StyleSheet.create({
     width: 58,
     height: 58,
     flexShrink: 0,
-    backgroundColor: "transparent",
+  },
+  brandCol: {
+    flex: 1,
+    gap: 3,
   },
   appName: {
     fontFamily: "Inter_700Bold",
     color: "#FFFFFF",
     letterSpacing: -0.5,
-    flex: 1,
   },
   tagline: {
     fontFamily: "Inter_400Regular",
     color: "rgba(255,255,255,0.80)",
-    lineHeight: 18,
-    paddingLeft: 2,
+    lineHeight: 16,
   },
   badge: {
     flexDirection: "row",
