@@ -149,6 +149,9 @@ export default function HomeScreen() {
   // audioReady = false on iOS web until user taps (browser autoplay policy)
   const [audioReady, setAudioReady] = useState(Platform.OS !== "web");
   const [showMicModal, setShowMicModal] = useState(false);
+  const [voiceMuted, setVoiceMuted] = useState(false);
+  const voiceMutedRef = useRef(false);
+  useEffect(() => { voiceMutedRef.current = voiceMuted; }, [voiceMuted]);
 
   const scrollRef = useRef<ScrollView>(null);
   const recognitionRef = useRef<any>(null);
@@ -172,6 +175,11 @@ export default function HomeScreen() {
   // ── TTS ──
   const speakText = useCallback(async (text: string, thenListen = false) => {
     if (!text.trim()) {
+      if (thenListen) startListening();
+      return;
+    }
+    // Voice muted — skip audio, still start listening so conversation continues
+    if (voiceMutedRef.current) {
       if (thenListen) startListening();
       return;
     }
@@ -389,14 +397,14 @@ export default function HomeScreen() {
       // 2. Create and bless ONE persistent Audio element during this user gesture.
       //    iOS permanently blesses an Audio element once play() is called within a gesture —
       //    reusing it for all TTS avoids ever hitting "autoplay blocked" again.
+      //    IMPORTANT: assign to ref SYNCHRONOUSLY so greeting TTS can use it immediately.
       try {
         const SILENT_MP3 =
           "data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsgU291bmRzIE11c2ljIExpY2Vuc2UARlRZUEUAAAAHAAABiAAAAAQAAAAA";
         const el = new Audio(SILENT_MP3);
         el.volume = 0;
-        el.play()
-          .then(() => { el.volume = 1; audioElRef.current = el; })
-          .catch(() => { audioElRef.current = el; }); // still store it even if play failed
+        audioElRef.current = el; // synchronous — available instantly for greeting TTS
+        el.play().then(() => { el.volume = 1; }).catch(() => {});
       } catch {}
       // 3. Pre-request microphone permission so iOS only shows the dialog once
       if (navigator.mediaDevices?.getUserMedia) {
@@ -470,7 +478,7 @@ export default function HomeScreen() {
     }
     if (isListening) { stopListening(); return; }
     if (isSpeaking) { stopSpeaking(); startListening(); return; }
-    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (prefs.haptic_feedback && Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     startListening();
   }
 
@@ -588,6 +596,23 @@ export default function HomeScreen() {
               Type instead
             </Text>
           </Pressable>
+
+          {/* ── Voice mute toggle — lower right ── */}
+          <Pressable
+            onPress={() => {
+              if (prefs.haptic_feedback && Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              if (!voiceMuted && isSpeaking) stopSpeaking();
+              setVoiceMuted(v => !v);
+            }}
+            hitSlop={10}
+            style={[styles.voiceMuteBtn, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}
+          >
+            <Ionicons
+              name={voiceMuted ? "volume-mute" : "volume-high"}
+              size={26}
+              color={voiceMuted ? "#9CA3AF" : "#2563EB"}
+            />
+          </Pressable>
         </View>
       )}
 
@@ -686,6 +711,22 @@ const styles = StyleSheet.create({
     marginTop: 18,
     paddingHorizontal: 20,
     paddingVertical: 8,
+  },
+  voiceMuteBtn: {
+    position: "absolute",
+    right: 16,
+    bottom: 20,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    borderWidth: 1.5,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 4,
   },
 
   // Input bar

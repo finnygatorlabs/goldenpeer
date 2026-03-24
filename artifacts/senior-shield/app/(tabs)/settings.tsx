@@ -169,7 +169,7 @@ export default function SettingsScreen() {
         <SettingRow
           icon="mic"
           label="Voice"
-          subtitle={prefs.preferred_voice === "female" ? `Female — Aria (natural, warm)` : `Male — Max (natural, calm)`}
+          subtitle={prefs.preferred_voice === "female" ? `Female — Ava (natural, warm)` : `Male — Max (natural, calm)`}
           onPress={() => {
             const newGender = prefs.preferred_voice === "female" ? "male" : "female";
             handlePrefChange("preferred_voice", newGender);
