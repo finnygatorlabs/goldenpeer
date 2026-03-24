@@ -91,16 +91,16 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,          // reduced 4 px more — shifts brand left
+    gap: 10,
   },
   logo: {
-    width: 58,
-    height: 58,
+    width: 74,
+    height: 74,
     flexShrink: 0,
   },
   brandCol: {
     flex: 1,
-    gap: 3,
+    gap: 2,
   },
   appName: {
     fontFamily: "Inter_700Bold",
