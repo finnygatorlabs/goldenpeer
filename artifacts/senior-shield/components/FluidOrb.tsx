@@ -66,7 +66,6 @@ function OrbVideo({ size }: { size: number }) {
     return (
       <video
         ref={videoRef}
-        src="/orb.mov"
         autoPlay
         loop
         muted
@@ -81,7 +80,10 @@ function OrbVideo({ size }: { size: number }) {
           top: 0,
           left: 0,
         }}
-      />
+      >
+        <source src="/orb.webm" type="video/webm" />
+        <source src="/orb.mp4" type="video/mp4" />
+      </video>
     );
   }
 
