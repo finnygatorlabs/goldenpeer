@@ -63,6 +63,7 @@ function OrbVideo({ size }: { size: number }) {
   }, []);
 
   if (Platform.OS === "web") {
+    const overflow = size * 0.12;
     return (
       <video
         ref={videoRef}
@@ -71,14 +72,13 @@ function OrbVideo({ size }: { size: number }) {
         muted
         playsInline
         style={{
-          width: size,
-          height: size,
-          borderRadius: size / 2,
+          width: size + overflow * 2,
+          height: size + overflow * 2,
           objectFit: "cover",
           display: "block",
           position: "absolute" as any,
-          top: 0,
-          left: 0,
+          top: -overflow,
+          left: -overflow,
         }}
       >
         <source src="/orb.webm" type="video/webm" />
@@ -170,13 +170,8 @@ export default function FluidOrb({ onPress, isListening, isSpeaking, audioReady 
     opacity: glowOpacity.value,
   }));
 
-  const icon: any = isListening
-    ? "stop-circle"
-    : isSpeaking
-    ? "volume-high"
-    : !audioReady
-    ? "hand-right"
-    : "mic";
+  const icon: any = isListening ? "stop-circle" : isSpeaking ? "volume-high" : "mic";
+  const iconOpacity = !audioReady && !isListening && !isSpeaking ? 0.55 : 1.0;
 
   return (
     <Pressable
@@ -205,8 +200,8 @@ export default function FluidOrb({ onPress, isListening, isSpeaking, audioReady 
       )}
 
       {/* Icon on top */}
-      <Reanimated.View style={[styles.iconWrap, iconStyle]}>
-        <Ionicons name={icon} size={52} color="#FFFFFF" />
+      <Reanimated.View style={[styles.iconWrap, iconStyle, { opacity: iconOpacity }]}>
+        <Ionicons name={icon} size={44} color="#FFFFFF" />
       </Reanimated.View>
     </Pressable>
   );
@@ -220,13 +215,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
-    backgroundColor: "#080C1E",
-    // Deep shadow for depth
+    backgroundColor: "#04061A",
     shadowColor: "#3B82F6",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.55,
-    shadowRadius: 24,
-    elevation: 16,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 8,
   },
   stateOverlay: {
     ...StyleSheet.absoluteFillObject,
