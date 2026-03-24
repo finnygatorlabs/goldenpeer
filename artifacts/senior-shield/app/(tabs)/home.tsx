@@ -491,13 +491,8 @@ export default function HomeScreen() {
         silentSrc.connect(ctx.destination);
         silentSrc.start(0);
       } catch {}
-      // Pre-request microphone so the browser dialog appears now, not mid-conversation
-      if (navigator.mediaDevices?.getUserMedia) {
-        navigator.mediaDevices
-          .getUserMedia({ audio: true })
-          .then((stream) => stream.getTracks().forEach((t) => t.stop()))
-          .catch(() => {});
-      }
+      // Note: mic permission is handled by the Web Speech API when startListening() fires.
+      // Do NOT call getUserMedia here — that would produce a redundant second OS dialog.
     }
     setAudioReady(true);
   }
