@@ -16,6 +16,7 @@ import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import * as Haptics from "expo-haptics";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
+import PageHeader from "@/components/PageHeader";
 
 interface AnalysisResult {
   id: string;
@@ -115,22 +116,19 @@ export default function ScamScreen() {
   }
 
   return (
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <PageHeader
+        pageTitle="Scam Detector"
+        pageSubtitle="Paste a suspicious message and I'll check if it's a scam"
+      />
     <ScrollView
-      style={[styles.container, { backgroundColor: theme.background }]}
       contentContainerStyle={[
         styles.content,
-        {
-          paddingTop: insets.top + (Platform.OS === "web" ? 67 : 16),
-          paddingBottom: tabBarHeight + insets.bottom + 24,
-        },
+        { paddingBottom: tabBarHeight + insets.bottom + 24, paddingTop: 16 },
       ]}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={[styles.title, { color: theme.text }]}>Scam Detector</Text>
-      <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-        Paste a suspicious message below and we'll check if it's a scam
-      </Text>
 
       <View style={[styles.inputCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
         <View style={styles.inputHeader}>
@@ -262,6 +260,7 @@ export default function ScamScreen() {
         </View>
       )}
     </ScrollView>
+    </View>
   );
 }
 

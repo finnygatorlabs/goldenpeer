@@ -18,6 +18,7 @@ import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
+import PageHeader from "@/components/PageHeader";
 import { usePreferences, DEFAULT_NAMES, Preferences } from "@/context/PreferencesContext";
 
 function SettingRow({
@@ -131,18 +132,15 @@ export default function SettingsScreen() {
   }
 
   return (
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+    <PageHeader pageTitle="Settings" />
     <ScrollView
-      style={[styles.container, { backgroundColor: theme.background }]}
       contentContainerStyle={[
         styles.content,
-        {
-          paddingTop: insets.top + (Platform.OS === "web" ? 67 : 16),
-          paddingBottom: tabBarHeight + insets.bottom + 24,
-        },
+        { paddingBottom: tabBarHeight + insets.bottom + 24 },
       ]}
       showsVerticalScrollIndicator={false}
     >
-      <Text style={[styles.title, { color: theme.text, fontSize: ts.h1 }]}>Settings</Text>
 
       {/* Profile card */}
       <View style={[styles.profileCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
@@ -382,13 +380,14 @@ export default function SettingsScreen() {
 
       <Text style={[styles.version, { color: theme.textTertiary, fontSize: ts.xs }]}>SeniorShield v1.0.0</Text>
     </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
   loadingContainer: { flex: 1, alignItems: "center", justifyContent: "center" },
-  content: { paddingHorizontal: 20, gap: 16 },
+  content: { paddingHorizontal: 20, gap: 16, paddingTop: 16 },
   title: { fontFamily: "Inter_700Bold", marginBottom: 4 },
   profileCard: { flexDirection: "row", alignItems: "center", gap: 14, padding: 20, borderRadius: 20, borderWidth: 1 },
   profileAvatar: { width: 52, height: 52, borderRadius: 26, alignItems: "center", justifyContent: "center" },

@@ -115,6 +115,9 @@ export default function HomeScreen() {
 
   // Female: nova (warm, human-like) | Male: onyx (deep, calm)
   const ttsVoice = prefs.preferred_voice === "female" ? "nova" : "onyx";
+  // Ref always holds the latest voice so stale closures (e.g. inside SpeechRecognition) never use the wrong voice
+  const ttsVoiceRef = useRef(ttsVoice);
+  useEffect(() => { ttsVoiceRef.current = ttsVoice; }, [ttsVoice]);
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [history, setHistory] = useState<ConvTurn[]>([]);
@@ -147,7 +150,7 @@ export default function HomeScreen() {
         const res = await fetch(`${apiBase}/api/voice/tts`, {
           method: "POST",
           headers: { "Content-Type": "application/json", ...authH },
-          body: JSON.stringify({ text: text.slice(0, 900), voice: ttsVoice }),
+          body: JSON.stringify({ text: text.slice(0, 900), voice: ttsVoiceRef.current }),
         });
         if (res.ok) {
           const { audio } = await res.json();
@@ -197,7 +200,7 @@ export default function HomeScreen() {
         const res = await fetch(`${apiBase}/api/voice/tts`, {
           method: "POST",
           headers: { "Content-Type": "application/json", ...authH },
-          body: JSON.stringify({ text: text.slice(0, 900), voice: ttsVoice }),
+          body: JSON.stringify({ text: text.slice(0, 900), voice: ttsVoiceRef.current }),
         });
         if (res.ok) {
           const { audio } = await res.json();
@@ -392,7 +395,7 @@ export default function HomeScreen() {
   const firstName = user?.first_name || "Friend";
   const orbBottomPad = tabBarHeight + insets.bottom + 8;
   // Footer height: statusLabel (24) + gap (14) + orb (220) + gap (18) + typeBtn (22) + padding (20)
-  const ORB_FOOTER_HEIGHT = 24 + 14 + 220 + 18 + 22 + 20;
+  const ORB_FOOTER_HEIGHT = 24 + 14 + 176 + 18 + 22 + 20;
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>

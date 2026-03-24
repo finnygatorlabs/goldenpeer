@@ -17,6 +17,7 @@ import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import * as Haptics from "expo-haptics";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
+import PageHeader from "@/components/PageHeader";
 
 interface FamilyMember {
   id: string;
@@ -117,30 +118,24 @@ export default function FamilyScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <PageHeader
+        pageTitle="Family Alerts"
+        pageSubtitle="They get notified if we detect a scam"
+      />
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          {
-            paddingTop: insets.top + (Platform.OS === "web" ? 67 : 16),
-            paddingBottom: tabBarHeight + insets.bottom + 24,
-          },
+          { paddingBottom: tabBarHeight + insets.bottom + 24 },
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.headerRow}>
-          <View>
-            <Text style={[styles.title, { color: theme.text }]}>Family Alerts</Text>
-            <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-              They get notified if we detect a scam
-            </Text>
-          </View>
-          <Pressable
-            onPress={() => setShowAddModal(true)}
-            style={[styles.addButton]}
-          >
-            <Ionicons name="add" size={24} color="#FFFFFF" />
-          </Pressable>
-        </View>
+        <Pressable
+          onPress={() => setShowAddModal(true)}
+          style={[styles.addButton, { alignSelf: "flex-end", marginBottom: 16 }]}
+        >
+          <Ionicons name="add" size={22} color="#FFFFFF" />
+          <Text style={{ color: "#FFFFFF", fontFamily: "Inter_600SemiBold", fontSize: 14 }}>Add Member</Text>
+        </Pressable>
 
         <View style={[styles.infoCard, { backgroundColor: "#EDE9FE", borderColor: "#C4B5FD" }]}>
           <Ionicons name="shield-checkmark" size={24} color="#7C3AED" />
@@ -290,17 +285,18 @@ export default function FamilyScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { paddingHorizontal: 20, gap: 20 },
+  content: { paddingHorizontal: 20, gap: 16, paddingTop: 16 },
   headerRow: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" },
   title: { fontSize: 28, fontFamily: "Inter_700Bold", marginBottom: 4 },
   subtitle: { fontSize: 15, fontFamily: "Inter_400Regular" },
   addButton: {
-    width: 48,
-    height: 48,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     borderRadius: 24,
     backgroundColor: "#2563EB",
-    alignItems: "center",
-    justifyContent: "center",
     shadowColor: "#2563EB",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,

@@ -12,7 +12,7 @@ import Reanimated, {
 } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 
-const SIZE = 220;
+const SIZE = 176;
 
 // ── Expanding wave ring ──────────────────────────────────────────────
 function PulseRing({ color, delay = 0, borderWidth = 2 }: { color: string; delay?: number; borderWidth?: number }) {
