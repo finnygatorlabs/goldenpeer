@@ -38,6 +38,27 @@ function stripMarkdown(text: string): string {
     .trim();
 }
 
+// Split response text into sentence-sized chunks for streaming TTS.
+// First chunk plays immediately (fast); remaining chunks are queued and
+// pre-fetched while the first is still playing — dramatically cuts perceived delay.
+function splitIntoChunks(text: string): string[] {
+  // Split at sentence-ending punctuation, keeping each chunk ≤ 220 chars
+  const parts = text.match(/[^.!?]+[.!?]+(?:\s|$)|[^.!?]+$/g) || [text];
+  const chunks: string[] = [];
+  let buf = "";
+  for (const s of parts) {
+    const candidate = (buf + s).trim();
+    if (candidate.length > 220 && buf) {
+      chunks.push(buf.trim());
+      buf = s;
+    } else {
+      buf = (buf + s);
+    }
+  }
+  if (buf.trim()) chunks.push(buf.trim());
+  return chunks.filter(Boolean);
+}
+
 interface Message {
   id: string;
   text: string;
@@ -171,6 +192,10 @@ export default function HomeScreen() {
   const abortTTSRef = useRef<AbortController | null>(null);
   // Monotonically increasing call ID — lets us discard stale responses from old TTS fetches
   const ttsCallIdRef = useRef(0);
+  // Sentence-streaming queue — holds remaining chunks after the first sentence starts playing
+  const chunkQueueRef = useRef<string[]>([]);
+  // Callback invoked when each TTS chunk finishes — either plays next chunk or ends session
+  const onTtsDoneRef = useRef<() => void>(() => {});
 
   // ── TTS ──
   const speakText = useCallback(async (text: string, thenListen = false) => {
@@ -224,11 +249,11 @@ export default function HomeScreen() {
           el.src = `data:audio/mpeg;base64,${audio}`;
           el.onended = () => {
             if (callId !== ttsCallIdRef.current) return;
-            setIsSpeaking(false);
-            if (shouldListenAfterSpeak.current) startListening();
+            onTtsDoneRef.current(); // chain next sentence chunk or finish
           };
           el.onerror = () => {
             if (callId !== ttsCallIdRef.current) return;
+            chunkQueueRef.current = []; // discard remaining chunks on error
             setIsSpeaking(false);
             if (shouldListenAfterSpeak.current) startListening();
           };
@@ -236,6 +261,7 @@ export default function HomeScreen() {
             await el.play();
           } catch {
             // play() failed even with blessed element — just end silently (text is in chat)
+            chunkQueueRef.current = [];
             setIsSpeaking(false);
             if (shouldListenAfterSpeak.current) startListening();
           }
@@ -269,8 +295,7 @@ export default function HomeScreen() {
           sound.setOnPlaybackStatusUpdate((s: any) => {
             if (s.didJustFinish) {
               sound.unloadAsync();
-              setIsSpeaking(false);
-              if (shouldListenAfterSpeak.current) startListening();
+              onTtsDoneRef.current(); // chain next sentence chunk or finish
             }
           });
           return;
@@ -284,8 +309,12 @@ export default function HomeScreen() {
       Sp.default.speak(text, {
         rate: 0.92,
         pitch: prefs.preferred_voice === "female" ? 1.05 : 0.86,
-        onDone: () => { setIsSpeaking(false); if (shouldListenAfterSpeak.current) startListening(); },
-        onError: () => { setIsSpeaking(false); if (shouldListenAfterSpeak.current) startListening(); },
+        onDone: () => { onTtsDoneRef.current(); }, // chain next chunk or finish
+        onError: () => {
+          chunkQueueRef.current = [];
+          setIsSpeaking(false);
+          if (shouldListenAfterSpeak.current) startListening();
+        },
       });
       return;
     }
@@ -295,8 +324,23 @@ export default function HomeScreen() {
   // Keep the ref pointing to the latest speakText after every re-creation
   useEffect(() => { speakTextRef.current = speakText; }, [speakText]);
 
+  // ── Sentence-streaming: called when each TTS chunk finishes playing ──
+  // Pops the next chunk from the queue and speaks it, or ends the session.
+  const onTtsDone = useCallback(() => {
+    const next = chunkQueueRef.current.shift();
+    if (next !== undefined) {
+      // Pre-speak the next chunk (audio is likely already cached/loading)
+      speakTextRef.current(next, shouldListenAfterSpeak.current);
+    } else {
+      setIsSpeaking(false);
+      if (shouldListenAfterSpeak.current) startListening();
+    }
+  }, []); // all deps are refs — always current, no stale closure risk
+  useEffect(() => { onTtsDoneRef.current = onTtsDone; }, [onTtsDone]);
+
   const stopSpeaking = useCallback(() => {
     shouldListenAfterSpeak.current = false;
+    chunkQueueRef.current = []; // discard any queued sentence chunks
     // Cancel any in-flight TTS fetch — this stops the network request mid-flight
     abortTTSRef.current?.abort();
     abortTTSRef.current = null;
@@ -458,8 +502,12 @@ export default function HomeScreen() {
       const reply = data.response_text || "I'm sorry, could you repeat that?";
       setMessages(prev => prev.map(m => m.id === lid ? { ...m, text: reply, isLoading: false } : m));
       setHistory([...updatedHistory, { role: "assistant", content: reply }]);
-      // Use ref so stale closures (captured inside startListening) always call the latest speakText
-      speakTextRef.current(stripMarkdown(reply), true);
+      // Sentence-streaming: split into chunks, speak first chunk immediately (fast),
+      // queue the rest — each chunk fires TTS while the previous chunk is still playing.
+      const cleanReply = stripMarkdown(reply);
+      const chunks = splitIntoChunks(cleanReply);
+      chunkQueueRef.current = chunks.slice(1); // remaining chunks after first
+      speakTextRef.current(chunks[0] || cleanReply, true);
     } catch {
       const err = "I couldn't connect just now. Please check your internet and try again.";
       setMessages(prev => prev.map(m => m.id === lid ? { ...m, text: err, isLoading: false } : m));
@@ -504,8 +552,12 @@ export default function HomeScreen() {
 
 
   const orbBottomPad = tabBarHeight + insets.bottom + 8;
-  // Footer height: statusLabel (24) + gap (14) + orb (220) + gap (18) + typeBtn (22) + padding (20)
-  const ORB_FOOTER_HEIGHT = 24 + 14 + 176 + 18 + 22 + 20;
+  // Orb is compact (small) when idle — audio ready but not currently listening or speaking
+  const isOrbIdle = audioReady && greeted && !isListening && !isSpeaking;
+  // Footer height changes based on active vs compact state:
+  // Active: statusLabel (24) + gap (14) + orb (176) + gap (18) + typeBtn (22) + padding (20) = 274
+  // Compact: orb (80) + label (22) + padding (24) = 126 — saves ~148px for the message list
+  const ORB_FOOTER_HEIGHT = isOrbIdle ? 80 + 22 + 24 : 24 + 14 + 176 + 18 + 22 + 20;
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -549,53 +601,58 @@ export default function HomeScreen() {
             {
               bottom: orbBottomPad,
               backgroundColor: theme.background,
-              paddingTop: 16,
-              paddingBottom: 16,
+              paddingTop: isOrbIdle ? 8 : 16,
+              paddingBottom: isOrbIdle ? 8 : 16,
             },
           ]}
         >
-          {/* "Tap to speak" label — clearly above the orb */}
-          <View style={styles.statusRow}>
-            {isListening && interimText ? (
-              <View style={[styles.interimBox, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-                <Text style={{ fontSize: ts.sm, fontFamily: "Inter_400Regular", color: theme.text, fontStyle: "italic" }} numberOfLines={2}>
-                  "{interimText}"
+          {/* Status label / interim text — hidden when idle to give messages more space */}
+          {!isOrbIdle && (
+            <View style={styles.statusRow}>
+              {isListening && interimText ? (
+                <View style={[styles.interimBox, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+                  <Text style={{ fontSize: ts.sm, fontFamily: "Inter_400Regular", color: theme.text, fontStyle: "italic" }} numberOfLines={2}>
+                    "{interimText}"
+                  </Text>
+                </View>
+              ) : (
+                <Text
+                  style={[
+                    styles.statusLabel,
+                    {
+                      color: isListening ? "#0891B2" : isSpeaking ? "#2563EB" : theme.textSecondary,
+                      fontSize: ts.sm,
+                    },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {statusLabel}
                 </Text>
-              </View>
-            ) : (
-              <Text
-                style={[
-                  styles.statusLabel,
-                  {
-                    color: isListening ? "#0891B2" : isSpeaking ? "#2563EB" : theme.textSecondary,
-                    fontSize: ts.sm,
-                  },
-                ]}
-                numberOfLines={1}
-              >
-                {statusLabel}
-              </Text>
-            )}
-          </View>
+              )}
+            </View>
+          )}
 
-          {/* Orb — centered */}
+          {/* Orb — compact when idle, full size when active */}
           <FluidOrb
             onPress={handleOrbPress}
             isListening={isListening}
             isSpeaking={isSpeaking}
             audioReady={audioReady}
+            isIdle={isOrbIdle}
           />
 
-          {/* "Type instead" — clearly below, with good margin */}
-          <Pressable
-            onPress={() => { stopListening(); stopSpeaking(); setShowText(true); }}
-            hitSlop={16}
-            style={styles.typeBtn}
-          >
-            <Text style={{ fontSize: ts.sm, color: theme.textSecondary, fontFamily: "Inter_400Regular", textDecorationLine: "underline" }}>
-              Type instead
-            </Text>
-          </Pressable>
+          {/* "Type instead" — shown only when active (listening/speaking/initial) */}
+          {!isOrbIdle && (
+            <Pressable
+              onPress={() => { stopListening(); stopSpeaking(); setShowText(true); }}
+              hitSlop={16}
+              style={styles.typeBtn}
+            >
+              <Text style={{ fontSize: ts.sm, color: theme.textSecondary, fontFamily: "Inter_400Regular", textDecorationLine: "underline" }}>
+                Type instead
+              </Text>
+            </Pressable>
+          )}
 
           {/* ── Voice mute toggle — lower right ── */}
           <Pressable

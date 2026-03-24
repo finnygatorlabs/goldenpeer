@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { Pressable, StyleSheet, View, Platform } from "react-native";
+import { Pressable, StyleSheet, View, Platform, Text } from "react-native";
 import Reanimated, {
   Easing,
   cancelAnimation,
@@ -12,7 +12,8 @@ import Reanimated, {
 } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 
-const SIZE = 176;
+const FULL_SIZE = 176;
+const COMPACT_SIZE = 80;
 
 // ── Expanding wave ring ──────────────────────────────────────────────
 function PulseRing({ color, delay = 0, borderWidth = 2 }: { color: string; delay?: number; borderWidth?: number }) {
@@ -87,7 +88,6 @@ function OrbVideo({ size }: { size: number }) {
     );
   }
 
-  // Native: use expo-av
   return <NativeVideo size={size} />;
 }
 
@@ -122,13 +122,20 @@ interface FluidOrbProps {
   isListening: boolean;
   isSpeaking: boolean;
   audioReady: boolean;
+  isIdle?: boolean; // compact mode when not active
 }
 
-export default function FluidOrb({ onPress, isListening, isSpeaking, audioReady }: FluidOrbProps) {
+export default function FluidOrb({ onPress, isListening, isSpeaking, audioReady, isIdle = false }: FluidOrbProps) {
   const iconScale = useSharedValue(1);
   const glowOpacity = useSharedValue(0);
+  const orbSize = useSharedValue(isIdle ? COMPACT_SIZE : FULL_SIZE);
 
-  // Listening: soft cyan shimmer; Speaking: gentle blue pulse — both preserve the orb's natural beauty
+  // Animate size between compact and full
+  useEffect(() => {
+    const target = isIdle ? COMPACT_SIZE : FULL_SIZE;
+    orbSize.value = withTiming(target, { duration: 320, easing: Easing.inOut(Easing.ease) });
+  }, [isIdle]);
+
   const accent = isListening ? "#67E8F9" : "#60A5FA";
   const accentAlt = isListening ? "#A5F3FC" : "#93C5FD";
 
@@ -141,7 +148,6 @@ export default function FluidOrb({ onPress, isListening, isSpeaking, audioReady 
         withSequence(withTiming(1.12, { duration: 320 }), withTiming(1.0, { duration: 320 })),
         -1, false
       );
-      // Very subtle cyan shimmer — enhances the orb without masking it
       glowOpacity.value = withRepeat(
         withSequence(withTiming(0.22, { duration: 320 }), withTiming(0.06, { duration: 320 })),
         -1, false
@@ -172,49 +178,59 @@ export default function FluidOrb({ onPress, isListening, isSpeaking, audioReady 
     opacity: glowOpacity.value,
   }));
 
+  const wrapperStyle = useAnimatedStyle(() => ({
+    width: orbSize.value,
+    height: orbSize.value,
+    borderRadius: orbSize.value / 2,
+  }));
+
   const icon: any = isListening ? "stop-circle" : isSpeaking ? "volume-high" : "mic";
-  // Subtle ghost icons — never distracting, just hint at the state
   const iconOpacity = isListening || isSpeaking ? 0.45 : 0.28;
+  const iconSize = isIdle ? 22 : 44;
 
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [styles.wrapper, pressed && { opacity: 0.9 }]}
+      style={({ pressed }) => [{ opacity: pressed ? 0.9 : 1 }]}
     >
-      {/* Looping video sphere */}
-      <OrbVideo size={SIZE} />
+      <Reanimated.View style={[styles.wrapper, wrapperStyle]}>
+        {/* Looping video sphere */}
+        <OrbVideo size={isIdle ? COMPACT_SIZE : FULL_SIZE} />
 
-      {/* State color overlay — tints the video when listening/speaking */}
-      <Reanimated.View
-        style={[
-          styles.stateOverlay,
-          { backgroundColor: accent },
-          glowStyle,
-        ]}
-      />
+        {/* State color overlay */}
+        <Reanimated.View
+          style={[
+            StyleSheet.absoluteFillObject,
+            { borderRadius: FULL_SIZE / 2, backgroundColor: accent },
+            glowStyle,
+          ]}
+        />
 
-      {/* Expanding wave rings when active */}
-      {(isListening || isSpeaking) && (
-        <View style={styles.rings}>
-          <PulseRing color={accent} delay={0} borderWidth={2.5} />
-          <PulseRing color={accentAlt} delay={660} borderWidth={2} />
-          <PulseRing color={accent} delay={1320} borderWidth={1.5} />
-        </View>
-      )}
+        {/* Expanding wave rings when active */}
+        {(isListening || isSpeaking) && (
+          <View style={StyleSheet.absoluteFillObject}>
+            <PulseRing color={accent} delay={0} borderWidth={2.5} />
+            <PulseRing color={accentAlt} delay={660} borderWidth={2} />
+            <PulseRing color={accent} delay={1320} borderWidth={1.5} />
+          </View>
+        )}
 
-      {/* Icon on top */}
-      <Reanimated.View style={[styles.iconWrap, iconStyle, { opacity: iconOpacity }]}>
-        <Ionicons name={icon} size={44} color="#FFFFFF" />
+        {/* Icon */}
+        <Reanimated.View style={[styles.iconWrap, iconStyle, { opacity: iconOpacity }]}>
+          <Ionicons name={icon} size={iconSize} color="#FFFFFF" />
+        </Reanimated.View>
       </Reanimated.View>
+
+      {/* "Tap to speak" hint shown inside compact orb label */}
+      {isIdle && (
+        <Text style={styles.compactLabel}>Tap to speak</Text>
+      )}
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   wrapper: {
-    width: SIZE,
-    height: SIZE,
-    borderRadius: SIZE / 2,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
@@ -227,7 +243,7 @@ const styles = StyleSheet.create({
   },
   stateOverlay: {
     ...StyleSheet.absoluteFillObject,
-    borderRadius: SIZE / 2,
+    borderRadius: FULL_SIZE / 2,
   },
   rings: {
     ...StyleSheet.absoluteFillObject,
@@ -236,18 +252,25 @@ const styles = StyleSheet.create({
   },
   pulseRing: {
     position: "absolute",
-    width: SIZE,
-    height: SIZE,
-    borderRadius: SIZE / 2,
+    width: FULL_SIZE,
+    height: FULL_SIZE,
+    borderRadius: FULL_SIZE / 2,
   },
   iconWrap: {
     position: "absolute",
     alignItems: "center",
     justifyContent: "center",
-    // Drop shadow on the icon for visibility over the video
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.8,
     shadowRadius: 6,
+  },
+  compactLabel: {
+    color: "#94A3B8",
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    textAlign: "center",
+    marginTop: 6,
+    letterSpacing: 0.3,
   },
 });
