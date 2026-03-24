@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
   brandCol: {
     flex: 1,
     gap: 2,
-    marginLeft: -7,
+    marginLeft: -14,
   },
   appName: {
     fontFamily: "Inter_700Bold",
