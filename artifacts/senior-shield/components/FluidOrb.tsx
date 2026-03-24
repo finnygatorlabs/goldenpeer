@@ -64,7 +64,11 @@ function OrbVideo({ size }: { size: number }) {
   }, []);
 
   if (Platform.OS === "web") {
-    const overflow = size * 0.12;
+    // Always render at FULL_SIZE regardless of isIdle — the animated wrapper's
+    // overflow:hidden clips it smoothly. Passing a dynamic size causes a visual
+    // jump because the DOM element snaps while the wrapper slowly animates.
+    const renderSize = FULL_SIZE;
+    const overflow = renderSize * 0.12;
     return (
       <video
         ref={videoRef}
@@ -73,8 +77,8 @@ function OrbVideo({ size }: { size: number }) {
         muted
         playsInline
         style={{
-          width: size + overflow * 2,
-          height: size + overflow * 2,
+          width: renderSize + overflow * 2,
+          height: renderSize + overflow * 2,
           objectFit: "cover",
           display: "block",
           position: "absolute" as any,

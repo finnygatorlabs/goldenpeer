@@ -217,6 +217,8 @@ export default function HomeScreen() {
   const ttsCallIdRef = useRef(0);
   // Sentence-streaming queue — holds remaining chunks after the first sentence starts playing
   const chunkQueueRef = useRef<string[]>([]);
+  // All scheduled Web Audio source nodes for the current utterance (gapless playback)
+  const scheduledNodesRef = useRef<AudioBufferSourceNode[]>([]);
   // Callback invoked when each TTS chunk finishes — either plays next chunk or ends session
   const onTtsDoneRef = useRef<() => void>(() => {});
 
@@ -347,6 +349,93 @@ export default function HomeScreen() {
   // Keep the ref pointing to the latest speakText after every re-creation
   useEffect(() => { speakTextRef.current = speakText; }, [speakText]);
 
+  // ── Gapless web TTS: fetch all chunks in parallel, schedule back-to-back ──
+  // This eliminates the silence gaps between sentence chunks by pre-fetching all
+  // audio simultaneously and using Web Audio API's precise start-time scheduling.
+  const speakGaplessWeb = useCallback(async (chunks: string[], thenListen: boolean) => {
+    if (!chunks.length) { if (thenListen) startListening(); return; }
+    if (voiceMutedRef.current) { if (thenListen) startListening(); return; }
+
+    abortTTSRef.current?.abort();
+    const ctrl = new AbortController();
+    abortTTSRef.current = ctrl;
+    const callId = ++ttsCallIdRef.current;
+
+    shouldListenAfterSpeak.current = thenListen;
+    setIsSpeaking(true);
+
+    // Stop any currently scheduled nodes
+    scheduledNodesRef.current.forEach(n => { n.onended = null; try { n.stop(); } catch {} });
+    scheduledNodesRef.current = [];
+    if (audioSrcNodeRef.current) {
+      audioSrcNodeRef.current.onended = null;
+      try { audioSrcNodeRef.current.stop(); } catch {}
+      audioSrcNodeRef.current = null;
+    }
+
+    const ctx = audioCtxRef.current;
+    if (!ctx) { setIsSpeaking(false); return; }
+
+    try {
+      const token = userRef.current?.token;
+
+      // Fetch ALL chunks in parallel — no sequential round-trips between sentences
+      const responses = await Promise.all(
+        chunks.map(chunk =>
+          fetch(`${apiBase}/api/voice/tts`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ text: chunk.slice(0, 600), voice: ttsVoiceRef.current }),
+            signal: ctrl.signal,
+          }).then(r => r.ok ? r.json() : null).catch(() => null)
+        )
+      );
+      if (callId !== ttsCallIdRef.current) return;
+
+      // Decode all base64 audio blobs → AudioBuffers
+      const buffers: AudioBuffer[] = [];
+      for (const result of responses) {
+        if (!result?.audio) continue;
+        const binary = atob(result.audio);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        const buf = await ctx.decodeAudioData(bytes.buffer.slice(0));
+        buffers.push(buf);
+      }
+      if (callId !== ttsCallIdRef.current) return;
+      if (!buffers.length) { setIsSpeaking(false); return; }
+
+      // Schedule every buffer to start exactly when the previous one ends — gapless
+      const nodes: AudioBufferSourceNode[] = [];
+      let startTime = ctx.currentTime + 0.05;
+      for (const buf of buffers) {
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        src.connect(ctx.destination);
+        src.start(startTime);
+        startTime += buf.duration;
+        nodes.push(src);
+      }
+      scheduledNodesRef.current = nodes;
+      audioSrcNodeRef.current = nodes[nodes.length - 1];
+
+      // Only the last node's onended marks the end of the full utterance
+      nodes[nodes.length - 1].onended = () => {
+        if (callId !== ttsCallIdRef.current) return;
+        scheduledNodesRef.current = [];
+        audioSrcNodeRef.current = null;
+        setIsSpeaking(false);
+        if (shouldListenAfterSpeak.current) startListening();
+      };
+    } catch (e: any) {
+      if (e?.name === "AbortError") return;
+      setIsSpeaking(false);
+      if (shouldListenAfterSpeak.current) startListening();
+    }
+  }, [apiBase]);
+  const speakGaplessWebRef = useRef(speakGaplessWeb);
+  useEffect(() => { speakGaplessWebRef.current = speakGaplessWeb; }, [speakGaplessWeb]);
+
   // ── Sentence-streaming: called when each TTS chunk finishes playing ──
   // Pops the next chunk from the queue and speaks it, or ends the session.
   const onTtsDone = useCallback(() => {
@@ -370,6 +459,9 @@ export default function HomeScreen() {
     // Increment call ID so any already-received response is treated as stale
     ttsCallIdRef.current++;
     if (Platform.OS === "web") {
+      // Stop all gapless-scheduled nodes
+      scheduledNodesRef.current.forEach(n => { n.onended = null; try { n.stop(); } catch {} });
+      scheduledNodesRef.current = [];
       if (audioSrcNodeRef.current) {
         audioSrcNodeRef.current.onended = null;
         try { audioSrcNodeRef.current.stop(); } catch {}
@@ -568,12 +660,17 @@ export default function HomeScreen() {
           .catch(() => {});
       }
 
-      // Sentence-streaming: split into chunks, speak first chunk immediately (fast),
-      // queue the rest — each chunk fires TTS while the previous chunk is still playing.
+      // Gapless TTS on web: pre-fetch all sentence chunks in parallel and schedule
+      // them back-to-back so there's no silence between sentences. Falls back to
+      // sequential streaming on native where the Web Audio API isn't available.
       const cleanReply = stripMarkdown(reply);
       const chunks = splitIntoChunks(cleanReply);
-      chunkQueueRef.current = chunks.slice(1); // remaining chunks after first
-      speakTextRef.current(chunks[0] || cleanReply, true);
+      if (Platform.OS === "web" && audioCtxRef.current) {
+        speakGaplessWebRef.current(chunks, true);
+      } else {
+        chunkQueueRef.current = chunks.slice(1);
+        speakTextRef.current(chunks[0] || cleanReply, true);
+      }
     } catch {
       const err = "I couldn't connect just now. Please check your internet and try again.";
       setMessages(prev => prev.map(m => m.id === lid ? { ...m, text: err, isLoading: false } : m));
