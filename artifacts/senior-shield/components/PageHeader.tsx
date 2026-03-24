@@ -18,8 +18,8 @@ export default function PageHeader({ showTagline = false }: PageHeaderProps) {
 
   // Safe-area top + platform offset
   const topOffset = insets.top + (Platform.OS === "web" ? 67 : 12);
-  // Logo is 58 px tall; badge (~26 px) raised 5 px above center = topOffset + (58/2 - 13 - 5) = topOffset + 11
-  const badgeTop = topOffset + 11;
+  // Raised 6 px more than before (was +11, now +5)
+  const badgeTop = topOffset + 5;
 
   return (
     <LinearGradient
@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 9,          // was 12 — shifts brand 3 px left
+    gap: 5,          // reduced 4 px more — shifts brand left
   },
   logo: {
     width: 58,
