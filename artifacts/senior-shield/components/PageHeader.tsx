@@ -12,6 +12,7 @@ interface PageHeaderProps {
 
 const GRADIENT: [string, string, string] = ["#06102E", "#0E2D6B", "#0B5FAA"];
 const H_PAD = 18;
+const H_PAD_LEFT = 11; // 7 px less than H_PAD to shift logo+text left
 
 export default function PageHeader({ showTagline = false, greeting }: PageHeaderProps) {
   const { ts } = usePreferences();
@@ -80,7 +81,8 @@ export default function PageHeader({ showTagline = false, greeting }: PageHeader
 
 const styles = StyleSheet.create({
   wrapper: {
-    paddingHorizontal: H_PAD,
+    paddingLeft: H_PAD_LEFT,
+    paddingRight: H_PAD,
     paddingBottom: 14,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 3 },
