@@ -31,16 +31,21 @@ interface ConvTurn {
 }
 
 // ── Message bubble ─────────────────────────────────────────────────────────
+const MAX_LINES = 4;
+
 function MessageBubble({
   message, theme, ts, onSpeak,
 }: {
   message: Message; theme: any; ts: any; onSpeak?: (t: string) => void;
 }) {
+  const [expanded, setExpanded] = useState(false);
+  const isLong = message.text.length > 180;
+
   if (message.isUser) {
     return (
       <View style={styles.userRow}>
         <View style={styles.userBubble}>
-          <Text style={{ fontSize: ts.base, lineHeight: ts.base * 1.5, color: "#fff", fontFamily: "Inter_400Regular" }}>
+          <Text style={{ fontSize: ts.sm, lineHeight: ts.sm * 1.45, color: "#fff", fontFamily: "Inter_400Regular" }}>
             {message.text}
           </Text>
         </View>
@@ -50,25 +55,37 @@ function MessageBubble({
   return (
     <View style={styles.asstRow}>
       <View style={[styles.asstIcon, { backgroundColor: "#DBEAFE" }]}>
-        <Ionicons name="shield-checkmark" size={14} color="#2563EB" />
+        <Ionicons name="shield-checkmark" size={12} color="#2563EB" />
       </View>
       <View style={[styles.asstBubble, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
         {message.isLoading ? (
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
             <ActivityIndicator size="small" color="#2563EB" />
             <Text style={{ color: theme.textSecondary, fontSize: ts.sm, fontFamily: "Inter_400Regular" }}>Thinking…</Text>
           </View>
         ) : (
           <>
-            <Text style={{ color: theme.text, fontSize: ts.base, lineHeight: ts.base * 1.58, fontFamily: "Inter_400Regular" }}>
+            <Text
+              numberOfLines={expanded ? undefined : MAX_LINES}
+              style={{ color: theme.text, fontSize: ts.sm, lineHeight: ts.sm * 1.55, fontFamily: "Inter_400Regular" }}
+            >
               {message.text}
             </Text>
-            {onSpeak && (
-              <Pressable onPress={() => onSpeak(message.text)} style={styles.replayBtn}>
-                <Ionicons name="volume-medium-outline" size={13} color="#2563EB" />
-                <Text style={{ fontSize: ts.xs, color: "#2563EB", fontFamily: "Inter_500Medium" }}>Replay</Text>
-              </Pressable>
-            )}
+            <View style={styles.replayRow}>
+              {isLong && (
+                <Pressable onPress={() => setExpanded(e => !e)} hitSlop={8}>
+                  <Text style={{ fontSize: ts.xs, color: "#2563EB", fontFamily: "Inter_500Medium" }}>
+                    {expanded ? "Show less" : "Read more"}
+                  </Text>
+                </Pressable>
+              )}
+              {onSpeak && (
+                <Pressable onPress={() => onSpeak(message.text)} style={styles.replayBtn}>
+                  <Ionicons name="volume-medium-outline" size={12} color="#64748B" />
+                  <Text style={{ fontSize: ts.xs, color: "#64748B", fontFamily: "Inter_400Regular" }}>Replay</Text>
+                </Pressable>
+              )}
+            </View>
           </>
         )}
       </View>
@@ -438,8 +455,8 @@ export default function HomeScreen() {
                 style={[
                   styles.statusLabel,
                   {
-                    color: isListening ? "#EF4444" : isSpeaking ? "#2563EB" : theme.text,
-                    fontSize: ts.base,
+                    color: isListening ? "#0891B2" : isSpeaking ? "#2563EB" : theme.textSecondary,
+                    fontSize: ts.sm,
                   },
                 ]}
                 numberOfLines={1}
@@ -531,22 +548,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 11, paddingVertical: 6, borderRadius: 20,
   },
   messages: { flex: 1 },
-  msgsContent: { paddingHorizontal: 14, paddingTop: 6, gap: 10 },
+  msgsContent: { paddingHorizontal: 12, paddingTop: 8, gap: 6 },
   userRow: { alignItems: "flex-end" },
   userBubble: {
-    backgroundColor: "#2563EB", borderRadius: 20, borderBottomRightRadius: 4,
-    paddingHorizontal: 14, paddingVertical: 10, maxWidth: "80%",
+    backgroundColor: "#2563EB", borderRadius: 18, borderBottomRightRadius: 4,
+    paddingHorizontal: 12, paddingVertical: 7, maxWidth: "78%",
   },
-  asstRow: { flexDirection: "row", alignItems: "flex-start", gap: 8, maxWidth: "90%" },
+  asstRow: { flexDirection: "row", alignItems: "flex-start", gap: 7, maxWidth: "90%" },
   asstIcon: {
-    width: 26, height: 26, borderRadius: 7,
-    alignItems: "center", justifyContent: "center", marginTop: 3, flexShrink: 0,
+    width: 22, height: 22, borderRadius: 6,
+    alignItems: "center", justifyContent: "center", marginTop: 2, flexShrink: 0,
   },
   asstBubble: {
-    flex: 1, borderRadius: 18, borderBottomLeftRadius: 4,
-    paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1,
+    flex: 1, borderRadius: 16, borderBottomLeftRadius: 4,
+    paddingHorizontal: 11, paddingVertical: 8, borderWidth: 1,
   },
-  replayBtn: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 6 },
+  replayRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 5 },
+  replayBtn: { flexDirection: "row", alignItems: "center", gap: 3 },
 
   // Orb footer — floats above the tab bar
   orbFooter: {

@@ -128,8 +128,9 @@ export default function FluidOrb({ onPress, isListening, isSpeaking, audioReady 
   const iconScale = useSharedValue(1);
   const glowOpacity = useSharedValue(0);
 
-  const accent = isListening ? "#EF4444" : "#60A5FA";
-  const accentAlt = isListening ? "#FCA5A5" : "#93C5FD";
+  // Listening: soft cyan shimmer; Speaking: gentle blue pulse — both preserve the orb's natural beauty
+  const accent = isListening ? "#67E8F9" : "#60A5FA";
+  const accentAlt = isListening ? "#A5F3FC" : "#93C5FD";
 
   useEffect(() => {
     cancelAnimation(iconScale);
@@ -137,20 +138,21 @@ export default function FluidOrb({ onPress, isListening, isSpeaking, audioReady 
 
     if (isListening) {
       iconScale.value = withRepeat(
-        withSequence(withTiming(1.18, { duration: 260 }), withTiming(1.0, { duration: 260 })),
+        withSequence(withTiming(1.12, { duration: 320 }), withTiming(1.0, { duration: 320 })),
         -1, false
       );
+      // Very subtle cyan shimmer — enhances the orb without masking it
       glowOpacity.value = withRepeat(
-        withSequence(withTiming(0.72, { duration: 260 }), withTiming(0.28, { duration: 260 })),
+        withSequence(withTiming(0.22, { duration: 320 }), withTiming(0.06, { duration: 320 })),
         -1, false
       );
     } else if (isSpeaking) {
       iconScale.value = withRepeat(
-        withSequence(withTiming(1.08, { duration: 540 }), withTiming(0.96, { duration: 540 })),
+        withSequence(withTiming(1.06, { duration: 600 }), withTiming(0.97, { duration: 600 })),
         -1, false
       );
       glowOpacity.value = withRepeat(
-        withSequence(withTiming(0.5, { duration: 540 }), withTiming(0.1, { duration: 540 })),
+        withSequence(withTiming(0.15, { duration: 600 }), withTiming(0.04, { duration: 600 })),
         -1, false
       );
     } else {
@@ -171,7 +173,8 @@ export default function FluidOrb({ onPress, isListening, isSpeaking, audioReady 
   }));
 
   const icon: any = isListening ? "stop-circle" : isSpeaking ? "volume-high" : "mic";
-  const iconOpacity = !audioReady && !isListening && !isSpeaking ? 0.55 : 1.0;
+  // Subtle ghost icons — never distracting, just hint at the state
+  const iconOpacity = isListening || isSpeaking ? 0.45 : 0.28;
 
   return (
     <Pressable
