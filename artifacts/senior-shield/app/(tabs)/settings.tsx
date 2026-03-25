@@ -10,6 +10,8 @@ import {
   Platform,
   ActivityIndicator,
   TextInput,
+  Image,
+  Linking,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -20,6 +22,9 @@ import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
 import PageHeader from "@/components/PageHeader";
 import { usePreferences, DEFAULT_NAMES, Preferences, TTS_VOICES, TtsVoice } from "@/context/PreferencesContext";
+
+const APP_VERSION = "1.0.0";
+const CONTACT_EMAIL = "admin@finnygator.com";
 
 function SettingRow({
   icon,
@@ -64,6 +69,15 @@ function SettingRow({
   );
 }
 
+function InfoRow({ label, value, theme, ts }: { label: string; value: string; theme: any; ts: any }) {
+  return (
+    <View style={[styles.infoRow, { borderBottomColor: theme.border }]}>
+      <Text style={[styles.infoLabel, { color: theme.textSecondary, fontSize: ts.xs }]}>{label}</Text>
+      <Text style={[styles.infoValue, { color: theme.text, fontSize: ts.sm }]} numberOfLines={1}>{value}</Text>
+    </View>
+  );
+}
+
 export default function SettingsScreen() {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
@@ -75,16 +89,74 @@ export default function SettingsScreen() {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [previewingVoice, setPreviewingVoice] = useState<TtsVoice | null>(null);
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+  const [profileData, setProfileData] = useState<any>(null);
+  const [deviceInfo, setDeviceInfo] = useState({ platform: "", model: "", osVersion: "" });
 
   const apiBase = (() => {
     const d = process.env.EXPO_PUBLIC_DOMAIN;
     return d ? `https://${d}` : "";
   })();
 
-  // Tap a voice card → select it immediately, then play a short preview sample
+  useEffect(() => {
+    if (!user?.token) return;
+    (async () => {
+      try {
+        const res = await fetch(`${apiBase}/api/user/profile`, {
+          headers: { Authorization: `Bearer ${user.token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setProfileData(data);
+        }
+      } catch {}
+    })();
+  }, [user?.token]);
+
+  useEffect(() => {
+    (async () => {
+      let platform = Platform.OS;
+      let model = "";
+      let osVersion = String(Platform.Version || "");
+      if (Platform.OS !== "web") {
+        try {
+          const Device = await import("expo-device");
+          model = Device.modelName || Device.deviceName || "";
+          platform = Platform.OS;
+        } catch {}
+      } else if (typeof navigator !== "undefined") {
+        const ua = navigator.userAgent;
+        if (/iPhone/.test(ua)) { platform = "ios"; model = "iPhone"; }
+        else if (/iPad/.test(ua)) { platform = "ios"; model = "iPad"; }
+        else if (/Android/.test(ua)) { platform = "android"; model = "Android"; }
+        else { platform = "web"; model = "Browser"; }
+      }
+      setDeviceInfo({ platform, model, osVersion });
+    })();
+  }, []);
+
+  async function pickProfilePhoto() {
+    try {
+      const ImagePicker = await import("expo-image-picker");
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("Permission needed", "Please allow access to your photo library to add a profile photo.");
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.5,
+      });
+      if (!result.canceled && result.assets[0]) {
+        setProfilePhoto(result.assets[0].uri);
+      }
+    } catch {}
+  }
+
   async function selectAndPreviewVoice(voice: TtsVoice) {
     if (previewingVoice) return;
-    // Immediately persist the selection
     handlePrefChange("tts_voice", voice);
     setPreviewingVoice(voice);
     try {
@@ -146,9 +218,7 @@ export default function SettingsScreen() {
   async function handleDeleteAccount() {
     setDeleting(true);
     try {
-      const domain = process.env.EXPO_PUBLIC_DOMAIN;
-      const base = domain ? `https://${domain}` : "";
-      const response = await fetch(`${base}/api/auth/account`, {
+      const response = await fetch(`${apiBase}/api/auth/account`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${user?.token}` },
       });
@@ -164,6 +234,16 @@ export default function SettingsScreen() {
       : prefs.font_size === "large"
       ? "Large"
       : "Normal";
+
+  const serverModel = profileData?.device_model;
+  const serverPlatform = profileData?.device_platform;
+  const serverOsVer = profileData?.device_os_version;
+  const dModel = serverModel || deviceInfo.model;
+  const dPlatform = serverPlatform || deviceInfo.platform;
+  const dOsVer = serverOsVer || deviceInfo.osVersion;
+  const deviceLabel = dModel
+    ? `${dModel}${dOsVer ? ` (${dPlatform === "ios" ? "iOS" : dPlatform === "android" ? "Android" : "Web"} ${dOsVer})` : ""}`
+    : "Detecting...";
 
   if (!loaded) {
     return (
@@ -184,31 +264,50 @@ export default function SettingsScreen() {
       showsVerticalScrollIndicator={false}
     >
 
-      {/* Profile card */}
-      <View style={[styles.profileCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-        <View style={[styles.profileAvatar, { backgroundColor: "#DBEAFE" }]}>
-          <Text style={[styles.profileAvatarText, { fontSize: ts.xl }]}>
-            {user?.first_name ? user.first_name[0].toUpperCase() : "U"}
-          </Text>
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.profileName, { color: theme.text, fontSize: ts.md }]}>
-            {user?.first_name ? `${user.first_name} ${user.last_name || ""}`.trim() : "Your Account"}
-          </Text>
-          <View style={[styles.freeBadge, { backgroundColor: "#DBEAFE" }]}>
-            <Text style={[styles.freeBadgeText, { fontSize: ts.xs }]}>Free Plan</Text>
+      {/* ── PROFILE SECTION ── */}
+      <View style={[styles.section, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+        <Text style={[styles.sectionTitle, { color: theme.textSecondary, fontSize: ts.tiny }]}>PROFILE</Text>
+        <View style={styles.profileSection}>
+          <Pressable onPress={pickProfilePhoto} style={styles.profilePhotoWrap}>
+            {profilePhoto ? (
+              <Image source={{ uri: profilePhoto }} style={styles.profilePhoto} />
+            ) : (
+              <View style={[styles.profileAvatar, { backgroundColor: "#DBEAFE" }]}>
+                <Text style={[styles.profileAvatarText, { fontSize: 28 }]}>
+                  {user?.first_name ? user.first_name[0].toUpperCase() : "U"}
+                </Text>
+              </View>
+            )}
+            <View style={styles.cameraIcon}>
+              <Ionicons name="camera" size={14} color="#FFF" />
+            </View>
+          </Pressable>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.profileName, { color: theme.text, fontSize: ts.lg }]}>
+              {user?.first_name ? `${user.first_name} ${user.last_name || ""}`.trim() : "Your Account"}
+            </Text>
+            <View style={[styles.planBadge, { backgroundColor: "#DBEAFE" }]}>
+              <Text style={[styles.planBadgeText, { fontSize: ts.xs }]}>Free Plan</Text>
+            </View>
           </View>
+          <Pressable onPress={() => router.push("/subscription")} style={styles.upgradeButton}>
+            <Text style={[styles.upgradeText, { fontSize: ts.sm }]}>Upgrade</Text>
+          </Pressable>
         </View>
-        <Pressable onPress={() => router.push("/subscription")} style={styles.upgradeButton}>
-          <Text style={[styles.upgradeText, { fontSize: ts.sm }]}>Upgrade</Text>
-        </Pressable>
+
+        <View style={styles.profileInfoList}>
+          <InfoRow label="Email" value={profileData?.email || "Loading..."} theme={theme} ts={ts} />
+          <InfoRow label="Account Type" value={profileData?.user_type === "senior" ? "Senior" : profileData?.user_type === "family" ? "Family Member" : profileData?.user_type || "Senior"} theme={theme} ts={ts} />
+          <InfoRow label="Device" value={deviceLabel} theme={theme} ts={ts} />
+          <InfoRow label="Plan" value="Free (No Expiration)" theme={theme} ts={ts} />
+          <InfoRow label="App Version" value={`SeniorShield v${APP_VERSION}`} theme={theme} ts={ts} />
+        </View>
       </View>
 
       {/* VOICE & AUDIO */}
       <View style={[styles.section, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
         <Text style={[styles.sectionTitle, { color: theme.textSecondary, fontSize: ts.tiny }]}>VOICE & AUDIO</Text>
 
-        {/* Gender toggle */}
         <SettingRow
           icon="mic"
           label="Assistant Voice"
@@ -228,7 +327,6 @@ export default function SettingsScreen() {
           ts={ts}
         />
 
-        {/* Voice screener — tap to select and preview */}
         <View style={[styles.voiceScreener, { borderTopColor: theme.border }]}>
           <Text style={[styles.voiceScreenerLabel, { color: theme.textSecondary, fontSize: ts.tiny }]}>
             CHOOSE A VOICE — TAP TO SELECT &amp; HEAR A SAMPLE
@@ -426,6 +524,24 @@ export default function SettingsScreen() {
         <SettingRow icon="card" label="Subscription" onPress={() => router.push("/subscription")} theme={theme} ts={ts} />
       </View>
 
+      {/* LEGAL */}
+      <View style={[styles.section, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+        <Text style={[styles.sectionTitle, { color: theme.textSecondary, fontSize: ts.tiny }]}>LEGAL</Text>
+        <SettingRow icon="lock-closed" label="Privacy Policy" onPress={() => router.push("/legal?page=privacy")} theme={theme} ts={ts} iconColor="#6366F1" iconBg="#EDE9FE" />
+        <SettingRow icon="document-text" label="Terms of Service" onPress={() => router.push("/legal?page=terms")} theme={theme} ts={ts} iconColor="#6366F1" iconBg="#EDE9FE" />
+        <SettingRow icon="information-circle" label="Cookie Policy" onPress={() => router.push("/legal?page=cookies")} theme={theme} ts={ts} iconColor="#6366F1" iconBg="#EDE9FE" />
+        <SettingRow
+          icon="mail"
+          label="Contact Us"
+          subtitle={CONTACT_EMAIL}
+          onPress={() => router.push("/legal?page=contact")}
+          theme={theme}
+          ts={ts}
+          iconColor="#6366F1"
+          iconBg="#EDE9FE"
+        />
+      </View>
+
       <Pressable
         onPress={handleLogout}
         style={({ pressed }) => [
@@ -475,7 +591,9 @@ export default function SettingsScreen() {
         </View>
       )}
 
-      <Text style={[styles.version, { color: theme.textTertiary, fontSize: ts.xs }]}>SeniorShield v1.0.0</Text>
+      <Text style={[styles.version, { color: theme.textTertiary, fontSize: ts.xs }]}>
+        SeniorShield™ v{APP_VERSION}
+      </Text>
     </ScrollView>
     </View>
   );
@@ -485,17 +603,65 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   loadingContainer: { flex: 1, alignItems: "center", justifyContent: "center" },
   content: { paddingHorizontal: 20, gap: 16, paddingTop: 16 },
-  title: { fontFamily: "Inter_700Bold", marginBottom: 4 },
-  profileCard: { flexDirection: "row", alignItems: "center", gap: 14, padding: 20, borderRadius: 20, borderWidth: 1 },
-  profileAvatar: { width: 52, height: 52, borderRadius: 26, alignItems: "center", justifyContent: "center" },
-  profileAvatarText: { fontFamily: "Inter_700Bold", color: "#2563EB" },
-  profileName: { fontFamily: "Inter_600SemiBold", marginBottom: 4 },
-  freeBadge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 8, alignSelf: "flex-start" },
-  freeBadgeText: { fontFamily: "Inter_600SemiBold", color: "#2563EB" },
-  upgradeButton: { backgroundColor: "#2563EB", paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12 },
-  upgradeText: { fontFamily: "Inter_700Bold", color: "#FFFFFF" },
   section: { borderRadius: 20, borderWidth: 1, overflow: "hidden" },
   sectionTitle: { fontFamily: "Inter_600SemiBold", letterSpacing: 0.5, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 },
+  profileSection: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    paddingHorizontal: 16,
+    paddingBottom: 14,
+  },
+  profilePhotoWrap: {
+    position: "relative",
+  },
+  profilePhoto: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+  },
+  profileAvatar: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  profileAvatarText: { fontFamily: "Inter_700Bold", color: "#2563EB" },
+  cameraIcon: {
+    position: "absolute",
+    bottom: -2,
+    right: -2,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: "#2563EB",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
+  },
+  profileName: { fontFamily: "Inter_700Bold", marginBottom: 4 },
+  planBadge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 8, alignSelf: "flex-start" },
+  planBadgeText: { fontFamily: "Inter_600SemiBold", color: "#2563EB" },
+  upgradeButton: { backgroundColor: "#2563EB", paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12 },
+  upgradeText: { fontFamily: "Inter_700Bold", color: "#FFFFFF" },
+  profileInfoList: {
+    borderTopWidth: 0.5,
+    borderTopColor: "rgba(0,0,0,0.06)",
+    marginHorizontal: 16,
+    paddingTop: 4,
+    marginBottom: 12,
+  },
+  infoRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 10,
+    borderBottomWidth: 0.5,
+  },
+  infoLabel: { fontFamily: "Inter_500Medium" },
+  infoValue: { fontFamily: "Inter_400Regular", flexShrink: 1, textAlign: "right", maxWidth: "60%" },
   settingRow: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 14, gap: 14, borderBottomWidth: 0.5 },
   settingIcon: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center" },
   settingText: { flex: 1 },
@@ -515,7 +681,7 @@ const styles = StyleSheet.create({
   deleteConfirmCancelText: { fontFamily: "Inter_600SemiBold" },
   deleteConfirmYes: { flex: 1, paddingVertical: 12, borderRadius: 12, backgroundColor: "#DC2626", alignItems: "center" },
   deleteConfirmYesText: { fontFamily: "Inter_600SemiBold", color: "#FFFFFF" },
-  version: { fontFamily: "Inter_400Regular", textAlign: "center" },
+  version: { fontFamily: "Inter_400Regular", textAlign: "center", marginTop: 4 },
   voiceScreener: { borderTopWidth: 0.5, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 16 },
   voiceScreenerLabel: { fontFamily: "Inter_600SemiBold", letterSpacing: 0.5, marginBottom: 10 },
   voiceGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
