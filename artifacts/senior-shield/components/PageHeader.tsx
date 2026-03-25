@@ -98,10 +98,8 @@ export default function PageHeader({ showTagline = false, greeting }: PageHeader
       {/* Tagline — single line, uses "&" to keep it short */}
       {showTagline && (
         <Text
-          style={[styles.tagline, { fontSize: ts.sm, marginTop: 2, paddingLeft: 74 }]}
+          style={[styles.tagline, { marginTop: 2, paddingLeft: 74 }]}
           numberOfLines={1}
-          adjustsFontSizeToFit
-          minimumFontScale={0.7}
         >
           Your voice assistant for tech help & scam protection
         </Text>
@@ -158,7 +156,8 @@ const styles = StyleSheet.create({
   tagline: {
     fontFamily: "Inter_400Regular",
     color: "rgba(255,255,255,0.72)",
-    lineHeight: 18,
+    fontSize: 12,
+    lineHeight: 16,
   },
   badge: {
     flexDirection: "row",
