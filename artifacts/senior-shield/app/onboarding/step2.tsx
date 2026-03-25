@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
+import { userApi } from "@/services/api";
 
 const FONT_SIZES = [
   { label: "Normal", value: "normal" },
@@ -35,16 +36,7 @@ export default function OnboardingStep2() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
     try {
-      const domain = process.env.EXPO_PUBLIC_DOMAIN;
-      const base = domain ? `https://${domain}` : "";
-      await fetch(`${base}/api/user/preferences`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${user?.token}`,
-        },
-        body: JSON.stringify({ font_size: fontSize, preferred_voice: voice }),
-      });
+      await userApi.updateProfile({ font_size: fontSize, preferred_voice: voice }, user?.token);
     } catch {}
 
     router.push("/onboarding/step3");

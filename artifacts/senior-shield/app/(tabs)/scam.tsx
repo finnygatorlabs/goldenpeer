@@ -19,6 +19,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
 import { usePreferences } from "@/context/PreferencesContext";
 import PageHeader from "@/components/PageHeader";
+import { scamApi, ApiError } from "@/services/api";
 
 interface LayerResult {
   name: string;
@@ -107,22 +108,7 @@ export default function ScamScreen() {
     setExpandedLayers({});
 
     try {
-      const domain = process.env.EXPO_PUBLIC_DOMAIN;
-      const base = domain ? `https://${domain}` : "";
-      const response = await fetch(`${base}/api/scam/analyze`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${user?.token}`,
-        },
-        body: JSON.stringify({ text: target }),
-      });
-
-      if (!response.ok) {
-        Alert.alert("Error", "Could not analyze message. Please try again.");
-        return;
-      }
-      const data = await response.json();
+      const data = await scamApi.analyze(target, user?.token);
       if (!data.risk_level || data.risk_score === undefined) {
         Alert.alert("Error", "Received an unexpected response. Please try again.");
         return;
@@ -154,16 +140,7 @@ export default function ScamScreen() {
   async function sendFeedback(type: "correct" | "false_positive" | "false_negative") {
     if (!result) return;
     try {
-      const domain = process.env.EXPO_PUBLIC_DOMAIN;
-      const base = domain ? `https://${domain}` : "";
-      await fetch(`${base}/api/scam/feedback`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${user?.token}`,
-        },
-        body: JSON.stringify({ scam_analysis_id: result.id, feedback_type: type }),
-      });
+      await scamApi.sendFeedback(result.id, type, user?.token);
       setFeedbackSent(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch (err) {}

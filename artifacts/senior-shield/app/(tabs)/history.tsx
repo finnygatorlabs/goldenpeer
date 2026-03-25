@@ -16,11 +16,7 @@ import { useAuth } from "@/context/AuthContext";
 import { usePreferences } from "@/context/PreferencesContext";
 import PageHeader from "@/components/PageHeader";
 import ConfirmModal from "@/components/ConfirmModal";
-
-const getApiBase = () => {
-  const d = process.env.EXPO_PUBLIC_DOMAIN;
-  return d ? `https://${d}` : "";
-};
+import { conversationApi } from "@/services/api";
 
 interface Message {
   role: string;
@@ -206,19 +202,13 @@ export default function HistoryScreen() {
   const [error, setError] = useState<string | null>(null);
   const [groupToDelete, setGroupToDelete] = useState<DateGroup | null>(null);
 
-  const apiBase = getApiBase();
-
   const fetchSessions = useCallback(
     async (isRefresh = false) => {
       if (!user?.token) return;
       if (!isRefresh) setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`${apiBase}/api/conversations`, {
-          headers: { Authorization: `Bearer ${user.token}` },
-        });
-        if (!res.ok) throw new Error("Failed to load");
-        const data = await res.json();
+        const data = await conversationApi.list(user.token);
         setSessions(Array.isArray(data) ? data : []);
       } catch {
         setError("Couldn't load your conversation history. Pull down to try again.");
@@ -227,7 +217,7 @@ export default function HistoryScreen() {
         setRefreshing(false);
       }
     },
-    [user?.token, apiBase]
+    [user?.token]
   );
 
   useEffect(() => {
@@ -238,10 +228,7 @@ export default function HistoryScreen() {
     if (!user?.token) return;
     setSessions((prev) => prev.filter((s) => s.id !== id));
     try {
-      await fetch(`${apiBase}/api/conversations/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${user.token}` },
-      });
+      await conversationApi.delete(id, user.token);
     } catch {
       fetchSessions();
     }
@@ -256,10 +243,7 @@ export default function HistoryScreen() {
     const ids = groupToDelete.sessions.map((s) => s.id);
     setSessions((prev) => prev.filter((s) => !ids.includes(s.id)));
     ids.forEach((id) => {
-      fetch(`${apiBase}/api/conversations/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${user.token!}` },
-      }).catch(() => {});
+      conversationApi.delete(id, user.token!).catch(() => {});
     });
     setGroupToDelete(null);
   }

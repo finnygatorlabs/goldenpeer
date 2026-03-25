@@ -43,6 +43,7 @@ artifacts-monorepo/
 │       │   ├── hearing-aid.tsx      # Hearing Aid connectivity settings
 │       │   ├── legal.tsx            # Legal pages (privacy, terms, cookies, security, contact)
 │       │   └── support.tsx          # Help/FAQ + contact form
+│       ├── services/api.ts          # Centralized API service (all backend calls)
 │       ├── context/AuthContext.tsx  # JWT auth (AsyncStorage) + AuthProvider
 │       ├── hooks/useTheme.ts        # Dark/light theme hook
 │       └── constants/colors.ts      # Color palette (light/dark)

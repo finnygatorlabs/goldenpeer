@@ -16,6 +16,7 @@ import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
+import { supportApi } from "@/services/api";
 
 const FAQ = [
   {
@@ -86,16 +87,7 @@ export default function SupportScreen() {
 
     setSubmitting(true);
     try {
-      const domain = process.env.EXPO_PUBLIC_DOMAIN;
-      const base = domain ? `https://${domain}` : "";
-      await fetch(`${base}/api/support/ticket`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${user?.token}`,
-        },
-        body: JSON.stringify({ subject: subject.trim(), message: message.trim() }),
-      });
+      await supportApi.submitTicket(subject.trim(), message.trim(), user?.token);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert(
         "Message Sent!",

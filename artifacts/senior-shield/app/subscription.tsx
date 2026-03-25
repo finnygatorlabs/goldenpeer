@@ -16,6 +16,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
+import { billingApi } from "@/services/api";
 
 const PLANS = [
   {
@@ -57,14 +58,7 @@ export default function SubscriptionScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setLoading(true);
     try {
-      const domain = process.env.EXPO_PUBLIC_DOMAIN;
-      const base = domain ? `https://${domain}` : "";
-      const response = await fetch(`${base}/api/billing/create-checkout`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${user?.token}` },
-        body: JSON.stringify({ plan: selected }),
-      });
-      const data = await response.json();
+      const data = await billingApi.createCheckout(selected, user?.token);
       if (data.checkout_url) {
         Alert.alert(
           "Upgrade to Pro",

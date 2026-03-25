@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
+import { familyApi, userApi } from "@/services/api";
 
 const RELATIONSHIPS = ["Son", "Daughter", "Grandson", "Granddaughter", "Spouse", "Friend", "Caregiver"];
 
@@ -31,31 +32,11 @@ export default function OnboardingStep3() {
     setLoading(true);
 
     try {
-      const domain = process.env.EXPO_PUBLIC_DOMAIN;
-      const base = domain ? `https://${domain}` : "";
-
       if (familyEmail.trim()) {
-        await fetch(`${base}/api/family/add-member`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${user?.token}`,
-          },
-          body: JSON.stringify({
-            adult_child_email: familyEmail.trim().toLowerCase(),
-            relationship: relationship.toLowerCase(),
-          }),
-        });
+        await familyApi.addMember(familyEmail.trim().toLowerCase(), relationship.toLowerCase(), user?.token);
       }
 
-      await fetch(`${base}/api/user/profile`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${user?.token}`,
-        },
-        body: JSON.stringify({ onboarding_completed: true }),
-      });
+      await userApi.updateProfile({ onboarding_completed: true }, user?.token);
 
       updateUser({ onboarding_completed: true });
       router.replace("/(tabs)/home");

@@ -18,6 +18,7 @@ import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
+import { hearingAidApi } from "@/services/api";
 import { usePreferences } from "@/context/PreferencesContext";
 
 type AudioRouting = "hearing_aid" | "phone_speaker" | "both";
@@ -52,10 +53,6 @@ interface Brand {
   android_support: boolean;
 }
 
-const apiBase = (() => {
-  const d = process.env.EXPO_PUBLIC_DOMAIN;
-  return d ? `https://${d}` : "";
-})();
 
 function SignalBar({ strength, theme }: { strength: number; theme: any }) {
   const bars = 5;
@@ -156,27 +153,18 @@ export default function HearingAidScreen() {
     }
   }
 
-  const headers = useCallback(() => ({
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${user?.token}`,
-  }), [user?.token]);
-
   const fetchStatus = useCallback(async () => {
     if (!user?.token) return;
     try {
-      const res = await fetch(`${apiBase}/api/hearing-aid/status`, { headers: headers() });
-      if (res.ok) {
-        const data = await res.json();
-        setStatus(data);
-      }
+      const data = await hearingAidApi.getStatus(user.token);
+      setStatus(data);
     } catch {}
     setLoading(false);
-  }, [user?.token, headers]);
+  }, [user?.token]);
 
   useEffect(() => {
     fetchStatus();
-    fetch(`${apiBase}/api/hearing-aid/supported-brands`)
-      .then((r) => r.json())
+    hearingAidApi.getSupportedBrands()
       .then((d) => setBrands(d.brands || []))
       .catch(() => {});
   }, [fetchStatus]);
@@ -217,25 +205,15 @@ export default function HearingAidScreen() {
     hapticTap();
     setConnecting(true);
     try {
-      const res = await fetch(`${apiBase}/api/hearing-aid/connect`, {
-        method: "POST",
-        headers: headers(),
-        body: JSON.stringify({
-          device_name: device.name,
-          device_brand: device.brand,
-          device_model: device.model,
-          device_id: `ble_${Date.now()}`,
-        }),
-      });
-      if (res.ok) {
-        if (Platform.OS !== "web") {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        }
-        setScanResults([]);
-        await fetchStatus();
-      } else {
-        Alert.alert("Connection Failed", "Could not connect to the hearing aid. Please try again.");
+      await hearingAidApi.connect({
+        brand: device.brand,
+        model: device.model,
+      }, user?.token);
+      if (Platform.OS !== "web") {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
+      setScanResults([]);
+      await fetchStatus();
     } catch {
       Alert.alert("Error", "Could not connect. Please check your internet connection.");
     }
@@ -246,13 +224,8 @@ export default function HearingAidScreen() {
     hapticTap();
     setDisconnecting(true);
     try {
-      const res = await fetch(`${apiBase}/api/hearing-aid/disconnect`, {
-        method: "POST",
-        headers: headers(),
-      });
-      if (res.ok) {
-        await fetchStatus();
-      }
+      await hearingAidApi.disconnect(user?.token);
+      await fetchStatus();
     } catch {}
     setDisconnecting(false);
   }
@@ -262,21 +235,15 @@ export default function HearingAidScreen() {
     setTesting(true);
     setTestResult(null);
     try {
-      const res = await fetch(`${apiBase}/api/hearing-aid/test-connection`, {
-        method: "POST",
-        headers: headers(),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setTestResult(data);
-        await fetchStatus();
-        if (Platform.OS !== "web") {
-          Haptics.notificationAsync(
-            data.audio_quality === "excellent" || data.audio_quality === "good"
-              ? Haptics.NotificationFeedbackType.Success
-              : Haptics.NotificationFeedbackType.Warning
-          );
-        }
+      const data = await hearingAidApi.testConnection(user?.token);
+      setTestResult(data);
+      await fetchStatus();
+      if (Platform.OS !== "web") {
+        Haptics.notificationAsync(
+          data.audio_quality === "excellent" || data.audio_quality === "good"
+            ? Haptics.NotificationFeedbackType.Success
+            : Haptics.NotificationFeedbackType.Warning
+        );
       }
     } catch {}
     setTesting(false);
@@ -286,11 +253,7 @@ export default function HearingAidScreen() {
     hapticTap();
     setStatus((prev) => prev ? { ...prev, [key]: value } : prev);
     try {
-      await fetch(`${apiBase}/api/hearing-aid/settings`, {
-        method: "PUT",
-        headers: headers(),
-        body: JSON.stringify({ [key]: value }),
-      });
+      await hearingAidApi.updateSettings({ [key]: value }, user?.token);
     } catch {}
   }
 

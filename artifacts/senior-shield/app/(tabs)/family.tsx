@@ -18,6 +18,7 @@ import * as Haptics from "expo-haptics";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
 import PageHeader from "@/components/PageHeader";
+import { familyApi } from "@/services/api";
 
 interface FamilyMember {
   id: string;
@@ -46,12 +47,7 @@ export default function FamilyScreen() {
 
   async function fetchMembers() {
     try {
-      const domain = process.env.EXPO_PUBLIC_DOMAIN;
-      const base = domain ? `https://${domain}` : "";
-      const response = await fetch(`${base}/api/family/members`, {
-        headers: { Authorization: `Bearer ${user?.token}` },
-      });
-      const data = await response.json();
+      const data = await familyApi.getMembers(user?.token);
       setMembers(data.members || []);
     } catch (err) {
     } finally {
@@ -70,17 +66,7 @@ export default function FamilyScreen() {
     }
     setAdding(true);
     try {
-      const domain = process.env.EXPO_PUBLIC_DOMAIN;
-      const base = domain ? `https://${domain}` : "";
-      const response = await fetch(`${base}/api/family/add-member`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${user?.token}`,
-        },
-        body: JSON.stringify({ adult_child_email: email.trim(), relationship: relationship.toLowerCase() }),
-      });
-      const data = await response.json();
+      const data = await familyApi.addMember(email.trim(), relationship.toLowerCase(), user?.token);
       if (data.success) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setShowAddModal(false);
@@ -102,12 +88,7 @@ export default function FamilyScreen() {
         style: "destructive",
         onPress: async () => {
           try {
-            const domain = process.env.EXPO_PUBLIC_DOMAIN;
-            const base = domain ? `https://${domain}` : "";
-            await fetch(`${base}/api/family/member/${id}`, {
-              method: "DELETE",
-              headers: { Authorization: `Bearer ${user?.token}` },
-            });
+            await familyApi.removeMember(id, user?.token);
             setMembers(prev => prev.filter(m => m.id !== id));
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
           } catch {}

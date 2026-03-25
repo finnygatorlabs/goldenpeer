@@ -22,6 +22,7 @@ import { usePreferences } from "@/context/PreferencesContext";
 import FluidOrb from "@/components/FluidOrb";
 import PageHeader from "@/components/PageHeader";
 import MicPermissionModal from "@/components/MicPermissionModal";
+import { voiceApi, conversationApi, userApi, API_BASE } from "@/services/api";
 
 // Remove markdown formatting before sending text to TTS so the voice
 // never reads aloud characters like **, *, #, -, _, ~, backticks, etc.
@@ -168,10 +169,7 @@ export default function HomeScreen() {
     const tod = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
     return `${tod}, ${firstName}`;
   })();
-  const apiBase = (() => {
-    const d = process.env.EXPO_PUBLIC_DOMAIN;
-    return d ? `https://${d}` : "";
-  })();
+  const apiBase = API_BASE;
   // Use the user's specifically chosen TTS voice from preferences
   const ttsVoice = prefs.tts_voice || (prefs.preferred_voice === "female" ? "nova" : "echo");
   // Ref always holds the latest voice so stale closures (e.g. inside SpeechRecognition) never use the wrong voice
@@ -724,13 +722,7 @@ export default function HomeScreen() {
           else if (/iPad/.test(ua)) { devicePlatform = "ios"; deviceModel = "iPad"; }
           else if (/Android/.test(ua)) { devicePlatform = "android"; deviceModel = "Android device"; }
         }
-        const domain = process.env.EXPO_PUBLIC_DOMAIN;
-        const base = domain ? `https://${domain}` : "";
-        await fetch(`${base}/api/user/profile`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${user.token}` },
-          body: JSON.stringify({ device_platform: devicePlatform, device_model: deviceModel, device_os_version: deviceOsVersion }),
-        });
+        await userApi.updateProfile({ device_platform: devicePlatform, device_model: deviceModel, device_os_version: deviceOsVersion }, user.token);
       } catch {}
     })();
   }, [user?.token]);
@@ -773,39 +765,20 @@ export default function HomeScreen() {
     // Always read from refs so stale closures (e.g. inside startListening) use current token + history
     const updatedHistory: ConvTurn[] = [...historyRef.current, { role: "user", content: text.trim() }];
     const freshToken = userRef.current?.token;
-    const freshAuthH = { Authorization: `Bearer ${freshToken}` };
     try {
-      const res = await fetch(`${apiBase}/api/voice/process-request`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...freshAuthH },
-        body: JSON.stringify({
-          request_text: text.trim(),
-          conversation_history: updatedHistory.slice(-12),
-        }),
-      });
-      if (res.status === 401) {
-        const authErr = "It looks like your session expired. Please go to Settings and sign in again.";
-        setMessages(prev => prev.map(m => m.id === lid ? { ...m, text: authErr, isLoading: false } : m));
-        speakTextRef.current(authErr, false);
-        return;
-      }
-      const data = await res.json();
+      const data = await voiceApi.processRequest(text.trim(), updatedHistory.slice(-12), freshToken);
       const reply = data.response_text || "I'm sorry, could you repeat that?";
       setMessages(prev => prev.map(m => m.id === lid ? { ...m, text: reply, isLoading: false } : m));
       const newHistory = [...updatedHistory, { role: "assistant" as const, content: reply }];
       setHistory(newHistory);
 
-      // Save/update conversation session in background (fire-and-forget)
       const saveToken = userRef.current?.token;
-      const saveHeaders = { "Content-Type": "application/json", Authorization: `Bearer ${saveToken}` };
-      const savePayload = JSON.stringify({ messages: newHistory });
       if (!sessionIdRef.current) {
-        fetch(`${apiBase}/api/conversations`, { method: "POST", headers: saveHeaders, body: savePayload })
-          .then(r => r.ok ? r.json() : null)
+        conversationApi.create(newHistory, saveToken)
           .then(d => { if (d?.id) sessionIdRef.current = d.id; })
           .catch(() => {});
       } else {
-        fetch(`${apiBase}/api/conversations/${sessionIdRef.current}`, { method: "PUT", headers: saveHeaders, body: savePayload })
+        conversationApi.update(sessionIdRef.current, newHistory, saveToken)
           .catch(() => {});
       }
 
@@ -820,8 +793,11 @@ export default function HomeScreen() {
         chunkQueueRef.current = chunks.slice(1);
         speakTextRef.current(chunks[0] || cleanReply, true);
       }
-    } catch {
-      const err = "I couldn't connect just now. Please check your internet and try again.";
+    } catch (e: any) {
+      const isAuthErr = e?.status === 401;
+      const err = isAuthErr
+        ? "It looks like your session expired. Please go to Settings and sign in again."
+        : "I couldn't connect just now. Please check your internet and try again.";
       setMessages(prev => prev.map(m => m.id === lid ? { ...m, text: err, isLoading: false } : m));
       speakTextRef.current(err, false);
     } finally {

@@ -16,6 +16,7 @@ import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
+import { emergencyApi } from "@/services/api";
 
 export default function EmergencyScreen() {
   const { theme } = useTheme();
@@ -35,20 +36,7 @@ export default function EmergencyScreen() {
   async function sendFamilyAlert() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     try {
-      const domain = process.env.EXPO_PUBLIC_DOMAIN;
-      const base = domain ? `https://${domain}` : "";
-      await fetch(`${base}/api/alerts/send`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${user?.token}`,
-        },
-        body: JSON.stringify({
-          alert_type: "emergency_sos",
-          message: "I need help. Please contact me immediately.",
-          severity: "high",
-        }),
-      });
+      await emergencyApi.sendAlert("emergency_sos", "I need help. Please contact me immediately.", "high", user?.token);
       setAlertSent(true);
     } catch {
       setAlertSent(true);

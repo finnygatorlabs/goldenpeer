@@ -22,6 +22,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
 import PageHeader from "@/components/PageHeader";
 import { usePreferences, DEFAULT_NAMES, Preferences, TTS_VOICES, TtsVoice } from "@/context/PreferencesContext";
+import { userApi, authApi, voiceApi, API_BASE } from "@/services/api";
 
 const APP_VERSION = "1.0.0";
 const CONTACT_EMAIL = "admin@finnygator.com";
@@ -98,22 +99,14 @@ export default function SettingsScreen() {
   const webFileInputRef = React.useRef<HTMLInputElement | null>(null);
   const prevBlobUrlRef = React.useRef<string | null>(null);
 
-  const apiBase = (() => {
-    const d = process.env.EXPO_PUBLIC_DOMAIN;
-    return d ? `https://${d}` : "";
-  })();
+  const apiBase = API_BASE;
 
   useEffect(() => {
     if (!user?.token) return;
     (async () => {
       try {
-        const res = await fetch(`${apiBase}/api/user/profile`, {
-          headers: { Authorization: `Bearer ${user.token}` },
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setProfileData(data);
-        }
+        const data = await userApi.getProfile(user.token);
+        setProfileData(data);
       } catch {}
     })();
   }, [user?.token]);
@@ -219,19 +212,10 @@ export default function SettingsScreen() {
       return;
     }
     try {
-      const res = await fetch(`${apiBase}/api/user/profile`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${user?.token}` },
-        body: JSON.stringify({ first_name: fn, last_name: ln }),
-      });
-      if (res.ok) {
-        const updated = await res.json();
-        setProfileData(updated);
-        updateUser({ first_name: fn, last_name: ln });
-        setEditingName(false);
-      } else {
-        Alert.alert("Save failed", "Could not update your name. Please try again.");
-      }
+      const updated = await userApi.updateProfile({ first_name: fn, last_name: ln }, user?.token);
+      setProfileData(updated);
+      updateUser({ first_name: fn, last_name: ln });
+      setEditingName(false);
     } catch {
       Alert.alert("Connection error", "Unable to save your name. Check your internet connection and try again.");
     }
@@ -242,13 +226,8 @@ export default function SettingsScreen() {
     handlePrefChange("tts_voice", voice);
     setPreviewingVoice(voice);
     try {
-      const res = await fetch(`${apiBase}/api/voice/tts`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${user?.token}` },
-        body: JSON.stringify({ text: "Hi there! I'm here to help you today.", voice }),
-      });
-      if (res.ok) {
-        const { audio } = await res.json();
+      const { audio } = await voiceApi.tts("Hi there! I'm here to help you today.", voice, user?.token);
+      if (audio) {
         if (Platform.OS === "web") {
           const el = new (window as any).Audio(`data:audio/mpeg;base64,${audio}`);
           await el.play();
@@ -300,11 +279,8 @@ export default function SettingsScreen() {
   async function handleDeleteAccount() {
     setDeleting(true);
     try {
-      const response = await fetch(`${apiBase}/api/auth/account`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${user?.token}` },
-      });
-      if (response.ok) logout();
+      await authApi.deleteAccount(user?.token);
+      logout();
     } catch {}
     setDeleting(false);
     setConfirmingDelete(false);
