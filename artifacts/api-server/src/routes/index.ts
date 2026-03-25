@@ -10,19 +10,34 @@ import billingRouter from "./billing.js";
 import supportRouter from "./support.js";
 import conversationsRouter from "./conversations.js";
 import hearingAidRouter from "./hearingAid.js";
+import contactsRouter from "./contacts.js";
+import emergencyRouter from "./emergency.js";
+import adminRouter from "./admin.js";
+import analyticsRouter from "./analytics.js";
+import telecomRouter from "./telecom.js";
+import insuranceRouter from "./insurance.js";
+import facilitiesRouter from "./facilities.js";
+import { authLimiter, scamLimiter, voiceLimiter } from "../lib/rateLimit.js";
 
 const router: IRouter = Router();
 
 router.use("/", healthRouter);
-router.use("/auth", authRouter);
+router.use("/auth", authLimiter, authRouter);
 router.use("/user", userRouter);
-router.use("/voice", voiceRouter);
-router.use("/scam", scamRouter);
+router.use("/voice", voiceLimiter, voiceRouter);
+router.use("/scam", scamLimiter, scamRouter);
 router.use("/family", familyRouter);
 router.use("/alerts", alertsRouter);
 router.use("/billing", billingRouter);
 router.use("/support", supportRouter);
 router.use("/conversations", conversationsRouter);
 router.use("/hearing-aid", hearingAidRouter);
+router.use("/contacts", contactsRouter);
+router.use("/emergency", emergencyRouter);
+router.use("/admin", adminRouter);
+router.use("/analytics", analyticsRouter);
+router.use("/telecom", telecomRouter);
+router.use("/insurance", insuranceRouter);
+router.use("/facilities", facilitiesRouter);
 
 export default router;

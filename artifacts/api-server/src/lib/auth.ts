@@ -2,7 +2,12 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { Request, Response, NextFunction } from "express";
 
-const JWT_SECRET = process.env.JWT_SECRET || "seniorshield-secret-key-change-in-production";
+const JWT_SECRET = process.env.JWT_SECRET || (() => {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("JWT_SECRET environment variable is required in production");
+  }
+  return "seniorshield-dev-only-secret-key";
+})();
 
 export function hashPassword(password: string): string {
   return bcrypt.hashSync(password, 10);

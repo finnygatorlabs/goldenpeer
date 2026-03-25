@@ -1,6 +1,6 @@
 import { Router, IRouter } from "express";
 import { db } from "@workspace/db";
-import { scamAnalysisTable, scamDetectionFeedbackTable } from "@workspace/db";
+import { scamAnalysisTable, scamDetectionFeedbackTable, scamLibraryTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { requireAuth, AuthRequest } from "../lib/auth.js";
 
@@ -572,6 +572,54 @@ router.post("/feedback", requireAuth, async (req: AuthRequest, res) => {
     res.json({ success: true, message: "Feedback recorded. Thank you for helping improve scam detection!" });
   } catch (err) {
     req.log.error({ err }, "Scam feedback error");
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.get("/history/:id", requireAuth, async (req: AuthRequest, res) => {
+  try {
+    const [entry] = await db.select().from(scamAnalysisTable)
+      .where(eq(scamAnalysisTable.id, req.params.id))
+      .limit(1);
+
+    if (!entry || entry.user_id !== req.user!.userId) {
+      res.status(404).json({ error: "Not Found" });
+      return;
+    }
+
+    res.json(entry);
+  } catch (err) {
+    req.log.error({ err }, "Scam detail error");
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.get("/library", async (_req, res) => {
+  try {
+    const patterns = await db.select().from(scamLibraryTable).orderBy(desc(scamLibraryTable.created_at));
+    res.json({ patterns });
+  } catch (err) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.post("/library", requireAuth, async (req: AuthRequest, res) => {
+  try {
+    const { pattern_name, keywords, description } = req.body;
+    if (!pattern_name) {
+      res.status(400).json({ error: "Bad Request", message: "pattern_name is required" });
+      return;
+    }
+
+    const [pattern] = await db.insert(scamLibraryTable).values({
+      pattern_name,
+      keywords: keywords || [],
+      description: description || null,
+    }).returning();
+
+    res.status(201).json({ pattern_id: pattern.id });
+  } catch (err) {
+    req.log.error({ err }, "Add scam library pattern error");
     res.status(500).json({ error: "Internal Server Error" });
   }
 });

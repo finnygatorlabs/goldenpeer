@@ -2,7 +2,7 @@ import { Router, IRouter } from "express";
 import { db } from "@workspace/db";
 import { usersTable, userTiersTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
-import { hashPassword, verifyPassword, generateToken, requireAuth, AuthRequest } from "../lib/auth.js";
+import { hashPassword, verifyPassword, generateToken, verifyToken, requireAuth, AuthRequest } from "../lib/auth.js";
 import { sendVerificationEmail, sendPasswordResetEmail, sendWelcomeEmail } from "../lib/email.js";
 import crypto from "crypto";
 
@@ -281,6 +281,61 @@ router.post("/google", async (req, res) => {
   } catch (err) {
     req.log.error({ err }, "Google auth error");
     res.status(500).json({ error: "Internal Server Error", message: "Google sign-in failed" });
+  }
+});
+
+router.post("/refresh-token", async (req, res) => {
+  try {
+    const { token: oldToken } = req.body;
+    const authHeader = req.headers.authorization;
+    const tokenToVerify = oldToken || (authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null);
+
+    if (!tokenToVerify) {
+      res.status(400).json({ error: "Bad Request", message: "token is required in body or Authorization header" });
+      return;
+    }
+
+    const decoded = verifyToken(tokenToVerify);
+    if (!decoded) {
+      res.status(401).json({ error: "Unauthorized", message: "Invalid or expired token" });
+      return;
+    }
+
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, decoded.userId)).limit(1);
+    if (!user) {
+      res.status(401).json({ error: "Unauthorized", message: "User not found" });
+      return;
+    }
+
+    const newToken = generateToken({ userId: user.id, email: user.email, userType: user.user_type });
+    res.json({ token: newToken, user_id: user.id, expires_in: "30d" });
+  } catch (err) {
+    req.log.error({ err }, "Refresh token error");
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.post("/change-password", requireAuth, async (req: AuthRequest, res) => {
+  try {
+    const { current_password, new_password } = req.body;
+    if (!current_password || !new_password) {
+      res.status(400).json({ error: "Bad Request", message: "current_password and new_password are required" });
+      return;
+    }
+    if (new_password.length < 8) {
+      res.status(400).json({ error: "Bad Request", message: "New password must be at least 8 characters" });
+      return;
+    }
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.user!.userId)).limit(1);
+    if (!user || !verifyPassword(current_password, user.password_hash)) {
+      res.status(401).json({ error: "Unauthorized", message: "Current password is incorrect" });
+      return;
+    }
+    await db.update(usersTable).set({ password_hash: hashPassword(new_password), updated_at: new Date() }).where(eq(usersTable.id, req.user!.userId));
+    res.json({ success: true, message: "Password changed successfully" });
+  } catch (err) {
+    req.log.error({ err }, "Change password error");
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 

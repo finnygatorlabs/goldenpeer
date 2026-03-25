@@ -356,4 +356,46 @@ router.get("/history", requireAuth, async (req: AuthRequest, res) => {
   }
 });
 
+router.get("/history/:id", requireAuth, async (req: AuthRequest, res) => {
+  try {
+    const [entry] = await db.select().from(voiceAssistanceHistoryTable)
+      .where(eq(voiceAssistanceHistoryTable.id, req.params.id))
+      .limit(1);
+
+    if (!entry || entry.user_id !== req.user!.userId) {
+      res.status(404).json({ error: "Not Found" });
+      return;
+    }
+
+    res.json(entry);
+  } catch (err) {
+    req.log.error({ err }, "Voice history detail error");
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.post("/feedback", requireAuth, async (req: AuthRequest, res) => {
+  try {
+    const { history_id, rating, comment } = req.body;
+    if (!history_id) {
+      res.status(400).json({ error: "Bad Request", message: "history_id is required" });
+      return;
+    }
+
+    const [entry] = await db.select().from(voiceAssistanceHistoryTable)
+      .where(eq(voiceAssistanceHistoryTable.id, history_id))
+      .limit(1);
+
+    if (!entry || entry.user_id !== req.user!.userId) {
+      res.status(404).json({ error: "Not Found" });
+      return;
+    }
+
+    res.json({ success: true, message: "Feedback recorded" });
+  } catch (err) {
+    req.log.error({ err }, "Voice feedback error");
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 export default router;
