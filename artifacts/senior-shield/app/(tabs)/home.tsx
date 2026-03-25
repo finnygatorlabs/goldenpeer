@@ -763,9 +763,11 @@ export default function HomeScreen() {
   const isOrbCompact = greeted;
   // Idle = compact + not actively listening/speaking (used for status row + "Type instead" logic)
   const isOrbIdle = greeted && !isListening && !isSpeaking;
-  // Compact footer: orb(80) + status(32, when active) + typeBtn(36) + padding = ~160px
-  // Full footer: status(32) + gap(14) + orb(176) + gap(18) + typeBtn(36) + padding = ~300px
-  const ORB_FOOTER_HEIGHT = isOrbCompact ? 160 : 300;
+  // Compact footer: orb(80) + typeBtn(29) + padding(16) = ~125px (status floats above)
+  // Full footer: orb(176) + typeBtn(29) + padding(16) = ~221px
+  const ORB_FOOTER_HEIGHT = isOrbCompact ? 125 : 221;
+  // The floating status row sits just above the footer
+  const statusRowBottom = orbBottomPad + ORB_FOOTER_HEIGHT + 8;
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -872,6 +874,44 @@ export default function HomeScreen() {
         ))}
       </ScrollView>
 
+      {/* ── Status label floats above the orb (no layout impact on orb position) ── */}
+      {!showText && (
+        <View
+          style={[
+            styles.statusRow,
+            {
+              position: "absolute",
+              bottom: statusRowBottom,
+              left: 0,
+              right: 0,
+              opacity: isOrbIdle ? 0 : 1,
+            },
+          ]}
+          pointerEvents="none"
+        >
+          {isListening && interimText ? (
+            <View style={[styles.interimBox, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+              <Text style={{ fontSize: ts.sm, fontFamily: "Inter_400Regular", color: theme.text, fontStyle: "italic" }} numberOfLines={3}>
+                "{interimText}"
+              </Text>
+            </View>
+          ) : (
+            <Text
+              style={[
+                styles.statusLabel,
+                {
+                  color: isListening ? "#0891B2" : isSpeaking ? "#2563EB" : theme.textSecondary,
+                  fontSize: ts.sm,
+                },
+              ]}
+              numberOfLines={1}
+            >
+              {statusLabel}
+            </Text>
+          )}
+        </View>
+      )}
+
       {/* ── Voice orb footer (above floating tab bar) ── */}
       {!showText && (
         <View
@@ -880,35 +920,11 @@ export default function HomeScreen() {
             {
               bottom: orbBottomPad,
               backgroundColor: theme.background,
-              paddingTop: 12,
-              paddingBottom: 12,
+              paddingTop: 8,
+              paddingBottom: 8,
             },
           ]}
         >
-          {/* Status label / interim text — always in layout (opacity only) so the orb never shifts */}
-          <View style={[styles.statusRow, { opacity: isOrbIdle ? 0 : 1 }]}>
-            {isListening && interimText ? (
-              <View style={[styles.interimBox, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-                <Text style={{ fontSize: ts.sm, fontFamily: "Inter_400Regular", color: theme.text, fontStyle: "italic" }} numberOfLines={2}>
-                  "{interimText}"
-                </Text>
-              </View>
-            ) : (
-              <Text
-                style={[
-                  styles.statusLabel,
-                  {
-                    color: isListening ? "#0891B2" : isSpeaking ? "#2563EB" : theme.textSecondary,
-                    fontSize: ts.sm,
-                  },
-                ]}
-                numberOfLines={1}
-              >
-                {statusLabel}
-              </Text>
-            )}
-          </View>
-
           {/* Orb — compact when idle, full size when active */}
           <FluidOrb
             onPress={handleOrbPress}
@@ -918,42 +934,17 @@ export default function HomeScreen() {
             isIdle={isOrbCompact}
           />
 
-          {/* "Type instead" + switch tip — always in layout (opacity only) so the orb never shifts */}
-          <View
-            style={{ alignItems: "center", gap: 10, opacity: (!isListening && !isSpeaking) ? 1 : 0 }}
+          {/* "Type instead" — slim link, always in layout so orb never shifts */}
+          <Pressable
+            onPress={() => { stopListening(); stopSpeaking(); setShowText(true); }}
+            hitSlop={16}
+            style={[styles.typeBtn, { opacity: (!isListening && !isSpeaking) ? 1 : 0 }]}
             pointerEvents={(!isListening && !isSpeaking) ? "auto" : "none"}
           >
-            <Pressable
-              onPress={() => { stopListening(); stopSpeaking(); setShowText(true); }}
-              hitSlop={16}
-              style={styles.typeBtn}
-            >
-              <Text style={{ fontSize: ts.sm, color: theme.textSecondary, fontFamily: "Inter_400Regular", textDecorationLine: "underline" }}>
-                Type instead
-              </Text>
-            </Pressable>
-
-            <Pressable
-              onPress={() => setShowSwitchModal(true)}
-              hitSlop={10}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 5,
-                paddingHorizontal: 14,
-                paddingVertical: 7,
-                borderRadius: 20,
-                backgroundColor: theme.card,
-                borderWidth: 1,
-                borderColor: theme.cardBorder,
-              }}
-            >
-              <Ionicons name="swap-horizontal-outline" size={15} color={theme.textSecondary} />
-              <Text style={{ fontSize: ts.xs ?? 11, color: theme.textSecondary, fontFamily: "Inter_400Regular" }}>
-                How to switch apps &amp; return
-              </Text>
-            </Pressable>
-          </View>
+            <Text style={{ fontSize: ts.sm, color: theme.textSecondary, fontFamily: "Inter_400Regular", textDecorationLine: "underline" }}>
+              Type instead
+            </Text>
+          </Pressable>
 
           {/* ── Voice mute toggle — lower right ── */}
           <Pressable
@@ -1052,10 +1043,10 @@ const styles = StyleSheet.create({
     gap: 0,
   },
   statusRow: {
-    height: 32,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 14,
+    paddingHorizontal: 16,
+    paddingBottom: 8,
   },
   statusLabel: {
     fontFamily: "Inter_600SemiBold",
@@ -1066,9 +1057,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 7, maxWidth: "82%",
   },
   typeBtn: {
-    marginTop: 18,
+    marginTop: 6,
     paddingHorizontal: 20,
-    paddingVertical: 8,
+    paddingVertical: 4,
   },
   voiceMuteBtn: {
     position: "absolute",
