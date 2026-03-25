@@ -13,9 +13,8 @@ import Reanimated, {
 import { Ionicons } from "@expo/vector-icons";
 
 const FULL_SIZE = 176;
-const COMPACT_SIZE = 80;
+const COMPACT_SIZE = 100;
 
-// ── Expanding wave ring ──────────────────────────────────────────────
 function PulseRing({ color, delay = 0, borderWidth = 2 }: { color: string; delay?: number; borderWidth?: number }) {
   const scale = useSharedValue(0.5);
   const opacity = useSharedValue(0.9);
@@ -48,7 +47,6 @@ function PulseRing({ color, delay = 0, borderWidth = 2 }: { color: string; delay
   );
 }
 
-// ── Web video element ────────────────────────────────────────────────
 function OrbVideo({ size }: { size: number }) {
   const videoRef = useRef<any>(null);
 
@@ -64,9 +62,6 @@ function OrbVideo({ size }: { size: number }) {
   }, []);
 
   if (Platform.OS === "web") {
-    // Always render at FULL_SIZE regardless of isIdle — the animated wrapper's
-    // overflow:hidden clips it smoothly. Passing a dynamic size causes a visual
-    // jump because the DOM element snaps while the wrapper slowly animates.
     const renderSize = FULL_SIZE;
     const overflow = renderSize * 0.12;
     return (
@@ -82,8 +77,9 @@ function OrbVideo({ size }: { size: number }) {
           objectFit: "cover",
           display: "block",
           position: "absolute" as any,
-          top: -overflow,
-          left: -overflow,
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
         }}
       >
         <source src="/orb.webm" type="video/webm" />
@@ -120,13 +116,12 @@ function NativeVideo({ size }: { size: number }) {
   );
 }
 
-// ── Main exported component ──────────────────────────────────────────
 interface FluidOrbProps {
   onPress: () => void;
   isListening: boolean;
   isSpeaking: boolean;
   audioReady: boolean;
-  isIdle?: boolean; // compact mode when not active
+  isIdle?: boolean;
 }
 
 export default function FluidOrb({ onPress, isListening, isSpeaking, audioReady, isIdle = false }: FluidOrbProps) {
@@ -134,7 +129,6 @@ export default function FluidOrb({ onPress, isListening, isSpeaking, audioReady,
   const glowOpacity = useSharedValue(0);
   const orbSize = useSharedValue(isIdle ? COMPACT_SIZE : FULL_SIZE);
 
-  // Animate size between compact and full
   useEffect(() => {
     const target = isIdle ? COMPACT_SIZE : FULL_SIZE;
     orbSize.value = withTiming(target, { duration: 320, easing: Easing.inOut(Easing.ease) });
@@ -190,7 +184,7 @@ export default function FluidOrb({ onPress, isListening, isSpeaking, audioReady,
 
   const icon: any = isListening ? "stop-circle" : isSpeaking ? "volume-high" : "mic";
   const iconOpacity = isListening || isSpeaking ? 0.45 : 0.28;
-  const iconSize = isIdle ? 22 : 44;
+  const iconSize = isIdle ? 28 : 44;
 
   return (
     <Pressable
@@ -198,10 +192,8 @@ export default function FluidOrb({ onPress, isListening, isSpeaking, audioReady,
       style={({ pressed }) => [{ opacity: pressed ? 0.9 : 1 }]}
     >
       <Reanimated.View style={[styles.wrapper, wrapperStyle]}>
-        {/* Looping video sphere */}
         <OrbVideo size={isIdle ? COMPACT_SIZE : FULL_SIZE} />
 
-        {/* State color overlay */}
         <Reanimated.View
           style={[
             StyleSheet.absoluteFillObject,
@@ -210,7 +202,6 @@ export default function FluidOrb({ onPress, isListening, isSpeaking, audioReady,
           ]}
         />
 
-        {/* Expanding wave rings when active */}
         {(isListening || isSpeaking) && (
           <View style={StyleSheet.absoluteFillObject}>
             <PulseRing color={accent} delay={0} borderWidth={2.5} />
@@ -219,13 +210,11 @@ export default function FluidOrb({ onPress, isListening, isSpeaking, audioReady,
           </View>
         )}
 
-        {/* Icon */}
         <Reanimated.View style={[styles.iconWrap, iconStyle, { opacity: iconOpacity }]}>
           <Ionicons name={icon} size={iconSize} color="#FFFFFF" />
         </Reanimated.View>
       </Reanimated.View>
 
-      {/* "Tap to speak" hint shown inside compact orb label */}
       {isIdle && (
         <Text style={styles.compactLabel}>Tap to speak</Text>
       )}
@@ -271,7 +260,7 @@ const styles = StyleSheet.create({
   },
   compactLabel: {
     color: "#94A3B8",
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: "Inter_400Regular",
     textAlign: "center",
     marginTop: 6,

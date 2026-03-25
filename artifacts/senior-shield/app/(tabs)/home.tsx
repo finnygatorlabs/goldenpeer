@@ -847,9 +847,9 @@ export default function HomeScreen() {
   const isOrbCompact = greeted;
   // Idle = compact + not actively listening/speaking (used for status row + "Type instead" logic)
   const isOrbIdle = greeted && !isListening && !isSpeaking;
-  // Compact footer: orb(80) + compactLabel(24) + typeBtn(30) + padding(16) = ~150px (status floats above)
-  // Full footer (pre-greeting): orb(176) + typeBtn(30) + padding(16) = ~222px
-  const ORB_FOOTER_HEIGHT = isOrbCompact ? 155 : 222;
+  // Compact footer: orb(100) + compactLabel(25) + typeBtn(32) + padding(16) + buffer(2) = ~175px
+  // Full footer (pre-greeting): orb(176) + typeBtn(32) + padding(16) = ~224px
+  const ORB_FOOTER_HEIGHT = isOrbCompact ? 175 : 224;
   // The floating status row sits just above the footer
   const statusRowBottom = orbBottomPad + ORB_FOOTER_HEIGHT + 8;
 
@@ -1194,13 +1194,13 @@ const styles = StyleSheet.create({
     right: 0,
     height: 52,
   },
-  // Soft ambient blue halo behind the orb — just slightly larger than the 80px compact orb
+  // Soft ambient blue halo behind the orb — slightly larger than the 100px compact orb
   orbGlow: {
     position: "absolute",
-    top: 10,
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    top: 8,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
     backgroundColor: "rgba(37,99,235,0.08)",
     shadowColor: "#2563EB",
     shadowOffset: { width: 0, height: 0 },
