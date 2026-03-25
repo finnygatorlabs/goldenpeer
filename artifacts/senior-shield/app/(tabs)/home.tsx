@@ -629,6 +629,20 @@ export default function HomeScreen() {
     return () => { audioCtxRef.current?.close().catch(() => {}); };
   }, []);
 
+  // On web, check if mic permission was already granted in a previous session.
+  // If so, mark audioReady immediately so the user never sees our consent modal
+  // again and can tap the orb to go straight to listening.
+  useEffect(() => {
+    if (Platform.OS !== "web" || typeof navigator === "undefined") return;
+    if (!navigator.permissions) return;
+    navigator.permissions
+      .query({ name: "microphone" as PermissionName })
+      .then(result => {
+        if (result.state === "granted") setAudioReady(true);
+      })
+      .catch(() => {});
+  }, []);
+
   // ── Send message ──
   async function sendMessage(text: string) {
     if (!text.trim() || isSending) return;
@@ -708,24 +722,20 @@ export default function HomeScreen() {
   }
 
   function handleOrbPress() {
+    // Always create the AudioContext on the FIRST user gesture regardless of audioReady.
+    // Chrome requires this synchronously inside a user gesture; doing it later loses the context.
+    if (Platform.OS === "web" && typeof window !== "undefined" && !audioCtxRef.current) {
+      try {
+        const ctx = new (window as any).AudioContext();
+        audioCtxRef.current = ctx;
+        const buf = ctx.createBuffer(1, 1, 22050);
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        src.connect(ctx.destination);
+        src.start(0);
+      } catch {}
+    }
     if (!audioReady) {
-      // On web, create the AudioContext RIGHT NOW during this orb-tap gesture.
-      // Chrome requires the AudioContext to be created synchronously within a user
-      // gesture — doing it later inside a modal button loses the gesture context.
-      if (Platform.OS === "web" && typeof window !== "undefined" && !audioCtxRef.current) {
-        try {
-          const ctx = new (window as any).AudioContext();
-          audioCtxRef.current = ctx;
-          // Play a silent buffer to immediately put the context in "running" state
-          const buf = ctx.createBuffer(1, 1, 22050);
-          const src = ctx.createBufferSource();
-          src.buffer = buf;
-          src.connect(ctx.destination);
-          src.start(0);
-        } catch {}
-      }
-      // Show the branded modal on all platforms — it acts as the informed-consent
-      // step before the browser's own mic permission dialog.
       setShowMicModal(true);
       return;
     }
@@ -737,7 +747,11 @@ export default function HomeScreen() {
 
   function handleEnableVoice() {
     setShowMicModal(false);
-    unlockAudio(); // triggers iOS system permission prompt + unlocks audio
+    unlockAudio();
+    // Start listening immediately so the browser's mic permission dialog appears
+    // as a direct continuation of the user's "Enable Voice" tap — not as a
+    // separate surprise popup on the next orb tap.
+    startListening();
   }
 
   function handleTypeInstead() {
