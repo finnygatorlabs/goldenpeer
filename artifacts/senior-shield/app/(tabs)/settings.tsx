@@ -82,7 +82,7 @@ export default function SettingsScreen() {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const { prefs, loaded, ts, updatePref } = usePreferences();
 
   const [nameInput, setNameInput] = useState(prefs.assistant_name);
@@ -92,6 +92,11 @@ export default function SettingsScreen() {
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [profileData, setProfileData] = useState<any>(null);
   const [deviceInfo, setDeviceInfo] = useState({ platform: "", model: "", osVersion: "" });
+  const [editingName, setEditingName] = useState(false);
+  const [firstNameEdit, setFirstNameEdit] = useState(user?.first_name || "");
+  const [lastNameEdit, setLastNameEdit] = useState(user?.last_name || "");
+  const webFileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const prevBlobUrlRef = React.useRef<string | null>(null);
 
   const apiBase = (() => {
     const d = process.env.EXPO_PUBLIC_DOMAIN;
@@ -135,24 +140,101 @@ export default function SettingsScreen() {
     })();
   }, []);
 
-  async function pickProfilePhoto() {
+  useEffect(() => {
+    return () => {
+      if (Platform.OS === "web") {
+        if (webFileInputRef.current) {
+          try { document.body.removeChild(webFileInputRef.current); } catch {}
+          webFileInputRef.current = null;
+        }
+        if (prevBlobUrlRef.current) {
+          URL.revokeObjectURL(prevBlobUrlRef.current);
+          prevBlobUrlRef.current = null;
+        }
+      }
+    };
+  }, []);
+
+  function pickProfilePhoto() {
+    if (Platform.OS === "web") {
+      if (!webFileInputRef.current) {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = "image/*";
+        input.style.display = "none";
+        input.onchange = (e: any) => {
+          const file = e.target?.files?.[0];
+          if (file) {
+            if (prevBlobUrlRef.current) {
+              URL.revokeObjectURL(prevBlobUrlRef.current);
+            }
+            const url = URL.createObjectURL(file);
+            prevBlobUrlRef.current = url;
+            setProfilePhoto(url);
+          }
+          input.value = "";
+        };
+        document.body.appendChild(input);
+        webFileInputRef.current = input;
+      }
+      webFileInputRef.current.click();
+    } else {
+      (async () => {
+        try {
+          const ImagePicker = await import("expo-image-picker");
+          const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+          if (status !== "granted") {
+            Alert.alert(
+              "Photo Access Needed",
+              "SeniorShield needs permission to access your photo library so you can set a profile picture. You can enable this in your phone's Settings app.",
+              [
+                { text: "OK", style: "default" },
+                {
+                  text: "Open Settings",
+                  onPress: () => { try { Linking.openSettings(); } catch {} },
+                },
+              ]
+            );
+            return;
+          }
+          const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ["images"],
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 0.7,
+          });
+          if (!result.canceled && result.assets[0]) {
+            setProfilePhoto(result.assets[0].uri);
+          }
+        } catch {}
+      })();
+    }
+  }
+
+  async function saveProfileName() {
+    const fn = firstNameEdit.trim();
+    const ln = lastNameEdit.trim();
+    if (!fn) {
+      Alert.alert("Name required", "Please enter at least a first name.");
+      return;
+    }
     try {
-      const ImagePicker = await import("expo-image-picker");
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert("Permission needed", "Please allow access to your photo library to add a profile photo.");
-        return;
-      }
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ["images"],
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.5,
+      const res = await fetch(`${apiBase}/api/user/profile`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${user?.token}` },
+        body: JSON.stringify({ first_name: fn, last_name: ln }),
       });
-      if (!result.canceled && result.assets[0]) {
-        setProfilePhoto(result.assets[0].uri);
+      if (res.ok) {
+        const updated = await res.json();
+        setProfileData(updated);
+        updateUser({ first_name: fn, last_name: ln });
+        setEditingName(false);
+      } else {
+        Alert.alert("Save failed", "Could not update your name. Please try again.");
       }
-    } catch {}
+    } catch {
+      Alert.alert("Connection error", "Unable to save your name. Check your internet connection and try again.");
+    }
   }
 
   async function selectAndPreviewVoice(voice: TtsVoice) {
@@ -283,16 +365,65 @@ export default function SettingsScreen() {
             </View>
           </Pressable>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.profileName, { color: theme.text, fontSize: ts.lg }]}>
-              {user?.first_name ? `${user.first_name} ${user.last_name || ""}`.trim() : "Your Account"}
-            </Text>
-            <View style={[styles.planBadge, { backgroundColor: "#DBEAFE" }]}>
-              <Text style={[styles.planBadgeText, { fontSize: ts.xs }]}>Free Plan</Text>
-            </View>
+            {editingName ? (
+              <View style={{ gap: 6 }}>
+                <TextInput
+                  style={[styles.nameEditInput, { color: theme.text, borderColor: theme.cardBorder, fontSize: ts.base }]}
+                  value={firstNameEdit}
+                  onChangeText={setFirstNameEdit}
+                  placeholder="First name"
+                  placeholderTextColor={theme.textSecondary}
+                  autoFocus
+                />
+                <TextInput
+                  style={[styles.nameEditInput, { color: theme.text, borderColor: theme.cardBorder, fontSize: ts.base }]}
+                  value={lastNameEdit}
+                  onChangeText={setLastNameEdit}
+                  placeholder="Last name"
+                  placeholderTextColor={theme.textSecondary}
+                />
+                <View style={{ flexDirection: "row", gap: 8, marginTop: 2 }}>
+                  <Pressable
+                    onPress={saveProfileName}
+                    style={[styles.nameEditBtn, { backgroundColor: "#3B82F6" }]}
+                  >
+                    <Text style={{ color: "#FFF", fontSize: ts.sm, fontWeight: "600" }}>Save</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => {
+                      setEditingName(false);
+                      setFirstNameEdit(user?.first_name || "");
+                      setLastNameEdit(user?.last_name || "");
+                    }}
+                    style={[styles.nameEditBtn, { backgroundColor: theme.cardBorder }]}
+                  >
+                    <Text style={{ color: theme.text, fontSize: ts.sm }}>Cancel</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ) : (
+              <Pressable onPress={() => {
+                setFirstNameEdit(user?.first_name || "");
+                setLastNameEdit(user?.last_name || "");
+                setEditingName(true);
+              }} style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                <Text style={[styles.profileName, { color: theme.text, fontSize: ts.lg }]}>
+                  {user?.first_name ? `${user.first_name} ${user.last_name || ""}`.trim() : "Your Account"}
+                </Text>
+                <Ionicons name="pencil" size={14} color={theme.textSecondary} />
+              </Pressable>
+            )}
+            {!editingName && (
+              <View style={[styles.planBadge, { backgroundColor: "#DBEAFE" }]}>
+                <Text style={[styles.planBadgeText, { fontSize: ts.xs }]}>Free Plan</Text>
+              </View>
+            )}
           </View>
-          <Pressable onPress={() => router.push("/subscription")} style={styles.upgradeButton}>
-            <Text style={[styles.upgradeText, { fontSize: ts.sm }]}>Upgrade</Text>
-          </Pressable>
+          {!editingName && (
+            <Pressable onPress={() => router.push("/subscription")} style={styles.upgradeButton}>
+              <Text style={[styles.upgradeText, { fontSize: ts.sm }]}>Upgrade</Text>
+            </Pressable>
+          )}
         </View>
 
         <View style={styles.profileInfoList}>
@@ -642,6 +773,19 @@ const styles = StyleSheet.create({
     borderColor: "#FFFFFF",
   },
   profileName: { fontFamily: "Inter_700Bold", marginBottom: 4 },
+  nameEditInput: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontFamily: "Inter_500Medium",
+  },
+  nameEditBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 8,
+    alignItems: "center" as const,
+  },
   planBadge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 8, alignSelf: "flex-start" },
   planBadgeText: { fontFamily: "Inter_600SemiBold", color: "#2563EB" },
   upgradeButton: { backgroundColor: "#2563EB", paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12 },
