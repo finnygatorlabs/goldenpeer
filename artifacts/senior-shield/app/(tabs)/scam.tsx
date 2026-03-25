@@ -17,39 +17,72 @@ import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import * as Haptics from "expo-haptics";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
+import { usePreferences } from "@/context/PreferencesContext";
 import PageHeader from "@/components/PageHeader";
+
+interface LayerResult {
+  name: string;
+  score: number;
+  maxScore: number;
+  findings: string[];
+}
 
 interface AnalysisResult {
   id: string;
   risk_score: number;
-  risk_level: "safe" | "suspicious" | "high_risk";
+  risk_level: "safe" | "low_risk" | "medium_risk" | "high_risk" | "critical_risk";
+  confidence: number;
   detected_patterns: string[];
   explanation: string;
+  recommendation: string;
+  layers: LayerResult[];
+  entities: {
+    urls: string[];
+    phones: string[];
+    emails: string[];
+    amounts: string[];
+    senderEmail: string | null;
+  };
+  keywords_detected: string[];
 }
 
-const RISK_CONFIG = {
-  safe: { color: "#10B981", bg: "#D1FAE5", label: "Safe", icon: "checkmark-circle" as const },
-  suspicious: { color: "#F59E0B", bg: "#FEF3C7", label: "Suspicious", icon: "warning" as const },
-  high_risk: { color: "#EF4444", bg: "#FEE2E2", label: "High Risk", icon: "alert-circle" as const },
+const RISK_CONFIG: Record<string, { color: string; bg: string; label: string; icon: keyof typeof Ionicons.glyphMap }> = {
+  safe: { color: "#10B981", bg: "#D1FAE5", label: "Safe", icon: "checkmark-circle" },
+  low_risk: { color: "#3B82F6", bg: "#DBEAFE", label: "Low Risk", icon: "information-circle" },
+  medium_risk: { color: "#F59E0B", bg: "#FEF3C7", label: "Medium Risk", icon: "warning" },
+  high_risk: { color: "#EF4444", bg: "#FEE2E2", label: "High Risk", icon: "alert-circle" },
+  critical_risk: { color: "#991B1B", bg: "#FEE2E2", label: "Critical Risk", icon: "skull" },
 };
 
 const PATTERN_LABELS: Record<string, string> = {
-  phishing_keywords: "Phishing language",
+  phishing: "Phishing attempt",
+  urgency_scam: "Urgency pressure tactic",
+  personal_info_request: "Requests sensitive info",
+  tech_support_scam: "Tech support scam",
+  romance_scam: "Romance scam",
+  lottery_scam: "Lottery/prize scam",
+  grandparent_scam: "Grandparent scam",
+  secrecy_pressure: "Secrecy pressure",
+  legal_threat_scam: "Legal threat scam",
   urgency: "Creates urgency",
-  money_request: "Requests money",
-  personal_info_request: "Wants personal info",
-  bank_impersonation: "Impersonates known brand",
+  financial_language: "Financial language",
+  authority_impersonation: "Impersonates authority",
+  threat_language: "Threat language",
+  sensitive_info_request: "Wants personal info",
   suspicious_links: "Suspicious links",
+  sender_spoofing: "Sender spoofing",
 };
 
 const QUICK_TESTS = [
-  "URGENT: Your bank account has been suspended. Click here to verify: bit.ly/12abc",
-  "Hi, it's your grandson! I'm in trouble and need $500 in gift cards. Don't tell Mom.",
+  "URGENT: Your bank account has been suspended. Click here to verify immediately: bit.ly/12abc",
+  "Hi, it's your grandson! I'm in jail and need $500 in gift cards for bail. Don't tell Mom.",
   "Congratulations! You've won $5,000. Send your SSN and bank account to claim your prize.",
+  "From: support@amaz0n-secure.net\nSubject: Your Amazon account has been compromised!\nYour account has been suspended due to suspicious activity. Click here immediately to verify your account.",
 ];
 
 export default function ScamScreen() {
   const { theme } = useTheme();
+  const { ts } = usePreferences();
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
   const { user } = useAuth();
@@ -59,6 +92,7 @@ export default function ScamScreen() {
   const [loading, setLoading] = useState(false);
   const [feedbackSent, setFeedbackSent] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
+  const [expandedLayers, setExpandedLayers] = useState<Record<number, boolean>>({});
 
   async function analyze(textToAnalyze?: string) {
     const target = textToAnalyze || text;
@@ -70,6 +104,7 @@ export default function ScamScreen() {
     setLoading(true);
     setResult(null);
     setFeedbackSent(false);
+    setExpandedLayers({});
 
     try {
       const domain = process.env.EXPO_PUBLIC_DOMAIN;
@@ -83,12 +118,29 @@ export default function ScamScreen() {
         body: JSON.stringify({ text: target }),
       });
 
+      if (!response.ok) {
+        Alert.alert("Error", "Could not analyze message. Please try again.");
+        return;
+      }
       const data = await response.json();
-      setResult(data);
+      if (!data.risk_level || data.risk_score === undefined) {
+        Alert.alert("Error", "Received an unexpected response. Please try again.");
+        return;
+      }
+      setResult({
+        ...data,
+        confidence: data.confidence ?? 0,
+        detected_patterns: data.detected_patterns ?? [],
+        layers: data.layers ?? [],
+        entities: data.entities ?? { urls: [], phones: [], emails: [], amounts: [], senderEmail: null },
+        keywords_detected: data.keywords_detected ?? [],
+        recommendation: data.recommendation ?? "",
+        explanation: data.explanation ?? "",
+      });
       Haptics.notificationAsync(
-        data.risk_level === "high_risk"
+        data.risk_level === "critical_risk" || data.risk_level === "high_risk"
           ? Haptics.NotificationFeedbackType.Error
-          : data.risk_level === "suspicious"
+          : data.risk_level === "medium_risk" || data.risk_level === "low_risk"
           ? Haptics.NotificationFeedbackType.Warning
           : Haptics.NotificationFeedbackType.Success
       );
@@ -117,6 +169,12 @@ export default function ScamScreen() {
     } catch (err) {}
   }
 
+  function toggleLayer(idx: number) {
+    setExpandedLayers(prev => ({ ...prev, [idx]: !prev[idx] }));
+  }
+
+  const riskConfig = result ? (RISK_CONFIG[result.risk_level] || RISK_CONFIG.safe) : RISK_CONFIG.safe;
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <PageHeader />
@@ -132,13 +190,13 @@ export default function ScamScreen() {
       <View style={[styles.inputCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
         <View style={styles.inputHeader}>
           <Ionicons name="clipboard-outline" size={20} color={theme.textSecondary} />
-          <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>Paste message here</Text>
+          <Text style={[styles.inputLabel, { color: theme.textSecondary, fontSize: ts.sm }]}>Paste message here</Text>
           <Pressable onPress={() => setShowHelpModal(true)} hitSlop={12} style={styles.infoButton}>
             <Ionicons name="information-circle-outline" size={22} color={theme.textSecondary} />
           </Pressable>
         </View>
         <TextInput
-          style={[styles.textArea, { color: theme.text, backgroundColor: theme.inputBackground }]}
+          style={[styles.textArea, { color: theme.text, backgroundColor: theme.inputBackground, fontSize: ts.base }]}
           value={text}
           onChangeText={setText}
           placeholder="Paste or type the suspicious message, email, or text..."
@@ -156,8 +214,8 @@ export default function ScamScreen() {
             <ActivityIndicator color="#FFFFFF" />
           ) : (
             <>
-              <Ionicons name="search" size={20} color="#FFFFFF" />
-              <Text style={styles.analyzeButtonText}>Analyze Message</Text>
+              <Ionicons name="shield-checkmark" size={20} color="#FFFFFF" />
+              <Text style={[styles.analyzeButtonText, { fontSize: ts.base }]}>Analyze Message</Text>
             </>
           )}
         </Pressable>
@@ -165,7 +223,7 @@ export default function ScamScreen() {
 
       {!result && !loading && (
         <View style={styles.quickTests}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Try a sample</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text, fontSize: ts.base }]}>Try a sample</Text>
           {QUICK_TESTS.map((test, i) => (
             <Pressable
               key={i}
@@ -173,7 +231,7 @@ export default function ScamScreen() {
               style={[styles.quickTestCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}
             >
               <Ionicons name="flask-outline" size={16} color={theme.textSecondary} />
-              <Text style={[styles.quickTestText, { color: theme.textSecondary }]} numberOfLines={2}>
+              <Text style={[styles.quickTestText, { color: theme.textSecondary, fontSize: ts.xs }]} numberOfLines={2}>
                 {test}
               </Text>
               <Ionicons name="chevron-forward" size={16} color={theme.textTertiary} />
@@ -184,79 +242,160 @@ export default function ScamScreen() {
 
       {result && (
         <View style={[styles.resultCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-          <View style={[styles.riskBanner, { backgroundColor: RISK_CONFIG[result.risk_level].bg }]}>
+          <View style={[styles.riskBanner, { backgroundColor: riskConfig.bg }]}>
             <Ionicons
-              name={RISK_CONFIG[result.risk_level].icon}
+              name={riskConfig.icon as any}
               size={32}
-              color={RISK_CONFIG[result.risk_level].color}
+              color={riskConfig.color}
             />
             <View style={styles.riskInfo}>
-              <Text style={[styles.riskLabel, { color: RISK_CONFIG[result.risk_level].color }]}>
-                {RISK_CONFIG[result.risk_level].label}
+              <Text style={[styles.riskLabel, { color: riskConfig.color, fontSize: ts.lg }]}>
+                {riskConfig.label}
               </Text>
-              <Text style={[styles.riskScore, { color: RISK_CONFIG[result.risk_level].color }]}>
-                Risk Score: {result.risk_score}/100
+              <Text style={[styles.riskScore, { color: riskConfig.color, fontSize: ts.xs }]}>
+                Risk Score: {result.risk_score}/100 ({Math.round(result.confidence * 100)}% confidence)
               </Text>
             </View>
-            <View style={[styles.scoreCircle, { borderColor: RISK_CONFIG[result.risk_level].color }]}>
-              <Text style={[styles.scoreNumber, { color: RISK_CONFIG[result.risk_level].color }]}>
+            <View style={[styles.scoreCircle, { borderColor: riskConfig.color }]}>
+              <Text style={[styles.scoreNumber, { color: riskConfig.color }]}>
                 {result.risk_score}
               </Text>
             </View>
           </View>
 
           <View style={styles.resultBody}>
-            <Text style={[styles.resultSectionTitle, { color: theme.text }]}>Analysis</Text>
-            <Text style={[styles.explanation, { color: theme.textSecondary }]}>{result.explanation}</Text>
+            <Text style={[styles.resultSectionTitle, { color: theme.text, fontSize: ts.base }]}>Recommendation</Text>
+            <Text style={[styles.recommendation, { color: riskConfig.color, fontSize: ts.sm }]}>{result.recommendation}</Text>
+
+            <Text style={[styles.resultSectionTitle, { color: theme.text, marginTop: 16, fontSize: ts.base }]}>Analysis</Text>
+            <Text style={[styles.explanation, { color: theme.textSecondary, fontSize: ts.sm }]}>{result.explanation}</Text>
 
             {result.detected_patterns.length > 0 && (
               <>
-                <Text style={[styles.resultSectionTitle, { color: theme.text, marginTop: 16 }]}>
-                  Warning Signs Detected
+                <Text style={[styles.resultSectionTitle, { color: theme.text, marginTop: 16, fontSize: ts.base }]}>
+                  Warning Signs ({result.detected_patterns.length})
                 </Text>
                 {result.detected_patterns.map((pattern, i) => (
                   <View key={i} style={styles.patternRow}>
                     <Ionicons name="alert-circle" size={16} color="#F59E0B" />
-                    <Text style={[styles.patternText, { color: theme.text }]}>
-                      {PATTERN_LABELS[pattern] || pattern}
+                    <Text style={[styles.patternText, { color: theme.text, fontSize: ts.sm }]}>
+                      {PATTERN_LABELS[pattern] || pattern.replace(/_/g, " ")}
                     </Text>
                   </View>
                 ))}
               </>
             )}
 
+            {result.layers && result.layers.length > 0 && (
+              <>
+                <Text style={[styles.resultSectionTitle, { color: theme.text, marginTop: 20, fontSize: ts.base }]}>
+                  Detection Layers
+                </Text>
+                {result.layers.map((layer, idx) => (
+                  <Pressable key={idx} onPress={() => toggleLayer(idx)}>
+                    <View style={[styles.layerCard, { backgroundColor: theme.inputBackground, borderColor: theme.cardBorder }]}>
+                      <View style={styles.layerHeader}>
+                        <View style={[styles.layerScoreBadge, { backgroundColor: layer.score > 0 ? (layer.score >= layer.maxScore * 0.7 ? "#FEE2E2" : "#FEF3C7") : "#D1FAE5" }]}>
+                          <Text style={[styles.layerScoreText, { color: layer.score > 0 ? (layer.score >= layer.maxScore * 0.7 ? "#991B1B" : "#92400E") : "#065F46", fontSize: ts.xs }]}>
+                            {layer.score}/{layer.maxScore}
+                          </Text>
+                        </View>
+                        <Text style={[styles.layerName, { color: theme.text, fontSize: ts.sm }]}>{layer.name}</Text>
+                        <Ionicons
+                          name={expandedLayers[idx] ? "chevron-up" : "chevron-down"}
+                          size={16}
+                          color={theme.textSecondary}
+                        />
+                      </View>
+                      {expandedLayers[idx] && layer.findings.length > 0 && (
+                        <View style={styles.layerFindings}>
+                          {layer.findings.map((finding, fi) => (
+                            <View key={fi} style={styles.findingRow}>
+                              <View style={[styles.findingDot, { backgroundColor: "#F59E0B" }]} />
+                              <Text style={[styles.findingText, { color: theme.textSecondary, fontSize: ts.xs }]}>{finding}</Text>
+                            </View>
+                          ))}
+                        </View>
+                      )}
+                      {expandedLayers[idx] && layer.findings.length === 0 && (
+                        <Text style={[styles.noFindings, { color: theme.textTertiary, fontSize: ts.xs }]}>No issues found in this layer</Text>
+                      )}
+                    </View>
+                  </Pressable>
+                ))}
+              </>
+            )}
+
+            {(result.entities?.urls?.length > 0 || result.entities?.phones?.length > 0 || result.entities?.emails?.length > 0 || result.entities?.amounts?.length > 0) && (
+              <>
+                <Text style={[styles.resultSectionTitle, { color: theme.text, marginTop: 20, fontSize: ts.base }]}>
+                  Extracted Info
+                </Text>
+                <View style={[styles.entitiesCard, { backgroundColor: theme.inputBackground, borderColor: theme.cardBorder }]}>
+                  {result.entities.senderEmail && (
+                    <View style={styles.entityRow}>
+                      <Ionicons name="person" size={14} color={theme.textSecondary} />
+                      <Text style={[styles.entityLabel, { color: theme.textSecondary, fontSize: ts.xs }]}>Sender:</Text>
+                      <Text style={[styles.entityValue, { color: theme.text, fontSize: ts.xs }]}>{result.entities.senderEmail}</Text>
+                    </View>
+                  )}
+                  {result.entities.urls.map((url, i) => (
+                    <View key={`u${i}`} style={styles.entityRow}>
+                      <Ionicons name="link" size={14} color={theme.textSecondary} />
+                      <Text style={[styles.entityLabel, { color: theme.textSecondary, fontSize: ts.xs }]}>Link:</Text>
+                      <Text style={[styles.entityValue, { color: theme.text, fontSize: ts.xs }]} numberOfLines={1}>{url}</Text>
+                    </View>
+                  ))}
+                  {result.entities.phones.map((phone, i) => (
+                    <View key={`p${i}`} style={styles.entityRow}>
+                      <Ionicons name="call" size={14} color={theme.textSecondary} />
+                      <Text style={[styles.entityLabel, { color: theme.textSecondary, fontSize: ts.xs }]}>Phone:</Text>
+                      <Text style={[styles.entityValue, { color: theme.text, fontSize: ts.xs }]}>{phone}</Text>
+                    </View>
+                  ))}
+                  {result.entities.amounts.map((amt, i) => (
+                    <View key={`a${i}`} style={styles.entityRow}>
+                      <Ionicons name="cash" size={14} color={theme.textSecondary} />
+                      <Text style={[styles.entityLabel, { color: theme.textSecondary, fontSize: ts.xs }]}>Amount:</Text>
+                      <Text style={[styles.entityValue, { color: theme.text, fontSize: ts.xs }]}>{amt}</Text>
+                    </View>
+                  ))}
+                </View>
+              </>
+            )}
+
             {!feedbackSent ? (
               <View style={styles.feedbackSection}>
-                <Text style={[styles.feedbackTitle, { color: theme.textSecondary }]}>Was this accurate?</Text>
+                <Text style={[styles.feedbackTitle, { color: theme.textSecondary, fontSize: ts.sm }]}>Was this accurate?</Text>
                 <View style={styles.feedbackButtons}>
                   <Pressable
                     style={[styles.feedbackBtn, { backgroundColor: "#D1FAE5", borderColor: "#10B981" }]}
                     onPress={() => sendFeedback("correct")}
                   >
                     <Ionicons name="checkmark" size={16} color="#10B981" />
-                    <Text style={[styles.feedbackBtnText, { color: "#10B981" }]}>Yes</Text>
+                    <Text style={[styles.feedbackBtnText, { color: "#10B981", fontSize: ts.sm }]}>Yes</Text>
                   </Pressable>
                   <Pressable
                     style={[styles.feedbackBtn, { backgroundColor: "#FEE2E2", borderColor: "#EF4444" }]}
                     onPress={() => sendFeedback(result.risk_level === "safe" ? "false_negative" : "false_positive")}
                   >
                     <Ionicons name="close" size={16} color="#EF4444" />
-                    <Text style={[styles.feedbackBtnText, { color: "#EF4444" }]}>No, this is wrong</Text>
+                    <Text style={[styles.feedbackBtnText, { color: "#EF4444", fontSize: ts.sm }]}>No, wrong</Text>
                   </Pressable>
                 </View>
               </View>
             ) : (
               <View style={styles.feedbackThankYou}>
                 <Ionicons name="heart" size={16} color="#2563EB" />
-                <Text style={[styles.feedbackThanks, { color: "#2563EB" }]}>Thanks for the feedback!</Text>
+                <Text style={[styles.feedbackThanks, { color: "#2563EB", fontSize: ts.sm }]}>Thanks for the feedback!</Text>
               </View>
             )}
 
             <Pressable
-              onPress={() => { setResult(null); setText(""); }}
+              onPress={() => { setResult(null); setText(""); setExpandedLayers({}); }}
               style={[styles.analyzeAnotherBtn, { borderColor: theme.border }]}
             >
-              <Text style={[styles.analyzeAnotherText, { color: theme.textSecondary }]}>Check another message</Text>
+              <Text style={[styles.analyzeAnotherText, { color: theme.textSecondary, fontSize: ts.sm }]}>Check another message</Text>
             </Pressable>
           </View>
         </View>
@@ -268,14 +407,14 @@ export default function ScamScreen() {
           <View style={[styles.helpModal, { backgroundColor: theme.card }]}>
             <View style={styles.helpHeader}>
               <Ionicons name="information-circle" size={28} color="#2563EB" />
-              <Text style={[styles.helpTitle, { color: theme.text }]}>How to Check a Message</Text>
+              <Text style={[styles.helpTitle, { color: theme.text, fontSize: ts.md }]}>How to Check a Message</Text>
             </View>
 
             <View style={styles.helpStep}>
               <Text style={[styles.helpStepNum, { backgroundColor: "#2563EB" }]}>1</Text>
               <View style={styles.helpStepContent}>
-                <Text style={[styles.helpStepTitle, { color: theme.text }]}>From Email</Text>
-                <Text style={[styles.helpStepDesc, { color: theme.textSecondary }]}>
+                <Text style={[styles.helpStepTitle, { color: theme.text, fontSize: ts.sm }]}>From Email</Text>
+                <Text style={[styles.helpStepDesc, { color: theme.textSecondary, fontSize: ts.xs }]}>
                   Open the suspicious email. Tap and hold on the message text until it highlights. Drag the handles to select all the text. Tap "Copy." Come back here and tap the text box, then tap "Paste."
                 </Text>
               </View>
@@ -284,8 +423,8 @@ export default function ScamScreen() {
             <View style={styles.helpStep}>
               <Text style={[styles.helpStepNum, { backgroundColor: "#2563EB" }]}>2</Text>
               <View style={styles.helpStepContent}>
-                <Text style={[styles.helpStepTitle, { color: theme.text }]}>From a Text Message</Text>
-                <Text style={[styles.helpStepDesc, { color: theme.textSecondary }]}>
+                <Text style={[styles.helpStepTitle, { color: theme.text, fontSize: ts.sm }]}>From a Text Message</Text>
+                <Text style={[styles.helpStepDesc, { color: theme.textSecondary, fontSize: ts.xs }]}>
                   Open the suspicious text. Tap and hold the message bubble. Tap "Copy." Come back to SeniorShield and paste it in the box above.
                 </Text>
               </View>
@@ -294,15 +433,15 @@ export default function ScamScreen() {
             <View style={styles.helpStep}>
               <Text style={[styles.helpStepNum, { backgroundColor: "#2563EB" }]}>3</Text>
               <View style={styles.helpStepContent}>
-                <Text style={[styles.helpStepTitle, { color: theme.text }]}>Or Just Type It</Text>
-                <Text style={[styles.helpStepDesc, { color: theme.textSecondary }]}>
+                <Text style={[styles.helpStepTitle, { color: theme.text, fontSize: ts.sm }]}>Or Just Type It</Text>
+                <Text style={[styles.helpStepDesc, { color: theme.textSecondary, fontSize: ts.xs }]}>
                   If you can't copy the message, type the key details: who sent it, what they asked for, and any links or phone numbers they included.
                 </Text>
               </View>
             </View>
 
             <Pressable onPress={() => setShowHelpModal(false)} style={styles.helpCloseBtn}>
-              <Text style={styles.helpCloseBtnText}>Got it!</Text>
+              <Text style={[styles.helpCloseBtnText, { fontSize: ts.base }]}>Got it!</Text>
             </Pressable>
           </View>
         </Pressable>
@@ -314,16 +453,13 @@ export default function ScamScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { paddingHorizontal: 20 },
-  title: { fontSize: 28, fontFamily: "Inter_700Bold", marginBottom: 8 },
-  subtitle: { fontSize: 15, fontFamily: "Inter_400Regular", lineHeight: 22, marginBottom: 24 },
   inputCard: { borderRadius: 20, borderWidth: 1, padding: 20, marginBottom: 24, gap: 14 },
   inputHeader: { flexDirection: "row", alignItems: "center", gap: 8 },
-  inputLabel: { fontSize: 14, fontFamily: "Inter_500Medium", flex: 1 },
+  inputLabel: { fontFamily: "Inter_500Medium", flex: 1 },
   infoButton: { padding: 2 },
   textArea: {
     borderRadius: 14,
     padding: 14,
-    fontSize: 16,
     fontFamily: "Inter_400Regular",
     minHeight: 120,
     lineHeight: 24,
@@ -337,11 +473,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 10,
   },
-  analyzeButtonText: { fontSize: 17, fontFamily: "Inter_700Bold", color: "#FFFFFF" },
+  analyzeButtonText: { fontFamily: "Inter_700Bold", color: "#FFFFFF" },
   disabled: { opacity: 0.6 },
   pressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
   quickTests: { gap: 10 },
-  sectionTitle: { fontSize: 17, fontFamily: "Inter_600SemiBold", marginBottom: 4 },
+  sectionTitle: { fontFamily: "Inter_600SemiBold", marginBottom: 4 },
   quickTestCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -350,7 +486,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
   },
-  quickTestText: { flex: 1, fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 18 },
+  quickTestText: { flex: 1, fontFamily: "Inter_400Regular", lineHeight: 18 },
   resultCard: { borderRadius: 20, borderWidth: 1, overflow: "hidden" },
   riskBanner: {
     flexDirection: "row",
@@ -359,8 +495,8 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   riskInfo: { flex: 1 },
-  riskLabel: { fontSize: 20, fontFamily: "Inter_700Bold" },
-  riskScore: { fontSize: 13, fontFamily: "Inter_500Medium", marginTop: 2 },
+  riskLabel: { fontFamily: "Inter_700Bold" },
+  riskScore: { fontFamily: "Inter_500Medium", marginTop: 2 },
   scoreCircle: {
     width: 52,
     height: 52,
@@ -371,12 +507,47 @@ const styles = StyleSheet.create({
   },
   scoreNumber: { fontSize: 18, fontFamily: "Inter_700Bold" },
   resultBody: { padding: 20, gap: 4 },
-  resultSectionTitle: { fontSize: 15, fontFamily: "Inter_600SemiBold", marginBottom: 8 },
-  explanation: { fontSize: 15, fontFamily: "Inter_400Regular", lineHeight: 23 },
+  resultSectionTitle: { fontFamily: "Inter_600SemiBold", marginBottom: 8 },
+  recommendation: { fontFamily: "Inter_600SemiBold", lineHeight: 22 },
+  explanation: { fontFamily: "Inter_400Regular", lineHeight: 23 },
   patternRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 4 },
-  patternText: { fontSize: 14, fontFamily: "Inter_400Regular" },
+  patternText: { fontFamily: "Inter_400Regular", flex: 1 },
+  layerCard: {
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 12,
+    marginBottom: 8,
+  },
+  layerHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  layerScoreBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    minWidth: 42,
+    alignItems: "center",
+  },
+  layerScoreText: { fontFamily: "Inter_700Bold" },
+  layerName: { fontFamily: "Inter_500Medium", flex: 1 },
+  layerFindings: { marginTop: 10, gap: 6, paddingLeft: 4 },
+  findingRow: { flexDirection: "row", alignItems: "flex-start", gap: 8 },
+  findingDot: { width: 6, height: 6, borderRadius: 3, marginTop: 6, flexShrink: 0 },
+  findingText: { fontFamily: "Inter_400Regular", lineHeight: 18, flex: 1 },
+  noFindings: { marginTop: 8, fontFamily: "Inter_400Regular", fontStyle: "italic" },
+  entitiesCard: {
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 12,
+    gap: 8,
+  },
+  entityRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  entityLabel: { fontFamily: "Inter_600SemiBold", width: 55 },
+  entityValue: { fontFamily: "Inter_400Regular", flex: 1 },
   feedbackSection: { marginTop: 20, gap: 10 },
-  feedbackTitle: { fontSize: 14, fontFamily: "Inter_500Medium" },
+  feedbackTitle: { fontFamily: "Inter_500Medium" },
   feedbackButtons: { flexDirection: "row", gap: 10 },
   feedbackBtn: {
     flex: 1,
@@ -388,9 +559,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
   },
-  feedbackBtnText: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  feedbackBtnText: { fontFamily: "Inter_600SemiBold" },
   feedbackThankYou: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 16 },
-  feedbackThanks: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  feedbackThanks: { fontFamily: "Inter_600SemiBold" },
   analyzeAnotherBtn: {
     borderRadius: 12,
     borderWidth: 1,
@@ -398,7 +569,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 16,
   },
-  analyzeAnotherText: { fontSize: 15, fontFamily: "Inter_500Medium" },
+  analyzeAnotherText: { fontFamily: "Inter_500Medium" },
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -420,7 +591,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   helpTitle: {
-    fontSize: 18,
     fontFamily: "Inter_700Bold",
   },
   helpStep: {
@@ -445,11 +615,9 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   helpStepTitle: {
-    fontSize: 15,
     fontFamily: "Inter_600SemiBold",
   },
   helpStepDesc: {
-    fontSize: 13,
     fontFamily: "Inter_400Regular",
     lineHeight: 19,
   },
@@ -461,7 +629,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   helpCloseBtnText: {
-    fontSize: 16,
     fontFamily: "Inter_700Bold",
     color: "#FFFFFF",
   },
