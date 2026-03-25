@@ -73,7 +73,7 @@ export default function PageHeader({ showTagline = false, greeting }: PageHeader
         ))}
       </View>
 
-      {/* Top row: logo + brand name + badge */}
+      {/* Top row: logo + brand name */}
       <View style={styles.topRow}>
         <Image
           source={require("../assets/images/logo-shield.png")}
@@ -89,20 +89,22 @@ export default function PageHeader({ showTagline = false, greeting }: PageHeader
             SeniorShield{"\u2122"}
           </Text>
         </View>
-        <View style={styles.badge}>
-          <Ionicons name="shield-checkmark" size={12} color="#34D399" />
-          <Text style={[styles.badgeText, { fontSize: ts.xs }]}>Protected</Text>
-        </View>
       </View>
 
-      {/* Tagline — single line, uses "&" to keep it short */}
+      {/* Tagline row with badge */}
       {showTagline && (
-        <Text
-          style={[styles.tagline, { marginTop: 2, paddingLeft: 74 }]}
-          numberOfLines={1}
-        >
-          Your voice assistant for tech help & scam protection
-        </Text>
+        <View style={styles.taglineRow}>
+          <Text
+            style={styles.tagline}
+            numberOfLines={1}
+          >
+            Your voice assistant for tech help & scam protection
+          </Text>
+          <View style={styles.badge}>
+            <Ionicons name="shield-checkmark" size={12} color="#34D399" />
+            <Text style={[styles.badgeText, { fontSize: ts.xs }]}>Protected</Text>
+          </View>
+        </View>
       )}
 
       {/* Greeting row */}
@@ -159,6 +161,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
   },
+  taglineRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 2,
+    paddingLeft: 74,
+  },
   badge: {
     flexDirection: "row",
     alignItems: "center",
@@ -166,11 +175,10 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(16,185,129,0.2)",
     borderWidth: 1,
     borderColor: "rgba(16,185,129,0.4)",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: 20,
     flexShrink: 0,
-    marginTop: -10,
   },
   badgeText: {
     fontFamily: "Inter_600SemiBold",
