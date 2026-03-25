@@ -73,6 +73,14 @@ export default function PageHeader({ showTagline = false, greeting }: PageHeader
         ))}
       </View>
 
+      {/* Badge above the brand row */}
+      <View style={styles.badgeRow}>
+        <View style={styles.badge}>
+          <Ionicons name="shield-checkmark" size={12} color="#34D399" />
+          <Text style={[styles.badgeText, { fontSize: ts.xs }]}>Protected</Text>
+        </View>
+      </View>
+
       {/* Top row: logo + brand name */}
       <View style={styles.topRow}>
         <Image
@@ -91,20 +99,14 @@ export default function PageHeader({ showTagline = false, greeting }: PageHeader
         </View>
       </View>
 
-      {/* Tagline row with badge */}
+      {/* Tagline */}
       {showTagline && (
-        <View style={styles.taglineRow}>
-          <Text
-            style={styles.tagline}
-            numberOfLines={1}
-          >
-            Your voice assistant for tech help & scam protection
-          </Text>
-          <View style={styles.badge}>
-            <Ionicons name="shield-checkmark" size={12} color="#34D399" />
-            <Text style={[styles.badgeText, { fontSize: ts.xs }]}>Protected</Text>
-          </View>
-        </View>
+        <Text
+          style={[styles.tagline, { marginTop: 2, paddingLeft: 74 }]}
+          numberOfLines={1}
+        >
+          Your voice assistant for tech help & scam protection
+        </Text>
       )}
 
       {/* Greeting row */}
@@ -161,12 +163,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
   },
-  taglineRow: {
+  badgeRow: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginTop: 2,
     paddingLeft: 74,
+    marginBottom: 4,
   },
   badge: {
     flexDirection: "row",
