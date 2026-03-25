@@ -777,9 +777,9 @@ export default function HomeScreen() {
   const isOrbCompact = greeted;
   // Idle = compact + not actively listening/speaking (used for status row + "Type instead" logic)
   const isOrbIdle = greeted && !isListening && !isSpeaking;
-  // Compact footer: orb(80) + typeBtn(29) + padding(16) = ~125px (status floats above)
-  // Full footer: orb(176) + typeBtn(29) + padding(16) = ~221px
-  const ORB_FOOTER_HEIGHT = isOrbCompact ? 125 : 221;
+  // Compact footer: orb(80) + compactLabel(24) + typeBtn(30) + padding(16) = ~150px (status floats above)
+  // Full footer (pre-greeting): orb(176) + typeBtn(30) + padding(16) = ~222px
+  const ORB_FOOTER_HEIGHT = isOrbCompact ? 155 : 222;
   // The floating status row sits just above the footer
   const statusRowBottom = orbBottomPad + ORB_FOOTER_HEIGHT + 8;
 
