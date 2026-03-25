@@ -170,6 +170,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: 20,
     flexShrink: 0,
+    marginTop: -10,
   },
   badgeText: {
     fontFamily: "Inter_600SemiBold",
