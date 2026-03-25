@@ -9,6 +9,7 @@ import alertsRouter from "./alerts.js";
 import billingRouter from "./billing.js";
 import supportRouter from "./support.js";
 import conversationsRouter from "./conversations.js";
+import hearingAidRouter from "./hearingAid.js";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use("/alerts", alertsRouter);
 router.use("/billing", billingRouter);
 router.use("/support", supportRouter);
 router.use("/conversations", conversationsRouter);
+router.use("/hearing-aid", hearingAidRouter);
 
 export default router;

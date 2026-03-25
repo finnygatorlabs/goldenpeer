@@ -225,3 +225,63 @@ export const conversationSessionsTable = pgTable("conversation_sessions", {
 });
 
 export type ConversationSession = typeof conversationSessionsTable.$inferSelect;
+
+export const userHearingAidsTable = pgTable("user_hearing_aids", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  user_id: uuid("user_id").references(() => usersTable.id, { onDelete: "cascade" }).notNull(),
+  device_name: varchar("device_name").notNull(),
+  device_brand: varchar("device_brand").notNull(),
+  device_model: varchar("device_model"),
+  device_id: varchar("device_id"),
+  firmware_version: varchar("firmware_version"),
+  is_connected: boolean("is_connected").default(false),
+  signal_strength: integer("signal_strength").default(0),
+  battery_left: integer("battery_left"),
+  battery_right: integer("battery_right"),
+  last_connected_at: timestamp("last_connected_at"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+export type UserHearingAid = typeof userHearingAidsTable.$inferSelect;
+
+export const hearingAidSettingsTable = pgTable("hearing_aid_settings", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  user_id: uuid("user_id").references(() => usersTable.id, { onDelete: "cascade" }).notNull().unique(),
+  hearing_aid_id: uuid("hearing_aid_id").references(() => userHearingAidsTable.id, { onDelete: "cascade" }),
+  audio_routing: varchar("audio_routing").default("hearing_aid"),
+  phone_volume: integer("phone_volume").default(60),
+  hearing_aid_volume: integer("hearing_aid_volume").default(70),
+  feedback_reduction_enabled: boolean("feedback_reduction_enabled").default(true),
+  echo_cancellation_enabled: boolean("echo_cancellation_enabled").default(true),
+  noise_reduction_enabled: boolean("noise_reduction_enabled").default(true),
+  low_battery_alert_enabled: boolean("low_battery_alert_enabled").default(true),
+  low_battery_threshold: integer("low_battery_threshold").default(20),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+export type HearingAidSettings = typeof hearingAidSettingsTable.$inferSelect;
+
+export const hearingAidConnectionLogsTable = pgTable("hearing_aid_connection_logs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  user_id: uuid("user_id").references(() => usersTable.id, { onDelete: "cascade" }).notNull(),
+  hearing_aid_id: uuid("hearing_aid_id").references(() => userHearingAidsTable.id, { onDelete: "cascade" }),
+  event_type: varchar("event_type").notNull(),
+  details: jsonb("details"),
+  created_at: timestamp("created_at").defaultNow(),
+});
+
+export type HearingAidConnectionLog = typeof hearingAidConnectionLogsTable.$inferSelect;
+
+export const hearingAidBatteryAlertsTable = pgTable("hearing_aid_battery_alerts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  user_id: uuid("user_id").references(() => usersTable.id, { onDelete: "cascade" }).notNull(),
+  hearing_aid_id: uuid("hearing_aid_id").references(() => userHearingAidsTable.id, { onDelete: "cascade" }),
+  side: varchar("side").notNull(),
+  battery_level: integer("battery_level").notNull(),
+  family_notified: boolean("family_notified").default(false),
+  created_at: timestamp("created_at").defaultNow(),
+});
+
+export type HearingAidBatteryAlert = typeof hearingAidBatteryAlertsTable.$inferSelect;

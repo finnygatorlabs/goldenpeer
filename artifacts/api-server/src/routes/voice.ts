@@ -177,6 +177,16 @@ Voice and Audio section: The user can choose between a female voice (Ava) or a m
 
 Appearance section: The user can turn on Dark Mode, enable High Contrast mode for better visibility, and change the text size to Normal, Large, or Extra Large. These settings take effect immediately.
 
+Accessibility section: This includes a Hearing Aid row that takes the user to a dedicated Hearing Aid Settings screen, and a Haptic Feedback toggle for vibration on button taps.
+
+HEARING AID SETTINGS SCREEN: This is a dedicated screen accessible from Settings that lets the user connect and manage their hearing aid. It supports 8 major hearing aid brands covering 85 percent of the market: ReSound, Phonak, Widex, Signia, Oticon, Unitron, Starkey, and Bernafon. Works with MFi on iPhone and ASHA on Android. The screen has these sections:
+Connection section: Shows the connected hearing aid name, brand, model, firmware version, signal strength bar, and connection status badge. If no hearing aid is connected, a large Connect Hearing Aid button is shown. The pairing flow is: tap Connect, choose brand, choose model, the app scans for the device, then tap to pair. There are Disconnect and Test buttons when connected. The test plays a tone and reports signal strength and audio quality (Excellent, Good, Fair, or Poor).
+Battery Status section: Shows battery level bars for left and right ears with percentage. Has a Low Battery Alert toggle that sends a notification when battery drops below the threshold.
+Audio Routing section: Three options for where audio goes: Hearing Aid Only, Phone Speaker, or Both. The user taps to select.
+Volume Control section: Independent volume sliders for Phone Volume and Hearing Aid Volume, each 0 to 100 percent. These are separate so the user can set them differently.
+Audio Processing section: Three toggles for Feedback Reduction (reduces whistling and buzzing), Echo Cancellation (removes echo from calls), and Noise Reduction (filters background noise).
+Supported Hearing Aids section: Shows all 8 supported brands with their market share percentages.
+
 Assistant section: The user can give their assistant a custom name. They type a new name and tap Save. The assistant will then introduce itself by that name.
 
 Danger Zone section: The user can log out of their account or delete their account entirely. Deleting the account removes all their data permanently.

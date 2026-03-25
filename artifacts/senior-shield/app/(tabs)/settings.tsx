@@ -611,6 +611,16 @@ export default function SettingsScreen() {
       <View style={[styles.section, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
         <Text style={[styles.sectionTitle, { color: theme.textSecondary, fontSize: ts.tiny }]}>ACCESSIBILITY</Text>
         <SettingRow
+          icon="ear"
+          label="Hearing Aid"
+          subtitle={profileData?.hearing_aid_connected ? `Connected — ${profileData.hearing_aid_model || "Hearing Aid"}` : "Connect your hearing aid"}
+          onPress={() => router.push("/hearing-aid")}
+          iconColor="#7C3AED"
+          iconBg="#EDE9FE"
+          theme={theme}
+          ts={ts}
+        />
+        <SettingRow
           icon="phone-portrait"
           label="Haptic Feedback"
           subtitle="Vibration on button taps"

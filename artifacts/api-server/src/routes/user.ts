@@ -25,6 +25,8 @@ router.get("/profile", requireAuth, async (req: AuthRequest, res) => {
       device_os_version: user.device_os_version,
       onboarding_completed: user.onboarding_completed,
       onboarding_step: user.onboarding_step,
+      hearing_aid_connected: user.hearing_aid_connected,
+      hearing_aid_model: user.hearing_aid_model,
       created_at: user.created_at,
     });
   } catch (err) {

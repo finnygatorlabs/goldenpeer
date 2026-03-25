@@ -40,6 +40,8 @@ artifacts-monorepo/
 │       │   ├── (tabs)/              # home, scam, family, settings + _layout
 │       │   ├── subscription.tsx     # Pro plan upgrade screen
 │       │   ├── emergency.tsx        # Emergency screen (911, SOS)
+│       │   ├── hearing-aid.tsx      # Hearing Aid connectivity settings
+│       │   ├── legal.tsx            # Legal pages (privacy, terms, cookies, security, contact)
 │       │   └── support.tsx          # Help/FAQ + contact form
 │       ├── context/AuthContext.tsx  # JWT auth (AsyncStorage) + AuthProvider
 │       ├── hooks/useTheme.ts        # Dark/light theme hook
@@ -69,10 +71,17 @@ artifacts-monorepo/
 - `POST /api/alerts/send` — send emergency alert to family
 - `POST /api/billing/create-checkout` — Stripe checkout session
 - `POST /api/support/ticket` — submit support ticket
+- `GET /api/hearing-aid/supported-brands` — list 8 supported hearing aid brands
+- `GET /api/hearing-aid/status` — connection status + settings
+- `POST /api/hearing-aid/connect` — connect hearing aid (brand, model, device_id)
+- `POST /api/hearing-aid/disconnect` — disconnect hearing aid
+- `PUT /api/hearing-aid/settings` — update audio routing, volumes, toggles
+- `POST /api/hearing-aid/test-connection` — test tone + signal quality
+- `POST /api/hearing-aid/battery-alert` — report low battery
 
 ## Database Tables
 
-users, user_tiers, user_preferences, family_relationships, voice_assistance_history, scam_analysis, scam_detection_feedback, alerts, support_tickets
+users, user_tiers, user_preferences, family_relationships, voice_assistance_history, scam_analysis, scam_detection_feedback, alerts, support_tickets, user_hearing_aids, hearing_aid_settings, hearing_aid_connection_logs, hearing_aid_battery_alerts
 
 ## Auth
 
