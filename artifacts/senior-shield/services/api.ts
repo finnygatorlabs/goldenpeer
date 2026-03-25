@@ -2,7 +2,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const getApiBase = () => {
   const d = process.env.EXPO_PUBLIC_DOMAIN;
-  return d ? `https://${d}` : "";
+  if (d) return `https://${d}`;
+  return "http://localhost:8080";
 };
 
 const API_BASE = getApiBase();
@@ -152,6 +153,10 @@ export const scamApi = {
   getLibrary(token?: string) {
     return request("/scam/library", { token });
   },
+
+  report(text: string, scamType: string, token?: string) {
+    return request("/scam/report", { method: "POST", body: { text, scam_type: scamType }, token });
+  },
 };
 
 
@@ -169,7 +174,11 @@ export const familyApi = {
   },
 
   getAlerts(token?: string) {
-    return request("/family/alerts", { token });
+    return request("/alerts", { token });
+  },
+
+  markAlertRead(alertId: string, token?: string) {
+    return request(`/alerts/${alertId}`, { method: "PUT", body: { status: "read" }, token });
   },
 };
 
@@ -247,15 +256,23 @@ export const emergencyApi = {
 
 
 export const supportApi = {
+  getFaq() {
+    return request("/support/faq", { skipAuth: true });
+  },
+
+  getTickets(token?: string) {
+    return request("/support/tickets", { token });
+  },
+
   submitTicket(subject: string, message: string, token?: string) {
-    return request("/support/ticket", { method: "POST", body: { subject, message }, token });
+    return request("/support/create-ticket", { method: "POST", body: { subject, message }, token });
   },
 };
 
 
 export const contactsApi = {
   list(token?: string) {
-    return request("/contacts", { token });
+    return request("/contacts/list", { token });
   },
 
   get(id: string, token?: string) {
@@ -263,7 +280,7 @@ export const contactsApi = {
   },
 
   add(data: { name: string; phone?: string; email?: string; relationship?: string }, token?: string) {
-    return request("/contacts", { method: "POST", body: data, token });
+    return request("/contacts/add", { method: "POST", body: data, token });
   },
 
   update(id: string, data: Record<string, any>, token?: string) {

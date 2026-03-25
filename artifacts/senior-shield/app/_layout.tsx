@@ -22,9 +22,11 @@ SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
 
-if (process.env.EXPO_PUBLIC_DOMAIN) {
-  setBaseUrl(`https://${process.env.EXPO_PUBLIC_DOMAIN}`);
-}
+setBaseUrl(
+  process.env.EXPO_PUBLIC_DOMAIN
+    ? `https://${process.env.EXPO_PUBLIC_DOMAIN}`
+    : "http://localhost:8080"
+);
 
 function RootLayoutNav() {
   const { user, isLoading } = useAuth();

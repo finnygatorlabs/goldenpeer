@@ -148,7 +148,7 @@ export default function LoginScreen() {
     setError("");
     try {
       const domain = process.env.EXPO_PUBLIC_DOMAIN;
-      const base = domain ? `https://${domain}` : "";
+      const base = domain ? `https://${domain}` : "http://localhost:8080";
       await fetch(`${base}/api/auth/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

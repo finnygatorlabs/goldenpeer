@@ -31,7 +31,7 @@ export default function VerifyEmailScreen() {
     setResending(true);
     try {
       const domain = process.env.EXPO_PUBLIC_DOMAIN;
-      const base = domain ? `https://${domain}` : "";
+      const base = domain ? `https://${domain}` : "http://localhost:8080";
       await fetch(`${base}/api/auth/resend-verification`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

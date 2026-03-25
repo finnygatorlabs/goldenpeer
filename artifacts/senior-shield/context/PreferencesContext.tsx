@@ -72,7 +72,7 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
     if (!user?.token) return;
     try {
       const domain = process.env.EXPO_PUBLIC_DOMAIN;
-      const base = domain ? `https://${domain}` : "";
+      const base = domain ? `https://${domain}` : "http://localhost:8080";
       const res = await fetch(`${base}/api/user/preferences`, {
         headers: { Authorization: `Bearer ${user.token}` },
       });
@@ -113,7 +113,7 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
     if (!user?.token) return;
     try {
       const domain = process.env.EXPO_PUBLIC_DOMAIN;
-      const base = domain ? `https://${domain}` : "";
+      const base = domain ? `https://${domain}` : "http://localhost:8080";
       await fetch(`${base}/api/user/preferences`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${user.token}` },

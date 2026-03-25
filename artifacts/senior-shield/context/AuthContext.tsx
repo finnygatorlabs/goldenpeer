@@ -4,7 +4,7 @@ import { setBaseUrl, setAuthTokenGetter } from "@workspace/api-client-react";
 
 const API_BASE = process.env.EXPO_PUBLIC_DOMAIN
   ? `https://${process.env.EXPO_PUBLIC_DOMAIN}`
-  : "";
+  : "http://localhost:8080";
 
 if (API_BASE) {
   setBaseUrl(API_BASE);
@@ -67,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function apiCall(path: string, body: object) {
     const domain = process.env.EXPO_PUBLIC_DOMAIN;
-    const base = domain ? `https://${domain}` : "";
+    const base = domain ? `https://${domain}` : "http://localhost:8080";
     const response = await fetch(`${base}/api${path}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
