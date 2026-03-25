@@ -854,36 +854,34 @@ export default function HomeScreen() {
             {
               bottom: orbBottomPad,
               backgroundColor: theme.background,
-              paddingTop: isOrbCompact ? 8 : 16,
-              paddingBottom: isOrbCompact ? 8 : 16,
+              paddingTop: 12,
+              paddingBottom: 12,
             },
           ]}
         >
-          {/* Status label / interim text — hidden when idle to give messages more space */}
-          {!isOrbIdle && (
-            <View style={styles.statusRow}>
-              {isListening && interimText ? (
-                <View style={[styles.interimBox, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-                  <Text style={{ fontSize: ts.sm, fontFamily: "Inter_400Regular", color: theme.text, fontStyle: "italic" }} numberOfLines={2}>
-                    "{interimText}"
-                  </Text>
-                </View>
-              ) : (
-                <Text
-                  style={[
-                    styles.statusLabel,
-                    {
-                      color: isListening ? "#0891B2" : isSpeaking ? "#2563EB" : theme.textSecondary,
-                      fontSize: ts.sm,
-                    },
-                  ]}
-                  numberOfLines={1}
-                >
-                  {statusLabel}
+          {/* Status label / interim text — always in layout (opacity only) so the orb never shifts */}
+          <View style={[styles.statusRow, { opacity: isOrbIdle ? 0 : 1 }]}>
+            {isListening && interimText ? (
+              <View style={[styles.interimBox, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+                <Text style={{ fontSize: ts.sm, fontFamily: "Inter_400Regular", color: theme.text, fontStyle: "italic" }} numberOfLines={2}>
+                  "{interimText}"
                 </Text>
-              )}
-            </View>
-          )}
+              </View>
+            ) : (
+              <Text
+                style={[
+                  styles.statusLabel,
+                  {
+                    color: isListening ? "#0891B2" : isSpeaking ? "#2563EB" : theme.textSecondary,
+                    fontSize: ts.sm,
+                  },
+                ]}
+                numberOfLines={1}
+              >
+                {statusLabel}
+              </Text>
+            )}
+          </View>
 
           {/* Orb — compact when idle, full size when active */}
           <FluidOrb
@@ -894,42 +892,42 @@ export default function HomeScreen() {
             isIdle={isOrbCompact}
           />
 
-          {/* "Type instead" — visible before greeting (full orb) and when idle after greeting */}
-          {!isListening && !isSpeaking && (
-            <View style={{ alignItems: "center", gap: 10 }}>
-              <Pressable
-                onPress={() => { stopListening(); stopSpeaking(); setShowText(true); }}
-                hitSlop={16}
-                style={styles.typeBtn}
-              >
-                <Text style={{ fontSize: ts.sm, color: theme.textSecondary, fontFamily: "Inter_400Regular", textDecorationLine: "underline" }}>
-                  Type instead
-                </Text>
-              </Pressable>
+          {/* "Type instead" + switch tip — always in layout (opacity only) so the orb never shifts */}
+          <View
+            style={{ alignItems: "center", gap: 10, opacity: (!isListening && !isSpeaking) ? 1 : 0 }}
+            pointerEvents={(!isListening && !isSpeaking) ? "auto" : "none"}
+          >
+            <Pressable
+              onPress={() => { stopListening(); stopSpeaking(); setShowText(true); }}
+              hitSlop={16}
+              style={styles.typeBtn}
+            >
+              <Text style={{ fontSize: ts.sm, color: theme.textSecondary, fontFamily: "Inter_400Regular", textDecorationLine: "underline" }}>
+                Type instead
+              </Text>
+            </Pressable>
 
-              {/* Switch-app tip — always visible so the user can reference it during tasks */}
-              <Pressable
-                onPress={() => setShowSwitchModal(true)}
-                hitSlop={10}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 5,
-                  paddingHorizontal: 14,
-                  paddingVertical: 7,
-                  borderRadius: 20,
-                  backgroundColor: theme.card,
-                  borderWidth: 1,
-                  borderColor: theme.cardBorder,
-                }}
-              >
-                <Ionicons name="swap-horizontal-outline" size={15} color={theme.textSecondary} />
-                <Text style={{ fontSize: ts.xs ?? 11, color: theme.textSecondary, fontFamily: "Inter_400Regular" }}>
-                  How to switch apps &amp; return
-                </Text>
-              </Pressable>
-            </View>
-          )}
+            <Pressable
+              onPress={() => setShowSwitchModal(true)}
+              hitSlop={10}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 5,
+                paddingHorizontal: 14,
+                paddingVertical: 7,
+                borderRadius: 20,
+                backgroundColor: theme.card,
+                borderWidth: 1,
+                borderColor: theme.cardBorder,
+              }}
+            >
+              <Ionicons name="swap-horizontal-outline" size={15} color={theme.textSecondary} />
+              <Text style={{ fontSize: ts.xs ?? 11, color: theme.textSecondary, fontFamily: "Inter_400Regular" }}>
+                How to switch apps &amp; return
+              </Text>
+            </Pressable>
+          </View>
 
           {/* ── Voice mute toggle — lower right ── */}
           <Pressable
