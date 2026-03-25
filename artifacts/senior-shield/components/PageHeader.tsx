@@ -20,7 +20,7 @@ function DecoCircle({ size, top, left, right, opacity }: { size: number; top?: n
         width: size,
         height: size,
         borderRadius: size / 2,
-        borderWidth: 1,
+        borderWidth: 1.5,
         borderColor: `rgba(255,255,255,${opacity})`,
         top,
         left,
@@ -57,16 +57,18 @@ export default function PageHeader({ showTagline = false, greeting }: PageHeader
       colors={GRADIENT}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
-      style={[styles.wrapper, { paddingTop: topPad + 14 }]}
+      style={[styles.wrapper, { paddingTop: topPad + 8 }]}
     >
-      {/* Abstract decorative elements */}
-      <DecoCircle size={160} top={-40} right={-50} opacity={0.06} />
-      <DecoCircle size={90} top={10} right={30} opacity={0.04} />
-      <DecoCircle size={200} top={-80} left={-100} opacity={0.04} />
-      <DecoLine width={180} top={20} left={-40} rotate="-25deg" opacity={0.05} />
-      <DecoLine width={120} top={55} left={220} rotate="15deg" opacity={0.04} />
+      {/* Abstract decorative elements — more visible */}
+      <DecoCircle size={180} top={-50} right={-60} opacity={0.12} />
+      <DecoCircle size={100} top={5} right={20} opacity={0.08} />
+      <DecoCircle size={220} top={-90} left={-110} opacity={0.08} />
+      <DecoCircle size={60} top={40} right={80} opacity={0.06} />
+      <DecoLine width={200} top={15} left={-50} rotate="-22deg" opacity={0.1} />
+      <DecoLine width={140} top={60} left={200} rotate="18deg" opacity={0.08} />
+      <DecoLine width={100} top={90} left={30} rotate="-10deg" opacity={0.06} />
       <View style={styles.decoDotsRow}>
-        {[0, 1, 2, 3].map(i => (
+        {[0, 1, 2, 3, 4].map(i => (
           <View key={i} style={styles.decoDot} />
         ))}
       </View>
@@ -80,7 +82,7 @@ export default function PageHeader({ showTagline = false, greeting }: PageHeader
         />
         <View style={styles.brandCol}>
           <Text
-            style={[styles.appName, { fontSize: ts.h1 }]}
+            style={styles.appName}
             numberOfLines={1}
             adjustsFontSizeToFit
           >
@@ -93,13 +95,15 @@ export default function PageHeader({ showTagline = false, greeting }: PageHeader
         </View>
       </View>
 
-      {/* Tagline — own row, full width, never competes with the badge */}
+      {/* Tagline — single line, uses "&" to keep it short */}
       {showTagline && (
         <Text
-          style={[styles.tagline, { fontSize: ts.sm, marginTop: 4, paddingLeft: 64 }]}
-          numberOfLines={2}
+          style={[styles.tagline, { fontSize: ts.sm, marginTop: 2, paddingLeft: 74 }]}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.7}
         >
-          Your voice assistant for tech help and scam protection
+          Your voice assistant for tech help & scam protection
         </Text>
       )}
 
@@ -124,7 +128,7 @@ export default function PageHeader({ showTagline = false, greeting }: PageHeader
 const styles = StyleSheet.create({
   wrapper: {
     paddingHorizontal: 16,
-    paddingBottom: 16,
+    paddingBottom: 14,
     overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 3 },
@@ -138,8 +142,8 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   logo: {
-    width: 52,
-    height: 52,
+    width: 62,
+    height: 62,
     flexShrink: 0,
   },
   brandCol: {
@@ -149,6 +153,7 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_700Bold",
     color: "#FFFFFF",
     letterSpacing: -0.3,
+    fontSize: 28,
   },
   tagline: {
     fontFamily: "Inter_400Regular",
@@ -174,7 +179,7 @@ const styles = StyleSheet.create({
   greetingRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingLeft: 64,
+    paddingLeft: 74,
     gap: 0,
   },
   greetingDivider: {
@@ -194,12 +199,12 @@ const styles = StyleSheet.create({
     bottom: 8,
     right: 16,
     flexDirection: "row",
-    gap: 6,
+    gap: 5,
   },
   decoDot: {
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: "rgba(255,255,255,0.1)",
+    backgroundColor: "rgba(255,255,255,0.15)",
   },
 });
