@@ -58,14 +58,14 @@ export default function TabLayout() {
       <Tabs.Screen
         name="scam"
         options={{
-          title: "Scam Check",
+          title: "Scam",
           tabBarIcon: ({ color, size }) => <Ionicons name="shield-checkmark" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="reminders"
         options={{
-          title: "Reminders",
+          title: "Remind",
           tabBarIcon: ({ color, size }) => <Ionicons name="notifications" size={size} color={color} />,
         }}
       />
@@ -86,8 +86,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="settings"
         options={{
-          title: "Settings",
-          tabBarIcon: ({ color, size }) => <Ionicons name="settings" size={size} color={color} />,
+          title: "More",
+          tabBarIcon: ({ color, size }) => <Ionicons name="ellipsis-horizontal" size={size} color={color} />,
         }}
       />
     </Tabs>

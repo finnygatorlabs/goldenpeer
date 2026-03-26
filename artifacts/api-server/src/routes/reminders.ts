@@ -59,7 +59,7 @@ const PRESET_REMINDERS = [
   },
 ];
 
-router.get("/presets", requireAuth, async (_req: AuthRequest, res) => {
+router.get("/presets", (_req, res) => {
   res.json({ presets: PRESET_REMINDERS });
 });
 
