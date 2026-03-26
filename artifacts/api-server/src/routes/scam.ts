@@ -1,8 +1,19 @@
 import { Router, IRouter } from "express";
+import multer from "multer";
 import { db } from "@workspace/db";
 import { scamAnalysisTable, scamDetectionFeedbackTable, scamLibraryTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { requireAuth, AuthRequest } from "../lib/auth.js";
+import fs from "fs/promises";
+
+const upload = multer({
+  dest: "/tmp/scam-uploads/",
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = ["image/jpeg", "image/png", "image/gif", "image/webp", "application/pdf", "text/plain"];
+    cb(null, allowed.includes(file.mimetype));
+  },
+});
 
 const router: IRouter = Router();
 
@@ -521,6 +532,87 @@ router.post("/analyze", requireAuth, async (req: AuthRequest, res) => {
   } catch (err) {
     req.log.error({ err }, "Scam analyze error");
     res.status(500).json({ error: "Internal Server Error", message: "Could not analyze message" });
+  }
+});
+
+router.post("/analyze-attachment", requireAuth, upload.single("file"), async (req: AuthRequest, res) => {
+  try {
+    const file = req.file;
+    const additionalText = req.body?.text || "";
+
+    if (!file && !additionalText) {
+      res.status(400).json({ error: "Bad Request", message: "A file or text is required" });
+      return;
+    }
+
+    let extractedText = additionalText;
+
+    if (file) {
+      try {
+        if (file.mimetype === "text/plain") {
+          const content = await fs.readFile(file.path, "utf-8");
+          extractedText = extractedText ? `${extractedText}\n\n--- Attached file content ---\n${content}` : content;
+        } else if (file.mimetype === "application/pdf") {
+          extractedText = extractedText
+            ? `${extractedText}\n\n[PDF file attached: ${file.originalname}]`
+            : `[PDF file attached: ${file.originalname}]`;
+        } else if (file.mimetype.startsWith("image/")) {
+          extractedText = extractedText
+            ? `${extractedText}\n\n[Image attached: ${file.originalname}]`
+            : `[Image attached: ${file.originalname}]`;
+        }
+      } finally {
+        await fs.unlink(file.path).catch(() => {});
+      }
+    }
+
+    if (!extractedText.trim()) {
+      res.status(400).json({ error: "Bad Request", message: "No analyzable content found" });
+      return;
+    }
+
+    const analysis = analyzeScamText(extractedText);
+
+    const [saved] = await db.insert(scamAnalysisTable).values({
+      user_id: req.user!.userId,
+      extracted_text: extractedText,
+      risk_score: analysis.risk_score.toString(),
+      risk_level: analysis.risk_level,
+      analysis_details: {
+        layers: analysis.layers,
+        entities: analysis.entities,
+        keywords_detected: analysis.keywords_detected,
+        detected_patterns: analysis.detected_patterns,
+        confidence: analysis.confidence,
+      },
+    }).returning();
+
+    res.json({
+      id: saved.id,
+      risk_score: analysis.risk_score,
+      risk_level: analysis.risk_level,
+      confidence: analysis.confidence,
+      detected_patterns: analysis.detected_patterns,
+      explanation: analysis.explanation,
+      recommendation: analysis.recommendation,
+      layers: analysis.layers,
+      entities: {
+        urls: analysis.entities.urls,
+        phones: analysis.entities.phones,
+        emails: analysis.entities.emails,
+        amounts: analysis.entities.amounts,
+        senderEmail: analysis.entities.senderEmail,
+      },
+      keywords_detected: analysis.keywords_detected,
+      attachment_info: file ? {
+        filename: file.originalname,
+        type: file.mimetype,
+        size: file.size,
+      } : null,
+    });
+  } catch (err) {
+    req.log.error({ err }, "Scam analyze-attachment error");
+    res.status(500).json({ error: "Internal Server Error", message: "Could not analyze attachment" });
   }
 });
 

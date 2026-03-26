@@ -10,16 +10,43 @@ import {
   Platform,
   Alert,
   Modal,
+  Image,
+  ActionSheetIOS,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import * as Haptics from "expo-haptics";
+import * as ImagePicker from "expo-image-picker";
+import * as DocumentPicker from "expo-document-picker";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
 import { usePreferences } from "@/context/PreferencesContext";
 import PageHeader from "@/components/PageHeader";
 import { scamApi, ApiError } from "@/services/api";
+
+interface AttachedFile {
+  uri: string;
+  name: string;
+  type: string;
+  size?: number;
+}
+
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp", "application/pdf", "text/plain"];
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
+function getFileIcon(type: string): keyof typeof Ionicons.glyphMap {
+  if (type.startsWith("image/")) return "image-outline";
+  if (type === "application/pdf") return "document-text-outline";
+  return "document-outline";
+}
+
+function formatFileSize(bytes?: number): string {
+  if (!bytes) return "";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 interface LayerResult {
   name: string;
@@ -94,11 +121,98 @@ export default function ScamScreen() {
   const [feedbackSent, setFeedbackSent] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [expandedLayers, setExpandedLayers] = useState<Record<number, boolean>>({});
+  const [attachment, setAttachment] = useState<AttachedFile | null>(null);
+
+  function showAttachOptions() {
+    const options = ["Take Photo", "Choose from Gallery", "Pick a File", "Cancel"];
+    const cancelIndex = 3;
+
+    if (Platform.OS === "ios") {
+      ActionSheetIOS.showActionSheetWithOptions(
+        { options, cancelButtonIndex: cancelIndex, title: "Attach Suspicious Content" },
+        (idx) => {
+          if (idx === 0) pickFromCamera();
+          else if (idx === 1) pickFromGallery();
+          else if (idx === 2) pickDocument();
+        }
+      );
+    } else {
+      Alert.alert("Attach Suspicious Content", "How would you like to attach the file?", [
+        { text: "Take Photo", onPress: pickFromCamera },
+        { text: "Choose from Gallery", onPress: pickFromGallery },
+        { text: "Pick a File", onPress: pickDocument },
+        { text: "Cancel", style: "cancel" },
+      ]);
+    }
+  }
+
+  async function pickFromCamera() {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("Permission Needed", "Please allow camera access to take photos of suspicious messages.");
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({ quality: 0.8 });
+    if (!result.canceled && result.assets[0]) {
+      const asset = result.assets[0];
+      setAttachment({
+        uri: asset.uri,
+        name: asset.fileName || `photo_${Date.now()}.jpg`,
+        type: asset.mimeType || "image/jpeg",
+        size: asset.fileSize,
+      });
+    }
+  }
+
+  async function pickFromGallery() {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("Permission Needed", "Please allow photo library access to select images.");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({ quality: 0.8 });
+    if (!result.canceled && result.assets[0]) {
+      const asset = result.assets[0];
+      setAttachment({
+        uri: asset.uri,
+        name: asset.fileName || `image_${Date.now()}.jpg`,
+        type: asset.mimeType || "image/jpeg",
+        size: asset.fileSize,
+      });
+    }
+  }
+
+  async function pickDocument() {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ALLOWED_TYPES,
+        copyToCacheDirectory: true,
+      });
+      if (!result.canceled && result.assets[0]) {
+        const asset = result.assets[0];
+        if (asset.size && asset.size > MAX_FILE_SIZE) {
+          Alert.alert("File Too Large", "Please select a file smaller than 10 MB.");
+          return;
+        }
+        setAttachment({
+          uri: asset.uri,
+          name: asset.name,
+          type: asset.mimeType || "application/octet-stream",
+          size: asset.size,
+        });
+      }
+    } catch {
+      Alert.alert("Error", "Could not pick file. Please try again.");
+    }
+  }
 
   async function analyze(textToAnalyze?: string) {
     const target = textToAnalyze || text;
-    if (!target.trim()) {
-      Alert.alert("Empty message", "Please paste or type a message to analyze.");
+    const hasText = target.trim().length > 0;
+    const hasFile = !!attachment;
+
+    if (!hasText && !hasFile) {
+      Alert.alert("Nothing to analyze", "Please paste a message or attach a file to check.");
       return;
     }
 
@@ -108,7 +222,21 @@ export default function ScamScreen() {
     setExpandedLayers({});
 
     try {
-      const data = await scamApi.analyze(target, user?.token);
+      let data;
+
+      if (hasFile) {
+        const formData = new FormData();
+        if (hasText) formData.append("text", target);
+        formData.append("file", {
+          uri: attachment!.uri,
+          name: attachment!.name,
+          type: attachment!.type,
+        } as any);
+        data = await scamApi.analyzeWithAttachment(formData, user?.token);
+      } else {
+        data = await scamApi.analyze(target, user?.token);
+      }
+
       if (!data.risk_level || data.risk_score === undefined) {
         Alert.alert("Error", "Received an unexpected response. Please try again.");
         return;
@@ -131,7 +259,7 @@ export default function ScamScreen() {
           : Haptics.NotificationFeedbackType.Success
       );
     } catch (err) {
-      Alert.alert("Error", "Could not analyze message. Please check your connection.");
+      Alert.alert("Error", "Could not analyze. Please check your connection.");
     } finally {
       setLoading(false);
     }
@@ -182,6 +310,41 @@ export default function ScamScreen() {
           numberOfLines={6}
           textAlignVertical="top"
         />
+
+        {attachment ? (
+          <View style={[styles.attachmentPreview, { backgroundColor: theme.inputBackground, borderColor: theme.cardBorder }]}>
+            {attachment.type.startsWith("image/") ? (
+              <Image source={{ uri: attachment.uri }} style={styles.attachmentThumb} />
+            ) : (
+              <View style={[styles.attachmentFileIcon, { backgroundColor: theme.card }]}>
+                <Ionicons name={getFileIcon(attachment.type)} size={24} color={theme.accent || "#3B82F6"} />
+              </View>
+            )}
+            <View style={styles.attachmentInfo}>
+              <Text style={[styles.attachmentName, { color: theme.text, fontSize: ts.sm }]} numberOfLines={1}>{attachment.name}</Text>
+              {attachment.size ? (
+                <Text style={[styles.attachmentSize, { color: theme.textSecondary, fontSize: ts.xs }]}>{formatFileSize(attachment.size)}</Text>
+              ) : null}
+            </View>
+            <Pressable onPress={() => setAttachment(null)} hitSlop={12} style={styles.attachmentRemove}>
+              <Ionicons name="close-circle" size={22} color={theme.textSecondary} />
+            </Pressable>
+          </View>
+        ) : (
+          <View style={styles.attachRow}>
+            <Pressable
+              onPress={showAttachOptions}
+              style={[styles.attachButton, { borderColor: theme.cardBorder }]}
+            >
+              <Ionicons name="attach" size={18} color={theme.textSecondary} />
+              <Text style={[styles.attachButtonText, { color: theme.textSecondary, fontSize: ts.sm }]}>Attach File or Photo</Text>
+            </Pressable>
+            <Text style={[styles.attachHint, { color: theme.textTertiary, fontSize: ts.xs }]}>
+              JPG, PNG, PDF, TXT (max 10 MB)
+            </Text>
+          </View>
+        )}
+
         <Pressable
           style={({ pressed }) => [styles.analyzeButton, loading && styles.disabled, pressed && styles.pressed]}
           onPress={() => analyze()}
@@ -192,7 +355,9 @@ export default function ScamScreen() {
           ) : (
             <>
               <Ionicons name="shield-checkmark" size={20} color="#FFFFFF" />
-              <Text style={[styles.analyzeButtonText, { fontSize: ts.base }]}>Analyze Message</Text>
+              <Text style={[styles.analyzeButtonText, { fontSize: ts.base }]}>
+                {attachment ? "Analyze Attachment" : "Analyze Message"}
+              </Text>
             </>
           )}
         </Pressable>
@@ -440,6 +605,62 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
     minHeight: 120,
     lineHeight: 24,
+  },
+  attachRow: {
+    marginBottom: 4,
+  },
+  attachButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    alignSelf: "flex-start",
+  },
+  attachButtonText: {
+    fontFamily: "Inter_500Medium",
+  },
+  attachHint: {
+    fontFamily: "Inter_400Regular",
+    marginTop: 4,
+    marginLeft: 2,
+  },
+  attachmentPreview: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 4,
+    gap: 10,
+  },
+  attachmentThumb: {
+    width: 48,
+    height: 48,
+    borderRadius: 8,
+  },
+  attachmentFileIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  attachmentInfo: {
+    flex: 1,
+  },
+  attachmentName: {
+    fontFamily: "Inter_500Medium",
+  },
+  attachmentSize: {
+    fontFamily: "Inter_400Regular",
+    marginTop: 2,
+  },
+  attachmentRemove: {
+    padding: 4,
   },
   analyzeButton: {
     backgroundColor: "#2563EB",

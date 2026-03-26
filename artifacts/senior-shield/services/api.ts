@@ -138,6 +138,22 @@ export const scamApi = {
     return request("/scam/analyze", { method: "POST", body: { text }, token });
   },
 
+  async analyzeWithAttachment(formData: FormData, token?: string) {
+    const authToken = token || (await getToken());
+    const headers: Record<string, string> = {};
+    if (authToken) headers["Authorization"] = `Bearer ${authToken}`;
+    const res = await fetch(`${API_BASE}/api/scam/analyze-attachment`, {
+      method: "POST",
+      headers,
+      body: formData,
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new ApiError(data.error || `Request failed (${res.status})`, res.status, data);
+    }
+    return res.json();
+  },
+
   sendFeedback(scamAnalysisId: string, feedbackType: string, token?: string) {
     return request("/scam/feedback", { method: "POST", body: { scam_analysis_id: scamAnalysisId, feedback_type: feedbackType }, token });
   },
