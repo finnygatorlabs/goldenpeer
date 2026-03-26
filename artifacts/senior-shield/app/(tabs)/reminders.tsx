@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  Pressable,
   ScrollView,
   ActivityIndicator,
   Alert,
@@ -419,26 +418,26 @@ export default function RemindersScreen() {
                         {getCategoryLabel(reminder.metadata.category)}
                       </Text>
                     </View>
-                    <Pressable
+                    <TouchableOpacity
                       onPress={() => {
                         setEditingCategoryReminder(reminder);
                         setShowCategoryModal(true);
                       }}
+                      activeOpacity={0.6}
                       style={[styles.changeCategoryBtn, { borderColor: theme.cardBorder }]}
                     >
                       <Text style={[styles.changeCategoryText, { color: theme.accent || "#2563EB", fontSize: ts.xs }]}>Change</Text>
-                    </Pressable>
+                    </TouchableOpacity>
                   </View>
                 )}
-                {reminder.is_custom && (
-                  <Pressable
-                    onPress={() => removeReminder(reminder)}
-                    style={[styles.removeBtn, { borderColor: theme.cardBorder }]}
-                  >
-                    <Ionicons name="trash-outline" size={14} color="#EF4444" />
-                    <Text style={[styles.removeBtnText, { fontSize: ts.xs }]}>Remove</Text>
-                  </Pressable>
-                )}
+                <TouchableOpacity
+                  onPress={() => removeReminder(reminder)}
+                  activeOpacity={0.6}
+                  style={[styles.removeBtn, { borderColor: theme.cardBorder }]}
+                >
+                  <Ionicons name="trash-outline" size={14} color="#EF4444" />
+                  <Text style={[styles.removeBtnText, { fontSize: ts.xs }]}>Remove</Text>
+                </TouchableOpacity>
               </View>
             ))}
           </View>
@@ -452,16 +451,16 @@ export default function RemindersScreen() {
           {presets
             .filter((p) => !isPresetAdded(p.key))
             .map((preset) => (
-              <Pressable
+              <TouchableOpacity
                 key={preset.key}
                 onPress={() => addPreset(preset)}
                 disabled={saving}
-                style={({ pressed }) => [
+                activeOpacity={0.7}
+                style={[
                   styles.presetCard,
                   {
                     backgroundColor: theme.card,
                     borderColor: theme.cardBorder,
-                    opacity: pressed ? 0.85 : 1,
                   },
                 ]}
               >
@@ -477,7 +476,7 @@ export default function RemindersScreen() {
                 <View style={[styles.addBadge, { backgroundColor: (theme.accent || "#2563EB") + "15" }]}>
                   <Ionicons name="add" size={18} color={theme.accent || "#2563EB"} />
                 </View>
-              </Pressable>
+              </TouchableOpacity>
             ))}
 
           {presets.filter((p) => !isPresetAdded(p.key)).length === 0 && myReminders.length > 0 && (
@@ -490,14 +489,14 @@ export default function RemindersScreen() {
           )}
         </View>
 
-        <Pressable
+        <TouchableOpacity
           onPress={() => setShowCustomModal(true)}
-          style={({ pressed }) => [
+          activeOpacity={0.7}
+          style={[
             styles.customButton,
             {
               borderColor: theme.cardBorder,
               backgroundColor: theme.card,
-              opacity: pressed ? 0.85 : 1,
             },
           ]}
         >
@@ -505,7 +504,7 @@ export default function RemindersScreen() {
           <Text style={[styles.customButtonText, { color: theme.accent || "#2563EB", fontSize: ts.base }]}>
             Create Custom Reminder
           </Text>
-        </Pressable>
+        </TouchableOpacity>
       </ScrollView>
 
       <Modal
@@ -584,9 +583,9 @@ export default function RemindersScreen() {
           <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: theme.text, fontSize: ts.lg }]}>Custom Reminder</Text>
-              <Pressable onPress={() => setShowCustomModal(false)} hitSlop={12}>
+              <TouchableOpacity onPress={() => setShowCustomModal(false)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} activeOpacity={0.5}>
                 <Ionicons name="close" size={24} color={theme.textSecondary} />
-              </Pressable>
+              </TouchableOpacity>
             </View>
 
             <Text style={[styles.modalLabel, { color: theme.textSecondary, fontSize: ts.sm }]}>Reminder Name</Text>
@@ -617,13 +616,13 @@ export default function RemindersScreen() {
               {customPrompt.length}/200
             </Text>
 
-            <Pressable
+            <TouchableOpacity
               onPress={addCustom}
               disabled={saving || !customLabel.trim() || !customPrompt.trim()}
-              style={({ pressed }) => [
+              activeOpacity={0.7}
+              style={[
                 styles.modalSaveButton,
                 (saving || !customLabel.trim() || !customPrompt.trim()) && styles.modalSaveDisabled,
-                pressed && { opacity: 0.85 },
               ]}
             >
               {saving ? (
@@ -631,7 +630,7 @@ export default function RemindersScreen() {
               ) : (
                 <Text style={[styles.modalSaveText, { fontSize: ts.base }]}>Add Reminder</Text>
               )}
-            </Pressable>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
