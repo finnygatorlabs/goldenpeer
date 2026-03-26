@@ -1,3 +1,23 @@
+/**
+ * SeniorShield Subscription Screen
+ * 
+ * Displays all 5 payment options:
+ * - Stripe (Credit Card) - ACTIVE
+ * - Verizon - Coming Soon
+ * - AT&T - Coming Soon
+ * - T-Mobile - Coming Soon
+ * - Medicare Advantage - Coming Soon
+ * 
+ * Location: app/subscription.tsx
+ * 
+ * Design Philosophy:
+ * - Clear visual hierarchy showing Stripe as the active option
+ * - Disabled state for "Coming Soon" options (grayed out)
+ * - Large touch targets for senior accessibility
+ * - Warm, reassuring copy
+ * - Progress indication (step 2 of 3)
+ */
+
 import React, { useState } from 'react';
 import {
   View,
@@ -8,51 +28,14 @@ import {
   Alert,
   StyleSheet,
   Dimensions,
-  StatusBar,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAuth } from '@/context/AuthContext';
-import { billingApi } from '@/services/api';
+import { useAuth } from '@/contexts/AuthContext';
+import { api } from '@/services/api';
 
 const { width } = Dimensions.get('window');
-const GRADIENT: [string, string, string] = ['#06102E', '#0E2D6B', '#0B5FAA'];
-
-function DecoCircle({ size, top, left, right, opacity }: { size: number; top?: number; left?: number; right?: number; opacity: number }) {
-  return (
-    <View
-      style={{
-        position: 'absolute',
-        width: size,
-        height: size,
-        borderRadius: size / 2,
-        borderWidth: 1.5,
-        borderColor: `rgba(255,255,255,${opacity})`,
-        top,
-        left,
-        right,
-      }}
-    />
-  );
-}
-
-function DecoLine({ width: w, top, left, rotate, opacity }: { width: number; top: number; left: number; rotate: string; opacity: number }) {
-  return (
-    <View
-      style={{
-        position: 'absolute',
-        width: w,
-        height: 1,
-        backgroundColor: `rgba(255,255,255,${opacity})`,
-        top,
-        left,
-        transform: [{ rotate }],
-      }}
-    />
-  );
-}
 
 type PaymentMethod = 'stripe' | 'verizon' | 'att' | 'tmobile' | 'medicare';
 
@@ -75,8 +58,8 @@ const PAYMENT_OPTIONS: PaymentOption[] = [
     description: 'Pay securely with Visa, Mastercard, or American Express',
     price: '$12.99/month',
     status: 'active',
-    color: '#FFFFFF',
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    color: '#6366F1',
+    backgroundColor: '#EEF2FF',
   },
   {
     id: 'verizon',
@@ -85,8 +68,8 @@ const PAYMENT_OPTIONS: PaymentOption[] = [
     description: 'Add to your Verizon bill',
     price: '$5.99/month',
     status: 'coming-soon',
-    color: '#EF4444',
-    backgroundColor: 'rgba(239,68,68,0.15)',
+    color: '#D41F16',
+    backgroundColor: '#FEE2E2',
   },
   {
     id: 'att',
@@ -95,8 +78,8 @@ const PAYMENT_OPTIONS: PaymentOption[] = [
     description: 'Add to your AT&T bill',
     price: '$5.99/month',
     status: 'coming-soon',
-    color: '#60A5FA',
-    backgroundColor: 'rgba(96,165,250,0.15)',
+    color: '#0066CC',
+    backgroundColor: '#DBEAFE',
   },
   {
     id: 'tmobile',
@@ -105,8 +88,8 @@ const PAYMENT_OPTIONS: PaymentOption[] = [
     description: 'Add to your T-Mobile bill',
     price: '$5.99/month',
     status: 'coming-soon',
-    color: '#F472B6',
-    backgroundColor: 'rgba(244,114,182,0.15)',
+    color: '#E20074',
+    backgroundColor: '#FCE7F3',
   },
   {
     id: 'medicare',
@@ -115,14 +98,13 @@ const PAYMENT_OPTIONS: PaymentOption[] = [
     description: 'Covered by your Medicare plan',
     price: 'Free - $5 copay',
     status: 'coming-soon',
-    color: '#34D399',
-    backgroundColor: 'rgba(52,211,153,0.15)',
+    color: '#059669',
+    backgroundColor: '#ECFDF5',
   },
 ];
 
 export default function SubscriptionScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('stripe');
   const [loading, setLoading] = useState(false);
@@ -142,15 +124,23 @@ export default function SubscriptionScreen() {
 
   const handleContinue = async () => {
     if (selectedMethod === 'stripe') {
+      // Navigate to Stripe checkout
+      // This will be implemented when Stripe environment variables are configured
       try {
         setLoading(true);
+        
+        // Call backend to create Stripe checkout session
+        const response = await api.post('/api/billing/stripe/checkout', {
+          userId: user?.id,
+          priceId: 'price_monthly', // Will be updated with actual Stripe price ID
+          successUrl: 'seniorship://subscription/success',
+          cancelUrl: 'seniorship://subscription/cancel',
+        });
 
-        const response = await billingApi.createCheckout(
-          'monthly',
-          user?.token
-        );
-
-        if (response?.url) {
+        if (response.data?.url) {
+          // Open Stripe checkout URL
+          // For web preview: router.push(response.data.url);
+          // For native: use react-native-url-polyfill or expo-web-browser
           Alert.alert(
             'Stripe Checkout',
             'Stripe checkout URL ready. Implementation pending environment variable setup.',
@@ -179,6 +169,7 @@ export default function SubscriptionScreen() {
         {
           text: 'Copy Email',
           onPress: () => {
+            // Copy to clipboard
             Alert.alert('Email copied to clipboard');
           },
         },
@@ -188,23 +179,12 @@ export default function SubscriptionScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
-      <LinearGradient colors={GRADIENT} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
-      <DecoCircle size={260} top={-80} right={-100} opacity={0.08} />
-      <DecoCircle size={140} top={30} right={30} opacity={0.06} />
-      <DecoCircle size={300} top={-120} left={-150} opacity={0.06} />
-      <DecoCircle size={180} top={500} left={-90} opacity={0.04} />
-      <DecoLine width={250} top={40} left={-60} rotate="-18deg" opacity={0.08} />
-      <DecoLine width={180} top={120} left={width - 100} rotate="22deg" opacity={0.06} />
-
-      <ScrollView
-        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 40 }]}
-        showsVerticalScrollIndicator={false}
-      >
+    <LinearGradient colors={['#F8FAFC', '#F1F5F9']} style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+            <Ionicons name="chevron-back" size={24} color="#1E293B" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Choose Payment Method</Text>
           <View style={styles.stepIndicator}>
@@ -212,10 +192,12 @@ export default function SubscriptionScreen() {
           </View>
         </View>
 
+        {/* Progress Bar */}
         <View style={styles.progressContainer}>
           <View style={[styles.progressBar, { width: '66%' }]} />
         </View>
 
+        {/* Headline */}
         <View style={styles.headlineSection}>
           <Text style={styles.headline}>Unlock Premium Features</Text>
           <Text style={styles.subheadline}>
@@ -223,6 +205,7 @@ export default function SubscriptionScreen() {
           </Text>
         </View>
 
+        {/* Payment Options */}
         <View style={styles.optionsContainer}>
           {PAYMENT_OPTIONS.map((option) => (
             <PaymentOptionCard
@@ -235,11 +218,17 @@ export default function SubscriptionScreen() {
           ))}
         </View>
 
+        {/* Selected Option Details */}
         {selectedMethod === 'stripe' && (
           <View style={styles.detailsSection}>
-            <View style={styles.detailsCard}>
+            <LinearGradient
+              colors={['#EEF2FF', '#E0E7FF']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.detailsCard}
+            >
               <View style={styles.detailsHeader}>
-                <Ionicons name="checkmark-circle" size={24} color="#34D399" />
+                <Ionicons name="checkmark-circle" size={24} color="#6366F1" />
                 <Text style={styles.detailsTitle}>Secure Payment</Text>
               </View>
               <Text style={styles.detailsText}>
@@ -250,10 +239,11 @@ export default function SubscriptionScreen() {
                 <DetailItem icon="shield-checkmark" text="PCI DSS compliant" />
                 <DetailItem icon="checkmark" text="Money-back guarantee" />
               </View>
-            </View>
+            </LinearGradient>
           </View>
         )}
 
+        {/* Billing Info */}
         <View style={styles.billingSection}>
           <Text style={styles.billingLabel}>Billing Details</Text>
           <View style={styles.billingCard}>
@@ -274,34 +264,42 @@ export default function SubscriptionScreen() {
             <View style={styles.divider} />
             <View style={styles.billingRow}>
               <Text style={styles.billingKey}>Cancel Anytime</Text>
-              <Ionicons name="checkmark" size={20} color="#34D399" />
+              <Ionicons name="checkmark" size={20} color="#059669" />
             </View>
           </View>
         </View>
 
+        {/* CTA Button */}
         <TouchableOpacity
           style={[styles.continueButton, loading && styles.continueButtonDisabled]}
           onPress={handleContinue}
           disabled={loading}
         >
           {loading ? (
-            <ActivityIndicator color="#0E2D6B" />
+            <ActivityIndicator color="#FFFFFF" />
           ) : (
             <>
               <Text style={styles.continueButtonText}>Continue to Payment</Text>
-              <Ionicons name="arrow-forward" size={20} color="#0E2D6B" />
+              <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
             </>
           )}
         </TouchableOpacity>
 
+        {/* Terms */}
         <Text style={styles.termsText}>
           By continuing, you agree to our Terms of Service and Privacy Policy
         </Text>
+
+        {/* Spacer */}
+        <View style={{ height: 40 }} />
       </ScrollView>
-    </View>
+    </LinearGradient>
   );
 }
 
+/**
+ * Individual Payment Option Card Component
+ */
 interface PaymentOptionCardProps {
   option: PaymentOption;
   isSelected: boolean;
@@ -327,8 +325,9 @@ function PaymentOptionCard({
       onPress={onSelect}
       disabled={isComingSoon}
     >
+      {/* Selection Indicator */}
       {!isComingSoon && (
-        <View style={[styles.selectionIndicator, isSelected && styles.selectionIndicatorActive]}>
+        <View style={styles.selectionIndicator}>
           {isSelected && (
             <View style={styles.selectionDot}>
               <Ionicons name="checkmark" size={16} color="#FFFFFF" />
@@ -337,13 +336,16 @@ function PaymentOptionCard({
         </View>
       )}
 
+      {/* Coming Soon Badge */}
       {isComingSoon && (
         <View style={styles.comingSoonBadge}>
           <Text style={styles.comingSoonText}>Coming Soon</Text>
         </View>
       )}
 
+      {/* Card Content */}
       <View style={styles.optionContent}>
+        {/* Icon and Name */}
         <View style={styles.optionHeader}>
           <View
             style={[
@@ -380,6 +382,7 @@ function PaymentOptionCard({
           </View>
         </View>
 
+        {/* Price and Action */}
         <View style={styles.optionFooter}>
           <Text
             style={[
@@ -403,6 +406,9 @@ function PaymentOptionCard({
   );
 }
 
+/**
+ * Detail Item Component (for security details)
+ */
 interface DetailItemProps {
   icon: string;
   text: string;
@@ -411,26 +417,32 @@ interface DetailItemProps {
 function DetailItem({ icon, text }: DetailItemProps) {
   return (
     <View style={styles.detailItem}>
-      <Ionicons name={icon as any} size={18} color="#34D399" />
+      <Ionicons name={icon as any} size={18} color="#6366F1" />
       <Text style={styles.detailItemText}>{text}</Text>
     </View>
   );
 }
 
+/**
+ * Styles
+ */
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#F8FAFC',
   },
   scrollContent: {
     paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 40,
   },
 
+  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 16,
-    zIndex: 10,
   },
   backButton: {
     padding: 8,
@@ -438,119 +450,119 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontFamily: 'Inter_600SemiBold',
-    color: '#FFFFFF',
+    fontWeight: '600',
+    color: '#1E293B',
     flex: 1,
     textAlign: 'center',
   },
   stepIndicator: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: '#E2E8F0',
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
   },
   stepText: {
     fontSize: 12,
-    fontFamily: 'Inter_600SemiBold',
-    color: 'rgba(255,255,255,0.7)',
+    fontWeight: '600',
+    color: '#64748B',
   },
 
+  // Progress Bar
   progressContainer: {
     height: 4,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: '#E2E8F0',
     borderRadius: 2,
     marginBottom: 24,
     overflow: 'hidden',
   },
   progressBar: {
     height: '100%',
-    backgroundColor: '#34D399',
+    backgroundColor: '#6366F1',
     borderRadius: 2,
   },
 
+  // Headline
   headlineSection: {
     marginBottom: 28,
   },
   headline: {
     fontSize: 28,
-    fontFamily: 'Inter_700Bold',
-    color: '#FFFFFF',
+    fontWeight: '700',
+    color: '#0F172A',
     marginBottom: 8,
   },
   subheadline: {
     fontSize: 16,
-    fontFamily: 'Inter_400Regular',
-    color: 'rgba(255,255,255,0.7)',
+    color: '#64748B',
     lineHeight: 24,
   },
 
+  // Options Container
   optionsContainer: {
     marginBottom: 28,
     gap: 12,
   },
 
+  // Option Card
   optionCard: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 16,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.12)',
+    borderWidth: 2,
+    borderColor: '#E2E8F0',
     flexDirection: 'row',
     alignItems: 'flex-start',
   },
   optionCardSelected: {
-    borderColor: 'rgba(52,211,153,0.5)',
-    backgroundColor: 'rgba(52,211,153,0.1)',
+    borderColor: '#6366F1',
+    backgroundColor: '#F8FAFC',
   },
   optionCardDisabled: {
-    opacity: 0.5,
+    opacity: 0.6,
   },
 
+  // Selection Indicator
   selectionIndicator: {
     width: 24,
     height: 24,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.25)',
+    borderColor: '#E2E8F0',
     marginRight: 12,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  selectionIndicatorActive: {
-    borderColor: '#34D399',
   },
   selectionDot: {
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: '#34D399',
+    backgroundColor: '#6366F1',
     justifyContent: 'center',
     alignItems: 'center',
   },
 
+  // Coming Soon Badge
   comingSoonBadge: {
     position: 'absolute',
     top: 12,
     right: 12,
-    backgroundColor: 'rgba(251,191,36,0.2)',
-    borderWidth: 1,
-    borderColor: 'rgba(251,191,36,0.3)',
+    backgroundColor: '#FEF3C7',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
   },
   comingSoonText: {
     fontSize: 11,
-    fontFamily: 'Inter_600SemiBold',
-    color: '#FBBF24',
+    fontWeight: '600',
+    color: '#92400E',
   },
 
+  // Option Content
   optionContent: {
     flex: 1,
   },
 
+  // Option Header
   optionHeader: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -569,23 +581,23 @@ const styles = StyleSheet.create({
   },
   optionName: {
     fontSize: 16,
-    fontFamily: 'Inter_600SemiBold',
-    color: '#FFFFFF',
+    fontWeight: '600',
+    color: '#0F172A',
     marginBottom: 4,
   },
   optionNameDisabled: {
-    color: 'rgba(255,255,255,0.4)',
+    color: '#94A3B8',
   },
   optionDescription: {
     fontSize: 13,
-    fontFamily: 'Inter_400Regular',
-    color: 'rgba(255,255,255,0.6)',
+    color: '#64748B',
     lineHeight: 18,
   },
   optionDescriptionDisabled: {
-    color: 'rgba(255,255,255,0.3)',
+    color: '#CBD5E1',
   },
 
+  // Option Footer
   optionFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -593,36 +605,35 @@ const styles = StyleSheet.create({
   },
   optionPrice: {
     fontSize: 14,
-    fontFamily: 'Inter_600SemiBold',
-    color: '#34D399',
+    fontWeight: '600',
+    color: '#6366F1',
   },
   optionPriceDisabled: {
-    color: 'rgba(255,255,255,0.3)',
+    color: '#CBD5E1',
   },
 
+  // Contact Button
   contactButton: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: 'rgba(251,191,36,0.3)',
-    backgroundColor: 'rgba(251,191,36,0.1)',
+    borderColor: '#FEF3C7',
+    backgroundColor: '#FFFBEB',
   },
   contactButtonText: {
     fontSize: 12,
-    fontFamily: 'Inter_600SemiBold',
-    color: '#FBBF24',
+    fontWeight: '600',
+    color: '#92400E',
   },
 
+  // Details Section
   detailsSection: {
     marginBottom: 24,
   },
   detailsCard: {
     borderRadius: 16,
     padding: 16,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
   },
   detailsHeader: {
     flexDirection: 'row',
@@ -631,14 +642,13 @@ const styles = StyleSheet.create({
   },
   detailsTitle: {
     fontSize: 16,
-    fontFamily: 'Inter_600SemiBold',
-    color: '#FFFFFF',
+    fontWeight: '600',
+    color: '#4F46E5',
     marginLeft: 8,
   },
   detailsText: {
     fontSize: 14,
-    fontFamily: 'Inter_400Regular',
-    color: 'rgba(255,255,255,0.65)',
+    color: '#4B5563',
     lineHeight: 20,
     marginBottom: 16,
   },
@@ -651,26 +661,26 @@ const styles = StyleSheet.create({
   },
   detailItemText: {
     fontSize: 13,
-    fontFamily: 'Inter_400Regular',
-    color: 'rgba(255,255,255,0.7)',
+    color: '#4B5563',
     marginLeft: 8,
   },
 
+  // Billing Section
   billingSection: {
     marginBottom: 24,
   },
   billingLabel: {
     fontSize: 14,
-    fontFamily: 'Inter_600SemiBold',
-    color: '#FFFFFF',
+    fontWeight: '600',
+    color: '#1E293B',
     marginBottom: 12,
   },
   billingCard: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
+    borderColor: '#E2E8F0',
   },
   billingRow: {
     flexDirection: 'row',
@@ -681,23 +691,24 @@ const styles = StyleSheet.create({
   },
   billingKey: {
     fontSize: 14,
-    fontFamily: 'Inter_500Medium',
-    color: 'rgba(255,255,255,0.6)',
+    color: '#64748B',
+    fontWeight: '500',
   },
   billingValue: {
     fontSize: 14,
-    fontFamily: 'Inter_600SemiBold',
-    color: '#FFFFFF',
+    fontWeight: '600',
+    color: '#0F172A',
   },
   divider: {
     height: 1,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: '#E2E8F0',
   },
 
+  // CTA Button
   continueButton: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    paddingVertical: 18,
+    backgroundColor: '#6366F1',
+    borderRadius: 12,
+    paddingVertical: 16,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
@@ -708,15 +719,15 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   continueButtonText: {
-    fontSize: 17,
-    fontFamily: 'Inter_700Bold',
-    color: '#0E2D6B',
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
 
+  // Terms
   termsText: {
     fontSize: 12,
-    fontFamily: 'Inter_400Regular',
-    color: 'rgba(255,255,255,0.45)',
+    color: '#64748B',
     textAlign: 'center',
     lineHeight: 18,
   },
