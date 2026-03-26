@@ -62,15 +62,6 @@ const PRESET_REMINDERS = [
     label: "Daily Motivation",
     prompt: "{name}, here is today's motivational quote to inspire your day.",
     icon: "sparkles-outline",
-    hasCategories: true,
-    categories: [
-      { key: "spiritual", label: "Spiritual Motivation (Bible)" },
-      { key: "stoic", label: "Stoic Philosophy" },
-      { key: "modern_leadership", label: "Modern Leadership & Self-Improvement" },
-      { key: "eastern", label: "Eastern Philosophies" },
-      { key: "philanthropic", label: "Philanthropic & Business Wisdom" },
-      { key: "mix", label: "Mix of All" },
-    ],
   },
 ];
 

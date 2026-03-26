@@ -31,6 +31,7 @@ export interface Preferences {
   captions_enabled: boolean;
   data_collection_enabled: boolean;
   assistant_name: string;
+  daily_quote_enabled: boolean;
 }
 
 const DEFAULT_PREFS: Preferences = {
@@ -45,6 +46,7 @@ const DEFAULT_PREFS: Preferences = {
   captions_enabled: true,
   data_collection_enabled: true,
   assistant_name: "Ava",
+  daily_quote_enabled: true,
 };
 
 interface PreferencesContextType {
@@ -93,6 +95,7 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
           data_collection_enabled: data.data_collection_enabled !== false,
           assistant_name: data.assistant_name || DEFAULT_NAMES[gender],
           tts_voice: (data.tts_voice as TtsVoice) || (gender === "female" ? "nova" : "echo"),
+          daily_quote_enabled: data.daily_quote_enabled !== false,
         });
       }
     } catch {}

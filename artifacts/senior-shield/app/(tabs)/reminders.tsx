@@ -24,18 +24,11 @@ import { usePreferences } from "@/context/PreferencesContext";
 import PageHeader from "@/components/PageHeader";
 import { remindersApi } from "@/services/api";
 
-interface MotivationCategory {
-  key: string;
-  label: string;
-}
-
 interface Preset {
   key: string;
   label: string;
   prompt: string;
   icon: string;
-  hasCategories?: boolean;
-  categories?: MotivationCategory[];
 }
 
 interface Reminder {
@@ -46,7 +39,6 @@ interface Reminder {
   icon: string;
   is_active: boolean;
   is_custom: boolean;
-  metadata?: { category?: string } | null;
 }
 
 const MAX_ACTIVE = 3;
@@ -65,15 +57,6 @@ const FALLBACK_PRESETS: Preset[] = [
     label: "Daily Motivation",
     prompt: "{name}, here is today's motivational quote to inspire your day.",
     icon: "sparkles-outline",
-    hasCategories: true,
-    categories: [
-      { key: "spiritual", label: "Spiritual Motivation (Bible)" },
-      { key: "stoic", label: "Stoic Philosophy" },
-      { key: "modern_leadership", label: "Modern Leadership & Self-Improvement" },
-      { key: "eastern", label: "Eastern Philosophies" },
-      { key: "philanthropic", label: "Philanthropic & Business Wisdom" },
-      { key: "mix", label: "Mix of All" },
-    ],
   },
 ];
 
@@ -92,9 +75,7 @@ export default function RemindersScreen() {
   const [customLabel, setCustomLabel] = useState("");
   const [customPrompt, setCustomPrompt] = useState("");
   const [saving, setSaving] = useState(false);
-  const [showCategoryModal, setShowCategoryModal] = useState(false);
-  const [pendingMotivationPreset, setPendingMotivationPreset] = useState<Preset | null>(null);
-  const [editingCategoryReminder, setEditingCategoryReminder] = useState<Reminder | null>(null);
+
 
   const activeCount = myReminders.filter((r) => r.is_active).length;
 
@@ -141,12 +122,6 @@ export default function RemindersScreen() {
       return;
     }
 
-    if (preset.hasCategories) {
-      setPendingMotivationPreset(preset);
-      setShowCategoryModal(true);
-      return;
-    }
-
     try {
       setSaving(true);
       const res = await remindersApi.add(
@@ -175,83 +150,6 @@ export default function RemindersScreen() {
     } finally {
       setSaving(false);
     }
-  }
-
-  async function addMotivationWithCategory(categoryKey: string) {
-    if (!pendingMotivationPreset) return;
-    const preset = pendingMotivationPreset;
-    const categoryLabel = preset.categories?.find((c) => c.key === categoryKey)?.label || categoryKey;
-
-    try {
-      setSaving(true);
-      setShowCategoryModal(false);
-
-      const res = await remindersApi.add(
-        {
-          reminder_key: preset.key,
-          label: `${preset.label} — ${categoryLabel}`,
-          prompt: preset.prompt,
-          icon: preset.icon,
-          metadata: { category: categoryKey },
-        },
-        user?.token
-      );
-      if (res.reminder) {
-        setMyReminders((prev) => {
-          const existing = prev.findIndex((r) => r.reminder_key === preset.key);
-          if (existing >= 0) {
-            const updated = [...prev];
-            updated[existing] = res.reminder;
-            return updated;
-          }
-          return [...prev, res.reminder];
-        });
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      }
-    } catch (err: any) {
-      Alert.alert("Error", err?.data?.message || "Could not add reminder.");
-    } finally {
-      setSaving(false);
-      setPendingMotivationPreset(null);
-    }
-  }
-
-  async function changeMotivationCategory(reminder: Reminder, categoryKey: string) {
-    const motivationPreset = presets.find((p) => p.key === "daily_motivation") || FALLBACK_PRESETS.find((p) => p.key === "daily_motivation");
-    const categoryLabel = motivationPreset?.categories?.find((c) => c.key === categoryKey)?.label || categoryKey;
-
-    try {
-      setSaving(true);
-      setShowCategoryModal(false);
-
-      const res = await remindersApi.updateMetadata(
-        reminder.id,
-        { category: categoryKey },
-        user?.token
-      );
-      if (res.reminder) {
-        const updatedReminder = { ...res.reminder, label: `Daily Motivation — ${categoryLabel}` };
-        setMyReminders((prev) =>
-          prev.map((r) => (r.id === reminder.id ? updatedReminder : r))
-        );
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      }
-    } catch (err: any) {
-      Alert.alert("Error", err?.data?.message || "Could not update category.");
-    } finally {
-      setSaving(false);
-      setEditingCategoryReminder(null);
-    }
-  }
-
-  function getCategoryLabel(categoryKey: string): string {
-    const motivationPreset = presets.find((p) => p.key === "daily_motivation") || FALLBACK_PRESETS.find((p) => p.key === "daily_motivation");
-    return motivationPreset?.categories?.find((c) => c.key === categoryKey)?.label || categoryKey;
-  }
-
-  function getCategories(): MotivationCategory[] {
-    const motivationPreset = presets.find((p) => p.key === "daily_motivation") || FALLBACK_PRESETS.find((p) => p.key === "daily_motivation");
-    return motivationPreset?.categories || [];
   }
 
   async function toggleReminder(reminder: Reminder) {
@@ -427,26 +325,6 @@ export default function RemindersScreen() {
                     thumbColor="#FFFFFF"
                   />
                 </View>
-                {reminder.reminder_key === "daily_motivation" && reminder.metadata?.category && (
-                  <View style={styles.categoryRow}>
-                    <View style={[styles.categoryBadge, { backgroundColor: (theme.accent || "#2563EB") + "15" }]}>
-                      <Ionicons name="bookmark-outline" size={12} color={theme.accent || "#2563EB"} />
-                      <Text style={[styles.categoryBadgeText, { color: theme.accent || "#2563EB", fontSize: ts.xs }]}>
-                        {getCategoryLabel(reminder.metadata.category)}
-                      </Text>
-                    </View>
-                    <TouchableOpacity
-                      onPress={() => {
-                        setEditingCategoryReminder(reminder);
-                        setShowCategoryModal(true);
-                      }}
-                      activeOpacity={0.6}
-                      style={[styles.changeCategoryBtn, { borderColor: theme.cardBorder }]}
-                    >
-                      <Text style={[styles.changeCategoryText, { color: theme.accent || "#2563EB", fontSize: ts.xs }]}>Change</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
                 <TouchableOpacity
                   onPress={() => removeReminder(reminder)}
                   activeOpacity={0.6}
@@ -523,77 +401,6 @@ export default function RemindersScreen() {
           </Text>
         </TouchableOpacity>
       </ScrollView>
-
-      <Modal
-        visible={showCategoryModal}
-        animationType="slide"
-        transparent={false}
-        onRequestClose={() => { setShowCategoryModal(false); setPendingMotivationPreset(null); setEditingCategoryReminder(null); }}
-      >
-        <View style={[styles.fullModalContainer, { backgroundColor: theme.background }]}>
-          <View style={[styles.fullModalHeader, { paddingTop: Math.max(insets.top, 20) + 10 }]}>
-            <Text style={[styles.modalTitle, { color: theme.text, fontSize: ts.lg }]}>
-              {editingCategoryReminder ? "Change Category" : "Choose Your Inspiration"}
-            </Text>
-            <TouchableOpacity
-              onPress={() => {
-                setShowCategoryModal(false);
-                setPendingMotivationPreset(null);
-                setEditingCategoryReminder(null);
-              }}
-              hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
-              activeOpacity={0.5}
-              style={styles.closeButton}
-            >
-              <Ionicons name="close-circle" size={32} color={theme.textSecondary} />
-            </TouchableOpacity>
-          </View>
-
-          <Text style={[styles.categoryModalSubtitle, { color: theme.textSecondary, fontSize: ts.sm, paddingHorizontal: 20 }]}>
-            Select the type of motivational quotes you'd like to hear each day:
-          </Text>
-
-          <ScrollView
-            style={{ flex: 1 }}
-            contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: insets.bottom + 20 }}
-            showsVerticalScrollIndicator={false}
-          >
-            {getCategories().map((cat) => {
-              const isSelected = editingCategoryReminder?.metadata?.category === cat.key;
-              return (
-                <TouchableOpacity
-                  key={cat.key}
-                  onPress={() => {
-                    if (editingCategoryReminder) {
-                      changeMotivationCategory(editingCategoryReminder, cat.key);
-                    } else {
-                      addMotivationWithCategory(cat.key);
-                    }
-                  }}
-                  disabled={saving}
-                  activeOpacity={0.6}
-                  style={[
-                    styles.categoryOption,
-                    {
-                      backgroundColor: isSelected ? (theme.accent || "#2563EB") + "15" : theme.card,
-                      borderColor: isSelected ? (theme.accent || "#2563EB") + "40" : theme.cardBorder,
-                    },
-                  ]}
-                >
-                  <Ionicons
-                    name={isSelected ? "radio-button-on" : "radio-button-off"}
-                    size={24}
-                    color={isSelected ? (theme.accent || "#2563EB") : theme.textTertiary}
-                  />
-                  <Text style={[styles.categoryOptionText, { color: theme.text, fontSize: ts.base }]}>
-                    {cat.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        </View>
-      </Modal>
 
       <Modal visible={showCustomModal} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
@@ -743,54 +550,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   removeBtnText: { fontFamily: "Inter_500Medium", color: "#EF4444" },
-  categoryRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: 10,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(0,0,0,0.06)",
-  },
-  categoryBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
-  },
-  categoryBadgeText: {
-    fontFamily: "Inter_500Medium",
-  },
-  changeCategoryBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  changeCategoryText: {
-    fontFamily: "Inter_500Medium",
-  },
-  categoryModalSubtitle: {
-    fontFamily: "Inter_400Regular",
-    lineHeight: 20,
-    marginBottom: 16,
-  },
-  categoryOption: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-    paddingHorizontal: 18,
-    paddingVertical: 18,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    marginBottom: 10,
-  },
-  categoryOptionText: {
-    fontFamily: "Inter_500Medium",
-    flex: 1,
-  },
   fullModalContainer: {
     flex: 1,
   },
