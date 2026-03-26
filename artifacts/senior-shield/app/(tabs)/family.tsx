@@ -99,7 +99,7 @@ export default function FamilyScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <PageHeader />
+      <PageHeader screenTitle="Family Circle" />
       <ScrollView
         contentContainerStyle={[
           styles.content,

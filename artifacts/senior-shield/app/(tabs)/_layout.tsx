@@ -2,12 +2,27 @@ import { BlurView } from "expo-blur";
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { Platform, StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const TAB_BG = "#06102E";
 const TAB_ACTIVE = "#FFFFFF";
 const TAB_INACTIVE = "#6B8CC7";
+
+const TAB_LABEL_STYLE = {
+  fontFamily: "Inter_500Medium",
+  fontSize: 11,
+  lineHeight: 14,
+  textAlign: "center" as const,
+};
+
+function TabLabel({ label, color }: { label: string; color: string }) {
+  return (
+    <Text style={[TAB_LABEL_STYLE, { color }]}>
+      {label}
+    </Text>
+  );
+}
 
 export default function TabLayout() {
   const isIOS = Platform.OS === "ios";
@@ -24,8 +39,9 @@ export default function TabLayout() {
           backgroundColor: isIOS ? "transparent" : TAB_BG,
           borderTopWidth: 0,
           elevation: 0,
-          paddingBottom: insets.bottom > 0 ? insets.bottom : 6,
-          height: 56 + (insets.bottom > 0 ? insets.bottom : 6),
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
+          paddingTop: 6,
+          height: 76 + (insets.bottom > 0 ? insets.bottom : 8),
         },
         tabBarBackground: () => (
           isIOS ? (
@@ -38,9 +54,9 @@ export default function TabLayout() {
             <View style={[StyleSheet.absoluteFill, { backgroundColor: TAB_BG }]} />
           )
         ),
-        tabBarLabelStyle: {
-          fontFamily: "Inter_500Medium",
-          fontSize: 11,
+        tabBarLabelStyle: TAB_LABEL_STYLE,
+        tabBarIconStyle: {
+          marginBottom: 2,
         },
       }}
     >
@@ -52,20 +68,27 @@ export default function TabLayout() {
         name="home"
         options={{
           title: "Home",
+          tabBarLabel: ({ color }) => <TabLabel label="Home" color={color} />,
           tabBarIcon: ({ color, size }) => <Ionicons name="home" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="scam"
         options={{
-          title: "Scam",
+          title: "Scam Analyzer",
+          tabBarLabel: ({ color }) => (
+            <Text style={[TAB_LABEL_STYLE, { color }]}>
+              Scam{"\n"}Analyzer
+            </Text>
+          ),
           tabBarIcon: ({ color, size }) => <Ionicons name="shield-checkmark" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="reminders"
         options={{
-          title: "Remind",
+          title: "Reminders",
+          tabBarLabel: ({ color }) => <TabLabel label="Reminders" color={color} />,
           tabBarIcon: ({ color, size }) => <Ionicons name="notifications" size={size} color={color} />,
         }}
       />
@@ -73,6 +96,7 @@ export default function TabLayout() {
         name="family"
         options={{
           title: "Family",
+          tabBarLabel: ({ color }) => <TabLabel label="Family" color={color} />,
           tabBarIcon: ({ color, size }) => <Ionicons name="people" size={size} color={color} />,
         }}
       />
@@ -80,14 +104,16 @@ export default function TabLayout() {
         name="history"
         options={{
           title: "History",
+          tabBarLabel: ({ color }) => <TabLabel label="History" color={color} />,
           tabBarIcon: ({ color, size }) => <Ionicons name="time" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          title: "More",
-          tabBarIcon: ({ color, size }) => <Ionicons name="ellipsis-horizontal" size={size} color={color} />,
+          title: "Settings",
+          tabBarLabel: ({ color }) => <TabLabel label="Settings" color={color} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="settings" size={size} color={color} />,
         }}
       />
     </Tabs>

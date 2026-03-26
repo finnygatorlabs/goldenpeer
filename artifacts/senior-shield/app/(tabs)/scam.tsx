@@ -282,7 +282,7 @@ export default function ScamScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <PageHeader />
+      <PageHeader screenTitle="Scam Analyzer" />
     <ScrollView
       contentContainerStyle={[
         styles.content,

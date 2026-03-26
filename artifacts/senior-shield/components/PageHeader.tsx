@@ -8,6 +8,7 @@ import { usePreferences } from "@/context/PreferencesContext";
 interface PageHeaderProps {
   showTagline?: boolean;
   greeting?: string;
+  screenTitle?: string;
 }
 
 const GRADIENT: [string, string, string] = ["#06102E", "#0E2D6B", "#0B5FAA"];
@@ -46,7 +47,7 @@ function DecoLine({ width, top, left, rotate, opacity }: { width: number; top: n
   );
 }
 
-export default function PageHeader({ showTagline = false, greeting }: PageHeaderProps) {
+export default function PageHeader({ showTagline = false, greeting, screenTitle }: PageHeaderProps) {
   const { ts } = usePreferences();
   const insets = useSafeAreaInsets();
 
@@ -121,6 +122,13 @@ export default function PageHeader({ showTagline = false, greeting }: PageHeader
           >
             {greeting}
           </Text>
+        </View>
+      )}
+
+      {!!screenTitle && (
+        <View style={styles.screenTitleRow}>
+          <View style={styles.screenTitleDivider} />
+          <Text style={[styles.screenTitle, { fontSize: ts.lg }]}>{screenTitle}</Text>
         </View>
       )}
     </LinearGradient>
@@ -201,6 +209,24 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_600SemiBold",
     color: "rgba(255,255,255,0.95)",
     lineHeight: 24,
+  },
+  screenTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 10,
+    paddingLeft: 4,
+  },
+  screenTitleDivider: {
+    width: 3,
+    height: 20,
+    borderRadius: 2,
+    backgroundColor: "#34D399",
+    marginRight: 10,
+  },
+  screenTitle: {
+    fontFamily: "Inter_700Bold",
+    color: "#FFFFFF",
+    letterSpacing: 0.2,
   },
   decoDotsRow: {
     position: "absolute",

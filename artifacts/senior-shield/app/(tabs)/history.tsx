@@ -265,7 +265,7 @@ export default function HistoryScreen() {
         onCancel={() => setGroupToDelete(null)}
       />
 
-      <PageHeader />
+      <PageHeader screenTitle="Conversation History" />
 
       {loading ? (
         <View style={styles.center}>

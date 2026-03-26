@@ -210,7 +210,7 @@ export default function RemindersScreen() {
   if (loading) {
     return (
       <View style={[styles.container, { backgroundColor: theme.background }]}>
-        <PageHeader />
+        <PageHeader screenTitle="Daily Reminders" />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.accent || "#2563EB"} />
           <Text style={[styles.loadingText, { color: theme.textSecondary, fontSize: ts.sm }]}>Loading reminders...</Text>
@@ -221,7 +221,7 @@ export default function RemindersScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <PageHeader />
+      <PageHeader screenTitle="Daily Reminders" />
       <ScrollView
         contentContainerStyle={[
           styles.content,
