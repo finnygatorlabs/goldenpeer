@@ -230,8 +230,8 @@ export default function SubscriptionScreen() {
               onPress={() => setCarrierDropdownOpen(!carrierDropdownOpen)}
             >
               <View style={styles.dropdownHeaderLeft}>
-                <View style={[styles.optionIconBox, { backgroundColor: 'rgba(239,68,68,0.15)' }]}>
-                  <Ionicons name="phone-portrait" size={20} color="#EF4444" />
+                <View style={[styles.optionIconBox, { backgroundColor: 'rgba(96,165,250,0.15)' }]}>
+                  <Ionicons name="cellular" size={20} color="#60A5FA" />
                 </View>
                 <View>
                   <Text style={styles.optionName}>Carrier Billing</Text>
