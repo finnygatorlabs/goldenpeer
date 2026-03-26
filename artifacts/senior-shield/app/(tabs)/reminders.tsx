@@ -98,12 +98,20 @@ export default function RemindersScreen() {
 
   const activeCount = myReminders.filter((r) => r.is_active).length;
 
+  const [authError, setAuthError] = useState(false);
+
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
+      setAuthError(false);
 
       const presetsPromise = remindersApi.getPresets().catch(() => null);
-      const remindersPromise = remindersApi.getAll(user?.token).catch(() => null);
+      const remindersPromise = remindersApi.getAll(user?.token).catch((err: any) => {
+        if (err?.status === 401) {
+          setAuthError(true);
+        }
+        return null;
+      });
 
       const [presetsRes, remindersRes] = await Promise.all([presetsPromise, remindersPromise]);
 
@@ -373,6 +381,15 @@ export default function RemindersScreen() {
             </Text>
           </View>
         </View>
+
+        {authError && (
+          <View style={[styles.authErrorBanner, { backgroundColor: "#FEF2F2", borderColor: "#FECACA" }]}>
+            <Ionicons name="alert-circle" size={20} color="#DC2626" />
+            <Text style={[styles.authErrorText, { fontSize: ts.sm }]}>
+              Your session has expired. Please sign in again from Settings to manage your reminders.
+            </Text>
+          </View>
+        )}
 
         {myReminders.length > 0 && (
           <View style={styles.section}>
@@ -674,6 +691,21 @@ const styles = StyleSheet.create({
   },
   counterText: { fontFamily: "Inter_600SemiBold" },
 
+  authErrorBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 16,
+  },
+  authErrorText: {
+    flex: 1,
+    fontFamily: "Inter_500Medium",
+    color: "#DC2626",
+    lineHeight: 20,
+  },
   section: { marginBottom: 24 },
   sectionTitle: { fontFamily: "Inter_600SemiBold", marginBottom: 4 },
   sectionSubtitle: { fontFamily: "Inter_400Regular", marginBottom: 12 },

@@ -9,6 +9,22 @@ const getApiBase = () => {
 const API_BASE = getApiBase();
 const STORAGE_KEY = "seniorshield_user";
 
+type SessionListener = () => void;
+const sessionExpiredListeners: SessionListener[] = [];
+
+export const apiEvents = {
+  onSessionExpired(fn: SessionListener) {
+    sessionExpiredListeners.push(fn);
+    return () => {
+      const idx = sessionExpiredListeners.indexOf(fn);
+      if (idx >= 0) sessionExpiredListeners.splice(idx, 1);
+    };
+  },
+  emitSessionExpired() {
+    sessionExpiredListeners.forEach((fn) => fn());
+  },
+};
+
 async function getToken(): Promise<string | null> {
   try {
     const stored = await AsyncStorage.getItem(STORAGE_KEY);
@@ -66,6 +82,9 @@ async function request<T = any>(path: string, options: RequestOptions = {}): Pro
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
+    if (response.status === 401 && !skipAuth) {
+      apiEvents.emitSessionExpired();
+    }
     const message = data?.message || data?.error || `Request failed (${response.status})`;
     throw new ApiError(message, response.status, data);
   }

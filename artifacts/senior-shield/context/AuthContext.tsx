@@ -1,6 +1,8 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Alert } from "react-native";
 import { setBaseUrl, setAuthTokenGetter } from "@workspace/api-client-react";
+import { apiEvents } from "@/services/api";
 
 const API_BASE = process.env.EXPO_PUBLIC_DOMAIN
   ? `https://${process.env.EXPO_PUBLIC_DOMAIN}`
@@ -38,6 +40,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const sessionExpiredShown = useRef(false);
+
   useEffect(() => {
     loadUser();
   }, []);
@@ -50,6 +54,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setAuthTokenGetter(() => null);
     }
   }, [user?.token]);
+
+  useEffect(() => {
+    function handleSessionExpired() {
+      if (sessionExpiredShown.current) return;
+      sessionExpiredShown.current = true;
+      AsyncStorage.removeItem(STORAGE_KEY);
+      setUser(null);
+      Alert.alert(
+        "Session Expired",
+        "Your session has ended. Please sign in again to continue.",
+        [{
+          text: "OK",
+          onPress: () => { sessionExpiredShown.current = false; },
+        }]
+      );
+    }
+    const unsub = apiEvents.onSessionExpired(handleSessionExpired);
+    return unsub;
+  }, []);
 
   async function loadUser() {
     try {
