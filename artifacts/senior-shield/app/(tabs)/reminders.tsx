@@ -11,6 +11,9 @@ import {
   Modal,
   Switch,
   TouchableOpacity,
+  TouchableWithoutFeedback,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -505,70 +508,75 @@ export default function RemindersScreen() {
         </Pressable>
       </ScrollView>
 
-      <Modal visible={showCategoryModal} animationType="slide" transparent onRequestClose={() => { setShowCategoryModal(false); setPendingMotivationPreset(null); setEditingCategoryReminder(null); }}>
-        <Pressable
-          style={styles.modalOverlay}
-          onPress={() => { setShowCategoryModal(false); setPendingMotivationPreset(null); setEditingCategoryReminder(null); }}
-        >
-          <Pressable style={[styles.modalContent, { backgroundColor: theme.card }]} onPress={() => {}}>
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: theme.text, fontSize: ts.lg }]}>
-                {editingCategoryReminder ? "Change Category" : "Choose Your Inspiration"}
-              </Text>
-              <TouchableOpacity
-                onPress={() => {
-                  setShowCategoryModal(false);
-                  setPendingMotivationPreset(null);
-                  setEditingCategoryReminder(null);
-                }}
-                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                activeOpacity={0.6}
-              >
-                <Ionicons name="close" size={24} color={theme.textSecondary} />
-              </TouchableOpacity>
-            </View>
-
-            <Text style={[styles.categoryModalSubtitle, { color: theme.textSecondary, fontSize: ts.sm }]}>
-              Select the type of motivational quotes you'd like to hear each day:
+      <Modal
+        visible={showCategoryModal}
+        animationType="slide"
+        transparent={false}
+        onRequestClose={() => { setShowCategoryModal(false); setPendingMotivationPreset(null); setEditingCategoryReminder(null); }}
+      >
+        <View style={[styles.fullModalContainer, { backgroundColor: theme.background }]}>
+          <View style={[styles.fullModalHeader, { paddingTop: Math.max(insets.top, 20) + 10 }]}>
+            <Text style={[styles.modalTitle, { color: theme.text, fontSize: ts.lg }]}>
+              {editingCategoryReminder ? "Change Category" : "Choose Your Inspiration"}
             </Text>
+            <TouchableOpacity
+              onPress={() => {
+                setShowCategoryModal(false);
+                setPendingMotivationPreset(null);
+                setEditingCategoryReminder(null);
+              }}
+              hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
+              activeOpacity={0.5}
+              style={styles.closeButton}
+            >
+              <Ionicons name="close-circle" size={32} color={theme.textSecondary} />
+            </TouchableOpacity>
+          </View>
 
-            <ScrollView style={{ maxHeight: 400 }} showsVerticalScrollIndicator={false} bounces={false}>
-              {getCategories().map((cat) => {
-                const isSelected = editingCategoryReminder?.metadata?.category === cat.key;
-                return (
-                  <TouchableOpacity
-                    key={cat.key}
-                    onPress={() => {
-                      if (editingCategoryReminder) {
-                        changeMotivationCategory(editingCategoryReminder, cat.key);
-                      } else {
-                        addMotivationWithCategory(cat.key);
-                      }
-                    }}
-                    disabled={saving}
-                    activeOpacity={0.7}
-                    style={[
-                      styles.categoryOption,
-                      {
-                        backgroundColor: isSelected ? (theme.accent || "#2563EB") + "15" : theme.inputBackground,
-                        borderColor: isSelected ? (theme.accent || "#2563EB") + "40" : theme.cardBorder,
-                      },
-                    ]}
-                  >
-                    <Ionicons
-                      name={isSelected ? "radio-button-on" : "radio-button-off"}
-                      size={22}
-                      color={isSelected ? (theme.accent || "#2563EB") : theme.textTertiary}
-                    />
-                    <Text style={[styles.categoryOptionText, { color: theme.text, fontSize: ts.base }]}>
-                      {cat.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          </Pressable>
-        </Pressable>
+          <Text style={[styles.categoryModalSubtitle, { color: theme.textSecondary, fontSize: ts.sm, paddingHorizontal: 20 }]}>
+            Select the type of motivational quotes you'd like to hear each day:
+          </Text>
+
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: insets.bottom + 20 }}
+            showsVerticalScrollIndicator={false}
+          >
+            {getCategories().map((cat) => {
+              const isSelected = editingCategoryReminder?.metadata?.category === cat.key;
+              return (
+                <TouchableOpacity
+                  key={cat.key}
+                  onPress={() => {
+                    if (editingCategoryReminder) {
+                      changeMotivationCategory(editingCategoryReminder, cat.key);
+                    } else {
+                      addMotivationWithCategory(cat.key);
+                    }
+                  }}
+                  disabled={saving}
+                  activeOpacity={0.6}
+                  style={[
+                    styles.categoryOption,
+                    {
+                      backgroundColor: isSelected ? (theme.accent || "#2563EB") + "15" : theme.card,
+                      borderColor: isSelected ? (theme.accent || "#2563EB") + "40" : theme.cardBorder,
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name={isSelected ? "radio-button-on" : "radio-button-off"}
+                    size={24}
+                    color={isSelected ? (theme.accent || "#2563EB") : theme.textTertiary}
+                  />
+                  <Text style={[styles.categoryOptionText, { color: theme.text, fontSize: ts.base }]}>
+                    {cat.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
       </Modal>
 
       <Modal visible={showCustomModal} animationType="slide" transparent>
@@ -741,16 +749,29 @@ const styles = StyleSheet.create({
   categoryOption: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 8,
+    gap: 14,
+    paddingHorizontal: 18,
+    paddingVertical: 18,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    marginBottom: 10,
   },
   categoryOptionText: {
     fontFamily: "Inter_500Medium",
     flex: 1,
+  },
+  fullModalContainer: {
+    flex: 1,
+  },
+  fullModalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+  },
+  closeButton: {
+    padding: 4,
   },
 
   presetCard: {
