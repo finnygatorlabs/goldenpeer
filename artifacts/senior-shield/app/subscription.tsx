@@ -198,7 +198,7 @@ export default function SubscriptionScreen() {
       <DecoLine width={250} top={40} left={-60} rotate="-18deg" opacity={0.08} />
       <DecoLine width={180} top={120} left={width - 100} rotate="22deg" opacity={0.06} />
 
-      <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 50) + 10 }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
