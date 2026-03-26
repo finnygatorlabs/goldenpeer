@@ -246,8 +246,8 @@ export const billingApi = {
 
 
 export const remindersApi = {
-  getPresets(token?: string) {
-    return request("/reminders/presets", { token });
+  getPresets() {
+    return request("/reminders/presets", { skipAuth: true });
   },
 
   getAll(token?: string) {

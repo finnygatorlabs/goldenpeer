@@ -40,6 +40,17 @@ interface Reminder {
 
 const MAX_ACTIVE = 3;
 
+const FALLBACK_PRESETS: Preset[] = [
+  { key: "medication", label: "Medication Reminder", prompt: "Good morning {name}, have you taken your medication today?", icon: "medkit-outline" },
+  { key: "family_call", label: "Family Check-in", prompt: "Hi {name}, have you called your family today? It would make their day to hear from you.", icon: "call-outline" },
+  { key: "morning_walk", label: "Morning Walk", prompt: "{name}, did you take your morning walk today? A short walk can do wonders for your health.", icon: "walk-outline" },
+  { key: "wellness_check", label: "Wellness Check", prompt: "{name}, on a scale of 1 to 10, how are you feeling this morning?", icon: "heart-outline" },
+  { key: "hydration", label: "Hydration Reminder", prompt: "{name}, have you had enough water today? Staying hydrated is so important.", icon: "water-outline" },
+  { key: "meals", label: "Meal Reminder", prompt: "{name}, have you eaten today? A good meal will help keep your energy up.", icon: "restaurant-outline" },
+  { key: "appointments", label: "Appointment Check", prompt: "{name}, do you have any appointments today? Let me help you stay on track.", icon: "calendar-outline" },
+  { key: "gratitude", label: "Gratitude Moment", prompt: "{name}, what's one thing you're grateful for today?", icon: "sunny-outline" },
+];
+
 export default function RemindersScreen() {
   const { theme } = useTheme();
   const { ts } = usePreferences();
@@ -61,12 +72,15 @@ export default function RemindersScreen() {
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const [presetsRes, remindersRes] = await Promise.all([
-        remindersApi.getPresets(user?.token),
-        remindersApi.getAll(user?.token),
-      ]);
-      setPresets(presetsRes.presets || []);
-      setMyReminders(remindersRes.reminders || []);
+
+      const presetsPromise = remindersApi.getPresets().catch(() => null);
+      const remindersPromise = remindersApi.getAll(user?.token).catch(() => null);
+
+      const [presetsRes, remindersRes] = await Promise.all([presetsPromise, remindersPromise]);
+
+      const loadedPresets = presetsRes?.presets;
+      setPresets(loadedPresets?.length ? loadedPresets : FALLBACK_PRESETS);
+      setMyReminders(remindersRes?.reminders || []);
     } catch {
       Alert.alert("Error", "Could not load reminders. Please try again.");
     } finally {
