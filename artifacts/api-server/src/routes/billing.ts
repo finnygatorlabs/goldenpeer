@@ -1,10 +1,17 @@
 import { Router, IRouter } from "express";
+import Stripe from "stripe";
 import { db } from "@workspace/db";
-import { userTiersTable, subscriptionsTable } from "@workspace/db";
+import { userTiersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireAuth, AuthRequest } from "../lib/auth.js";
 
 const router: IRouter = Router();
+
+function getStripe(): Stripe | null {
+  const key = process.env.STRIPE_API_KEY || process.env.STRIPE_SECRET_KEY;
+  if (!key) return null;
+  return new Stripe(key, { apiVersion: "2025-04-30.basil" });
+}
 
 router.get("/subscription", requireAuth, async (req: AuthRequest, res) => {
   try {
@@ -64,17 +71,41 @@ router.put("/subscription", requireAuth, async (req: AuthRequest, res) => {
 
 router.delete("/subscription", requireAuth, async (req: AuthRequest, res) => {
   try {
-    const [updated] = await db.update(userTiersTable)
-      .set({ tier: "free", status: "cancelled", billing_cycle: null, stripe_subscription_id: null, updated_at: new Date() } as any)
+    const [tier] = await db.select()
+      .from(userTiersTable)
       .where(eq(userTiersTable.user_id, req.user!.userId))
-      .returning();
+      .limit(1);
 
-    if (!updated) {
+    if (!tier) {
       res.status(404).json({ error: "Not Found" });
       return;
     }
 
-    res.json({ success: true, message: "Subscription cancelled. You will retain access until the end of your billing period." });
+    const stripe = getStripe();
+    if (stripe && tier.stripe_subscription_id) {
+      try {
+        await stripe.subscriptions.update(tier.stripe_subscription_id, {
+          cancel_at_period_end: true,
+        });
+        req.log.info({ subscriptionId: tier.stripe_subscription_id }, "Stripe subscription set to cancel at period end");
+      } catch (stripeErr) {
+        req.log.error({ stripeErr, subscriptionId: tier.stripe_subscription_id }, "Stripe cancellation failed");
+      }
+    }
+
+    const [updated] = await db.update(userTiersTable)
+      .set({
+        status: "cancelling",
+        updated_at: new Date(),
+      } as any)
+      .where(eq(userTiersTable.user_id, req.user!.userId))
+      .returning();
+
+    res.json({
+      success: true,
+      message: "Subscription cancelled. You will retain access until the end of your billing period.",
+      cancel_at_period_end: true,
+    });
   } catch (err) {
     req.log.error({ err }, "Cancel subscription error");
     res.status(500).json({ error: "Internal Server Error" });
@@ -109,7 +140,40 @@ router.get("/trial-status", requireAuth, async (req: AuthRequest, res) => {
 
 router.get("/invoices", requireAuth, async (req: AuthRequest, res) => {
   try {
-    res.json({ invoices: [], message: "Invoice history requires Stripe integration" });
+    const stripe = getStripe();
+    if (!stripe) {
+      res.json({ invoices: [], message: "Billing not configured" });
+      return;
+    }
+
+    const [tier] = await db.select()
+      .from(userTiersTable)
+      .where(eq(userTiersTable.user_id, req.user!.userId))
+      .limit(1);
+
+    if (!tier?.stripe_subscription_id) {
+      res.json({ invoices: [] });
+      return;
+    }
+
+    const stripeInvoices = await stripe.invoices.list({
+      subscription: tier.stripe_subscription_id,
+      limit: 20,
+    });
+
+    const invoices = stripeInvoices.data.map((inv) => ({
+      id: inv.id,
+      amount: inv.amount_due,
+      currency: inv.currency,
+      status: inv.status,
+      created: inv.created,
+      period_start: inv.period_start,
+      period_end: inv.period_end,
+      pdf_url: inv.invoice_pdf,
+      hosted_url: inv.hosted_invoice_url,
+    }));
+
+    res.json({ invoices });
   } catch (err) {
     req.log.error({ err }, "Get invoices error");
     res.status(500).json({ error: "Internal Server Error" });
@@ -120,8 +184,8 @@ router.post("/create-checkout", requireAuth, async (req: AuthRequest, res) => {
   try {
     const { billing_cycle } = req.body;
 
-    const stripeKey = process.env.STRIPE_API_KEY;
-    if (!stripeKey) {
+    const stripe = getStripe();
+    if (!stripe) {
       res.status(503).json({ error: "Billing not configured", message: "Stripe integration is not set up yet." });
       return;
     }
@@ -134,24 +198,22 @@ router.post("/create-checkout", requireAuth, async (req: AuthRequest, res) => {
     const domains = process.env.REPLIT_DOMAINS?.split(",")[0] || "localhost";
     const baseUrl = `https://${domains}`;
 
-    const response = await fetch("https://api.stripe.com/v1/checkout/sessions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${stripeKey}`,
-        "Content-Type": "application/x-www-form-urlencoded",
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items: [{
+        price: priceIds[billing_cycle] || priceIds.monthly,
+        quantity: 1,
+      }],
+      mode: "subscription",
+      success_url: `${baseUrl}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}/billing/cancel`,
+      client_reference_id: req.user!.userId,
+      metadata: {
+        user_id: req.user!.userId,
+        billing_cycle: billing_cycle || "monthly",
       },
-      body: new URLSearchParams({
-        "payment_method_types[]": "card",
-        "line_items[0][price]": priceIds[billing_cycle] || priceIds.monthly,
-        "line_items[0][quantity]": "1",
-        mode: "subscription",
-        success_url: `${baseUrl}/billing/success`,
-        cancel_url: `${baseUrl}/billing/cancel`,
-        client_reference_id: req.user!.userId,
-      }),
     });
 
-    const session = await response.json() as any;
     res.json({ checkout_url: session.url });
   } catch (err) {
     req.log.error({ err }, "Create checkout error");
@@ -160,12 +222,170 @@ router.post("/create-checkout", requireAuth, async (req: AuthRequest, res) => {
 });
 
 router.post("/webhook", async (req, res) => {
+  const stripe = getStripe();
+  const sig = req.headers["stripe-signature"] as string | undefined;
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  let event: Stripe.Event;
+
+  if (webhookSecret && sig && stripe) {
+    try {
+      event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+    } catch (err: any) {
+      req.log.error({ err: err.message }, "Webhook signature verification failed");
+      res.status(400).json({ error: `Webhook Error: ${err.message}` });
+      return;
+    }
+  } else {
+    if (webhookSecret && !sig) {
+      req.log.warn("Missing stripe-signature header");
+      res.status(400).json({ error: "Missing stripe-signature header" });
+      return;
+    }
+    req.log.warn("No STRIPE_WEBHOOK_SECRET set — skipping signature verification (dev mode)");
+    const raw = Buffer.isBuffer(req.body) ? req.body.toString() : req.body;
+    event = typeof raw === "string" ? JSON.parse(raw) : raw;
+  }
+
+  req.log.info({ type: event.type, id: event.id }, "Stripe webhook received");
+
   try {
-    req.log.info({ type: req.body?.type }, "Stripe webhook received");
+    switch (event.type) {
+      case "checkout.session.completed": {
+        const session = event.data.object as Stripe.Checkout.Session;
+        const userId = session.client_reference_id || session.metadata?.user_id;
+
+        if (!userId) {
+          req.log.warn("checkout.session.completed: no user_id found");
+          break;
+        }
+
+        const billingCycle = session.metadata?.billing_cycle || "monthly";
+        const subscriptionId = typeof session.subscription === "string"
+          ? session.subscription
+          : session.subscription?.id;
+
+        const now = new Date();
+        const premiumEnd = new Date(now);
+        premiumEnd.setFullYear(premiumEnd.getFullYear() + (billingCycle === "annual" ? 1 : 0));
+        premiumEnd.setMonth(premiumEnd.getMonth() + (billingCycle === "monthly" ? 1 : 0));
+
+        const [existing] = await db.select()
+          .from(userTiersTable)
+          .where(eq(userTiersTable.user_id, userId))
+          .limit(1);
+
+        if (existing) {
+          await db.update(userTiersTable)
+            .set({
+              tier: "premium",
+              status: "active",
+              billing_cycle: billingCycle,
+              stripe_subscription_id: subscriptionId || null,
+              premium_start_date: now.toISOString().split("T")[0],
+              premium_end_date: premiumEnd.toISOString().split("T")[0],
+              updated_at: now,
+            } as any)
+            .where(eq(userTiersTable.user_id, userId));
+        } else {
+          await db.insert(userTiersTable).values({
+            user_id: userId,
+            tier: "premium",
+            status: "active",
+            billing_cycle: billingCycle,
+            stripe_subscription_id: subscriptionId || null,
+            premium_start_date: now.toISOString().split("T")[0],
+            premium_end_date: premiumEnd.toISOString().split("T")[0],
+          } as any);
+        }
+
+        req.log.info({ userId, subscriptionId, billingCycle }, "User upgraded to premium");
+        break;
+      }
+
+      case "customer.subscription.updated": {
+        const subscription = event.data.object as Stripe.Subscription;
+        const subId = subscription.id;
+
+        const [tier] = await db.select()
+          .from(userTiersTable)
+          .where(eq(userTiersTable.stripe_subscription_id, subId))
+          .limit(1);
+
+        if (tier) {
+          const status = subscription.cancel_at_period_end ? "cancelling" : "active";
+          const periodEnd = new Date(subscription.current_period_end * 1000);
+
+          await db.update(userTiersTable)
+            .set({
+              status,
+              premium_end_date: periodEnd.toISOString().split("T")[0],
+              updated_at: new Date(),
+            } as any)
+            .where(eq(userTiersTable.stripe_subscription_id, subId));
+
+          req.log.info({ subId, status }, "Subscription updated");
+        }
+        break;
+      }
+
+      case "customer.subscription.deleted": {
+        const subscription = event.data.object as Stripe.Subscription;
+        const subId = subscription.id;
+
+        const [tier] = await db.select()
+          .from(userTiersTable)
+          .where(eq(userTiersTable.stripe_subscription_id, subId))
+          .limit(1);
+
+        if (tier) {
+          await db.update(userTiersTable)
+            .set({
+              tier: "free",
+              status: "cancelled",
+              stripe_subscription_id: null,
+              billing_cycle: null,
+              premium_end_date: null,
+              updated_at: new Date(),
+            } as any)
+            .where(eq(userTiersTable.stripe_subscription_id, subId));
+
+          req.log.info({ subId, userId: tier.user_id }, "Subscription cancelled — downgraded to free");
+        }
+        break;
+      }
+
+      case "invoice.payment_failed": {
+        const invoice = event.data.object as Stripe.Invoice;
+        const subId = typeof invoice.subscription === "string"
+          ? invoice.subscription
+          : invoice.subscription?.id;
+
+        if (subId) {
+          const [tier] = await db.select()
+            .from(userTiersTable)
+            .where(eq(userTiersTable.stripe_subscription_id, subId))
+            .limit(1);
+
+          if (tier) {
+            await db.update(userTiersTable)
+              .set({ status: "past_due", updated_at: new Date() } as any)
+              .where(eq(userTiersTable.stripe_subscription_id, subId));
+
+            req.log.warn({ subId, userId: tier.user_id }, "Payment failed — subscription past due");
+          }
+        }
+        break;
+      }
+
+      default:
+        req.log.info({ type: event.type }, "Unhandled webhook event type");
+    }
+
     res.json({ received: true });
   } catch (err) {
-    req.log.error({ err }, "Billing webhook error");
-    res.status(500).json({ error: "Internal Server Error" });
+    req.log.error({ err, eventType: event.type }, "Webhook processing error");
+    res.status(500).json({ error: "Webhook processing failed" });
   }
 });
 

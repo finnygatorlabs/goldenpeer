@@ -48,7 +48,7 @@ The project is built as a pnpm monorepo, utilizing Node.js 24 and TypeScript 5.9
 ## External Dependencies
 
 - **OpenAI**: Used for GPT-4o-mini in voice assistance and text-to-speech (with Edge TTS as fallback).
-- **Stripe**: Integrated for subscription billing and checkout processes.
+- **Stripe**: Full subscription billing with checkout, webhook signature verification, invoice retrieval, and cancellation via the official Stripe SDK.
 - **PostgreSQL**: Relational database.
 - **Expo**: Framework for React Native application development.
 - **React Native**: Mobile application framework.
