@@ -15,6 +15,12 @@ async function extractPdfText(filePath: string): Promise<string> {
   return data.text || "";
 }
 
+async function extractDocxText(filePath: string): Promise<string> {
+  const mammoth = await import("mammoth");
+  const result = await mammoth.extractRawText({ path: filePath });
+  return result.value || "";
+}
+
 async function extractImageText(filePath: string, mimeType: string): Promise<string> {
   const openaiKey = process.env.OPENAI_API_KEY;
   if (!openaiKey) return "";
@@ -57,8 +63,14 @@ const upload = multer({
   dest: "/tmp/scam-uploads/",
   limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
-    const allowed = ["image/jpeg", "image/png", "image/gif", "image/webp", "application/pdf", "text/plain"];
-    cb(null, allowed.includes(file.mimetype));
+    const allowed = [
+      "image/jpeg", "image/png", "image/gif", "image/webp",
+      "application/pdf", "text/plain",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/msword",
+    ];
+    const byExtension = file.originalname.endsWith(".docx") || file.originalname.endsWith(".doc");
+    cb(null, allowed.includes(file.mimetype) || byExtension);
   },
 });
 
@@ -144,6 +156,30 @@ router.post("/analyze-attachment", requireAuth, upload.single("file"), async (re
             extractedText = extractedText
               ? `${extractedText}\n\n[PDF file contained no extractable text: ${file.originalname}]`
               : `[PDF file contained no extractable text: ${file.originalname}]`;
+          }
+        } else if (file.mimetype === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" || file.originalname.endsWith(".docx")) {
+          req.log.info({ filename: file.originalname }, "Extracting text from DOCX");
+          const docxContent = await extractDocxText(file.path);
+          if (docxContent.trim()) {
+            extractedText = extractedText
+              ? `${extractedText}\n\n--- Extracted from document: ${file.originalname} ---\n${docxContent}`
+              : docxContent;
+          } else {
+            extractedText = extractedText
+              ? `${extractedText}\n\n[Document contained no extractable text: ${file.originalname}]`
+              : `[Document contained no extractable text: ${file.originalname}]`;
+          }
+        } else if (file.mimetype === "application/msword" || file.originalname.endsWith(".doc")) {
+          req.log.info({ filename: file.originalname }, "Extracting text from DOC via OCR fallback");
+          const ocrContent = await extractImageText(file.path, file.mimetype);
+          if (ocrContent.trim()) {
+            extractedText = extractedText
+              ? `${extractedText}\n\n--- Extracted from document: ${file.originalname} ---\n${ocrContent}`
+              : ocrContent;
+          } else {
+            extractedText = extractedText
+              ? `${extractedText}\n\n[Document contained no readable text: ${file.originalname}]`
+              : `[Document contained no readable text: ${file.originalname}]`;
           }
         } else if (file.mimetype.startsWith("image/")) {
           req.log.info({ filename: file.originalname }, "Running OCR on image");

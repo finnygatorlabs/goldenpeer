@@ -32,12 +32,18 @@ interface AttachedFile {
   size?: number;
 }
 
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp", "application/pdf", "text/plain"];
+const ALLOWED_TYPES = [
+  "image/jpeg", "image/png", "image/gif", "image/webp",
+  "application/pdf", "text/plain",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/msword",
+];
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 function getFileIcon(type: string): keyof typeof Ionicons.glyphMap {
   if (type.startsWith("image/")) return "image-outline";
   if (type === "application/pdf") return "document-text-outline";
+  if (type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" || type === "application/msword") return "document-text-outline";
   return "document-outline";
 }
 
@@ -127,7 +133,7 @@ export default function ScamScreen() {
     if (Platform.OS === "web") {
       const input = document.createElement("input");
       input.type = "file";
-      input.accept = "image/jpeg,image/png,image/gif,image/webp,application/pdf,text/plain";
+      input.accept = "image/jpeg,image/png,image/gif,image/webp,application/pdf,text/plain,.docx,.doc,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword";
       input.onchange = (e: any) => {
         const file = e.target?.files?.[0];
         if (!file) return;
