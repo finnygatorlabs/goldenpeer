@@ -221,6 +221,23 @@ export default function HomeScreen() {
     ]).start(() => setQuoteDismissed(true));
   }, [quoteDismissed, screenWidth]);
 
+  const INACTIVITY_TIMEOUT = 90_000;
+  const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const resetToIdleRef = useRef<() => void>(() => {});
+
+  const touchInactivity = useCallback(() => {
+    if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
+    inactivityTimerRef.current = setTimeout(() => {
+      if (!conversationActiveRef.current && !isSendingRef.current && !isSpeakingRef.current) {
+        resetToIdleRef.current();
+      }
+    }, INACTIVITY_TIMEOUT);
+  }, []);
+
+  useEffect(() => {
+    return () => { if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current); };
+  }, []);
+
   // Conversation session ID — created on first exchange, used to append subsequent turns
   const sessionIdRef = useRef<string | null>(null);
 
@@ -530,6 +547,35 @@ export default function HomeScreen() {
     setIsSpeaking(false);
   }, []);
 
+  useEffect(() => {
+    if (!isSpeaking && greeted && !isListening && !isSending) {
+      touchInactivity();
+    }
+  }, [isSpeaking]);
+
+  const resetToIdle = useCallback(() => {
+    stopSpeaking();
+    conversationActiveRef.current = false;
+    shouldListenAfterSpeak.current = false;
+    if (silenceTimerRef.current) { clearTimeout(silenceTimerRef.current); silenceTimerRef.current = null; }
+    recognitionRef.current?.stop();
+    recognitionRef.current = null;
+    setIsListening(false);
+    setIsSending(false);
+    setShowText(false);
+    setInputText("");
+    setInterimText("");
+    noSpeechRetryRef.current = 0;
+    sessionIdRef.current = null;
+    setQuoteDismissed(false);
+    quoteSlideAnim.setValue(0);
+    quoteOpacityAnim.setValue(1);
+    const g = `Hi ${userRef.current?.first_name || "there"}! I'm ${assistantName}. Tap the orb and start talking — I'm here to help!`;
+    setMessages([{ id: "0", text: g, isUser: false }]);
+    setHistory([{ role: "assistant", content: g }]);
+  }, [stopSpeaking, assistantName]);
+  useEffect(() => { resetToIdleRef.current = resetToIdle; }, [resetToIdle]);
+
   // ── Speech recognition ──
   // conversationActiveRef: true while we're in an ongoing voice conversation.
   // Drives the auto-restart loop: if recognition ends with no speech and the
@@ -828,10 +874,12 @@ export default function HomeScreen() {
     } finally {
       setIsSending(false);
       setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 150);
+      touchInactivity();
     }
   }
 
   function handleOrbPress() {
+    if (inactivityTimerRef.current) { clearTimeout(inactivityTimerRef.current); inactivityTimerRef.current = null; }
     dismissQuote();
     // Always create the AudioContext on the FIRST user gesture regardless of audioReady.
     // Chrome requires this synchronously inside a user gesture; doing it later loses the context.
@@ -1170,7 +1218,7 @@ export default function HomeScreen() {
           <TextInput
             style={[styles.textInput, { backgroundColor: theme.inputBackground, color: theme.text, fontSize: ts.base }]}
             value={inputText}
-            onChangeText={setInputText}
+            onChangeText={(t) => { setInputText(t); touchInactivity(); }}
             placeholder={`Ask ${assistantName}…`}
             placeholderTextColor={theme.placeholder}
             multiline
