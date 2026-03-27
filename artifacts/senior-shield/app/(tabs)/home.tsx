@@ -999,7 +999,7 @@ export default function HomeScreen() {
             },
           ]}
         >
-          <Text style={[styles.quoteText, { color: theme.text, fontSize: ts.lg }]}>
+          <Text numberOfLines={2} style={[styles.quoteText, { color: theme.text, fontSize: ts.lg }]}>
             {dailyQuote.text}
           </Text>
           <Text style={[styles.quoteAuthor, { color: theme.textSecondary, fontSize: ts.sm }]}>
@@ -1198,19 +1198,17 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   quoteBanner: {
     paddingHorizontal: 24,
-    paddingVertical: 16,
-    alignItems: "center",
+    paddingTop: 8,
+    paddingBottom: 12,
   },
   quoteText: {
     fontFamily: "Inter_400Regular",
     fontStyle: "italic",
-    textAlign: "center",
-    lineHeight: 28,
+    lineHeight: 26,
   },
   quoteAuthor: {
     fontFamily: "Inter_500Medium",
-    marginTop: 6,
-    textAlign: "center",
+    marginTop: 4,
   },
   messages: { flex: 1 },
   msgsContent: { paddingHorizontal: 14, paddingTop: 12, gap: 10 },
