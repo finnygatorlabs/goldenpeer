@@ -999,13 +999,7 @@ export default function HomeScreen() {
             },
           ]}
         >
-          <View style={styles.quoteGlowWrap}>
-            <LinearGradient
-              colors={["rgba(96,165,250,0.12)", "rgba(96,165,250,0.04)", "transparent"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.quoteGlow}
-            />
+          <View style={[styles.quoteAccentBox, { borderLeftColor: "rgba(96,165,250,0.6)" }]}>
             <Text numberOfLines={2} style={[styles.quoteText, { color: theme.text, fontSize: ts.lg }]}>
               {dailyQuote.text}
             </Text>
@@ -1209,17 +1203,10 @@ const styles = StyleSheet.create({
     paddingTop: 28,
     paddingBottom: 12,
   },
-  quoteGlowWrap: {
-    position: "relative",
-    paddingVertical: 4,
-  },
-  quoteGlow: {
-    position: "absolute",
-    top: -8,
-    left: -24,
-    right: -24,
-    bottom: -8,
-    borderRadius: 16,
+  quoteAccentBox: {
+    borderLeftWidth: 4,
+    borderRadius: 2,
+    paddingLeft: 14,
   },
   quoteText: {
     fontFamily: "Inter_400Regular",
