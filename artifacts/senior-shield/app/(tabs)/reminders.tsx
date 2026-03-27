@@ -174,22 +174,30 @@ export default function RemindersScreen() {
   }
 
   async function removeReminder(reminder: Reminder) {
-    Alert.alert("Remove Reminder", `Remove "${reminder.label}" from your list?`, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Remove",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await remindersApi.remove(reminder.id, user?.token);
-            setMyReminders((prev) => prev.filter((r) => r.id !== reminder.id));
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          } catch {
-            Alert.alert("Error", "Could not remove reminder.");
-          }
-        },
-      },
-    ]);
+    const doRemove = async () => {
+      try {
+        await remindersApi.remove(reminder.id, user?.token);
+        setMyReminders((prev) => prev.filter((r) => r.id !== reminder.id));
+        if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      } catch {
+        if (Platform.OS === "web") {
+          window.alert("Could not remove reminder.");
+        } else {
+          Alert.alert("Error", "Could not remove reminder.");
+        }
+      }
+    };
+
+    if (Platform.OS === "web") {
+      if (window.confirm(`Remove "${reminder.label}" from your list?`)) {
+        await doRemove();
+      }
+    } else {
+      Alert.alert("Remove Reminder", `Remove "${reminder.label}" from your list?`, [
+        { text: "Cancel", style: "cancel" },
+        { text: "Remove", style: "destructive", onPress: doRemove },
+      ]);
+    }
   }
 
   async function addCustom() {
