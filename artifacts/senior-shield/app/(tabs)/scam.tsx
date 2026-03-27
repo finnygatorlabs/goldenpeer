@@ -375,7 +375,7 @@ export default function ScamScreen() {
               <Text style={[styles.attachButtonText, { color: theme.textSecondary, fontSize: ts.sm }]}>Attach File or Photo</Text>
             </Pressable>
             <Text style={[styles.attachHint, { color: theme.textTertiary, fontSize: ts.xs }]}>
-              JPG, PNG, PDF, TXT (max 10 MB)
+              JPG, PNG, PDF, TXT, DOC, DOCX (max 10 MB)
             </Text>
           </View>
         )}
