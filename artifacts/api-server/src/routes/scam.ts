@@ -8,7 +8,8 @@ import { analyzeScamText } from "../lib/scamAnalyzer.js";
 import fs from "fs/promises";
 
 async function extractPdfText(filePath: string): Promise<string> {
-  const pdfParse = (await import("pdf-parse")).default;
+  const mod = await import("pdf-parse");
+  const pdfParse = (mod as any).default || mod;
   const buffer = await fs.readFile(filePath);
   const data = await pdfParse(buffer);
   return data.text || "";
