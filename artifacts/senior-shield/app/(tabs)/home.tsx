@@ -1208,12 +1208,12 @@ const styles = StyleSheet.create({
   },
   quoteAccentRow: {
     flexDirection: "row",
-    alignItems: "stretch",
   },
   quoteAccentLine: {
     width: 3,
     borderRadius: 2,
     marginRight: 14,
+    alignSelf: "stretch",
   },
   quoteContent: {
     flex: 1,
