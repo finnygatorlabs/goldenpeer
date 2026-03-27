@@ -25,7 +25,8 @@ import FluidOrb from "@/components/FluidOrb";
 import PageHeader from "@/components/PageHeader";
 import MicPermissionModal from "@/components/MicPermissionModal";
 import { voiceApi, conversationApi, userApi, API_BASE } from "@/services/api";
-import { getDailyQuote } from "@/constants/dailyQuotes";
+import { getDailyQuote, DailyQuote } from "@/constants/dailyQuotes";
+import { dailyQuoteApi } from "@/services/api";
 
 // Remove markdown formatting before sending text to TTS so the voice
 // never reads aloud characters like **, *, #, -, _, ~, backticks, etc.
@@ -199,11 +200,21 @@ export default function HomeScreen() {
   const voiceMutedRef = useRef(false);
   useEffect(() => { voiceMutedRef.current = voiceMuted; }, [voiceMuted]);
 
-  const dailyQuote = useMemo(() => getDailyQuote(), []);
+  const [dailyQuote, setDailyQuote] = useState<DailyQuote>(() => getDailyQuote());
   const quoteSlideAnim = useRef(new Animated.Value(0)).current;
   const quoteOpacityAnim = useRef(new Animated.Value(1)).current;
   const [quoteDismissed, setQuoteDismissed] = useState(false);
   const screenWidth = Dimensions.get("window").width;
+
+  useEffect(() => {
+    let cancelled = false;
+    dailyQuoteApi.get().then((q) => {
+      if (!cancelled && q?.text && q?.author) {
+        setDailyQuote({ text: q.text, author: q.author });
+      }
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   const dismissQuote = useCallback(() => {
     if (quoteDismissed) return;
@@ -1198,7 +1209,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   quoteBanner: {
     paddingHorizontal: 24,
-    paddingTop: 8,
+    paddingTop: 28,
     paddingBottom: 12,
   },
   quoteText: {

@@ -391,4 +391,10 @@ export const hearingAidApi = {
   },
 };
 
+export const dailyQuoteApi = {
+  get(token?: string) {
+    return request<{ text: string; author: string; source: string }>("/daily-quote", { token });
+  },
+};
+
 export { API_BASE, getToken, request };
