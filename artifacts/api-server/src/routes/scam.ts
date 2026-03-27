@@ -7,6 +7,51 @@ import { requireAuth, AuthRequest } from "../lib/auth.js";
 import { analyzeScamText } from "../lib/scamAnalyzer.js";
 import fs from "fs/promises";
 
+async function extractPdfText(filePath: string): Promise<string> {
+  const pdfParse = (await import("pdf-parse")).default;
+  const buffer = await fs.readFile(filePath);
+  const data = await pdfParse(buffer);
+  return data.text || "";
+}
+
+async function extractImageText(filePath: string, mimeType: string): Promise<string> {
+  const openaiKey = process.env.OPENAI_API_KEY;
+  if (!openaiKey) return "";
+  const buffer = await fs.readFile(filePath);
+  const base64 = buffer.toString("base64");
+  const dataUrl = `data:${mimeType};base64,${base64}`;
+
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${openaiKey}`,
+    },
+    body: JSON.stringify({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: "Extract ALL text from this image exactly as it appears. Include every word, number, URL, email address, phone number, and symbol. Do not summarize or interpret — just extract the raw text. If there is no text, reply with EMPTY.",
+            },
+            { type: "image_url", image_url: { url: dataUrl, detail: "high" } },
+          ],
+        },
+      ],
+      max_tokens: 2000,
+      temperature: 0,
+    }),
+  });
+
+  if (!res.ok) return "";
+  const data = (await res.json()) as any;
+  const extracted = data.choices?.[0]?.message?.content?.trim() || "";
+  return extracted === "EMPTY" ? "" : extracted;
+}
+
 const upload = multer({
   dest: "/tmp/scam-uploads/",
   limits: { fileSize: 10 * 1024 * 1024 },
@@ -88,13 +133,29 @@ router.post("/analyze-attachment", requireAuth, upload.single("file"), async (re
           const content = await fs.readFile(file.path, "utf-8");
           extractedText = extractedText ? `${extractedText}\n\n--- Attached file content ---\n${content}` : content;
         } else if (file.mimetype === "application/pdf") {
-          extractedText = extractedText
-            ? `${extractedText}\n\n[PDF file attached: ${file.originalname}]`
-            : `[PDF file attached: ${file.originalname}]`;
+          req.log.info({ filename: file.originalname }, "Extracting text from PDF");
+          const pdfContent = await extractPdfText(file.path);
+          if (pdfContent.trim()) {
+            extractedText = extractedText
+              ? `${extractedText}\n\n--- Extracted from PDF: ${file.originalname} ---\n${pdfContent}`
+              : pdfContent;
+          } else {
+            extractedText = extractedText
+              ? `${extractedText}\n\n[PDF file contained no extractable text: ${file.originalname}]`
+              : `[PDF file contained no extractable text: ${file.originalname}]`;
+          }
         } else if (file.mimetype.startsWith("image/")) {
-          extractedText = extractedText
-            ? `${extractedText}\n\n[Image attached: ${file.originalname}]`
-            : `[Image attached: ${file.originalname}]`;
+          req.log.info({ filename: file.originalname }, "Running OCR on image");
+          const ocrContent = await extractImageText(file.path, file.mimetype);
+          if (ocrContent.trim()) {
+            extractedText = extractedText
+              ? `${extractedText}\n\n--- Extracted from image: ${file.originalname} ---\n${ocrContent}`
+              : ocrContent;
+          } else {
+            extractedText = extractedText
+              ? `${extractedText}\n\n[Image contained no readable text: ${file.originalname}]`
+              : `[Image contained no readable text: ${file.originalname}]`;
+          }
         }
       } finally {
         await fs.unlink(file.path).catch(() => {});
