@@ -124,6 +124,29 @@ export default function ScamScreen() {
   const [attachment, setAttachment] = useState<AttachedFile | null>(null);
 
   function showAttachOptions() {
+    if (Platform.OS === "web") {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "image/jpeg,image/png,image/gif,image/webp,application/pdf,text/plain";
+      input.onchange = (e: any) => {
+        const file = e.target?.files?.[0];
+        if (!file) return;
+        if (file.size > MAX_FILE_SIZE) {
+          window.alert("File Too Large — please select a file smaller than 10 MB.");
+          return;
+        }
+        const uri = URL.createObjectURL(file);
+        setAttachment({
+          uri,
+          name: file.name,
+          type: file.type || "application/octet-stream",
+          size: file.size,
+        });
+      };
+      input.click();
+      return;
+    }
+
     const options = ["Take Photo", "Choose from Gallery", "Pick a File", "Cancel"];
     const cancelIndex = 3;
 
