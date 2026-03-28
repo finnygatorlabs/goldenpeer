@@ -148,14 +148,14 @@ export default function WelcomeScreen() {
             style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}
             onPress={() => router.push("/auth/signup")}
           >
-            <Text style={styles.primaryButtonText}>Get Started — It's Free</Text>
+            <Text style={styles.primaryButtonText}>Get Started</Text>
           </Pressable>
 
           <Pressable
             style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}
             onPress={() => router.push("/auth/login")}
           >
-            <Text style={styles.secondaryButtonText}>I already have an account</Text>
+            <Text style={styles.secondaryButtonText}>Sign In</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -281,30 +281,33 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   buttons: {
-    gap: 12,
+    flexDirection: "row",
+    gap: 10,
     marginTop: 8,
   },
   primaryButton: {
+    flex: 1,
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    paddingVertical: 18,
+    borderRadius: 14,
+    paddingVertical: 14,
     alignItems: "center",
   },
   primaryButtonText: {
-    fontSize: 17,
+    fontSize: 15,
     fontFamily: "Inter_700Bold",
     color: "#0E2D6B",
   },
   secondaryButton: {
+    flex: 1,
     backgroundColor: "rgba(255,255,255,0.1)",
-    borderRadius: 16,
-    paddingVertical: 18,
+    borderRadius: 14,
+    paddingVertical: 14,
     alignItems: "center",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.2)",
   },
   secondaryButtonText: {
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: "Inter_500Medium",
     color: "#FFFFFF",
   },
