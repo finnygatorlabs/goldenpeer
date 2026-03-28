@@ -30,7 +30,7 @@ interface FamilyMember {
   weekly_summary: boolean;
 }
 
-const RELATIONSHIPS = ["Son", "Daughter", "Grandson", "Granddaughter", "Spouse", "Friend", "Caregiver"];
+const RELATIONSHIPS = ["Son", "Daughter", "Brother", "Sister", "Spouse", "Significant Other", "Grandson", "Granddaughter", "Friend", "Caregiver"];
 const MAX_FAMILY_MEMBERS = 3;
 
 export default function FamilyScreen() {
@@ -91,20 +91,24 @@ export default function FamilyScreen() {
   }
 
   async function removeMember(id: string) {
-    Alert.alert("Remove family member?", "They will no longer receive your alerts.", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Remove",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await familyApi.removeMember(id, user?.token);
-            setMembers(prev => prev.filter(m => m.id !== id));
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          } catch {}
-        },
-      },
-    ]);
+    const doRemove = async () => {
+      try {
+        await familyApi.removeMember(id, user?.token);
+        setMembers(prev => prev.filter(m => m.id !== id));
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      } catch {}
+    };
+
+    if (Platform.OS === "web") {
+      if (window.confirm("Remove family member? They will no longer receive your alerts.")) {
+        await doRemove();
+      }
+    } else {
+      Alert.alert("Remove family member?", "They will no longer receive your alerts.", [
+        { text: "Cancel", style: "cancel" },
+        { text: "Remove", style: "destructive", onPress: doRemove },
+      ]);
+    }
   }
 
   return (
