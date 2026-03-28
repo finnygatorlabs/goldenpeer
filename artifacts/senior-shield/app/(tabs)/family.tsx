@@ -134,11 +134,13 @@ export default function FamilyScreen() {
           </Pressable>
         </View>
 
-        <View style={[styles.infoCard, { backgroundColor: "#EDE9FE", borderColor: "#C4B5FD" }]}>
-          <Ionicons name="shield-checkmark" size={24} color="#7C3AED" />
+        <View style={[styles.infoCard, { backgroundColor: "rgba(37,99,235,0.1)", borderColor: "rgba(37,99,235,0.25)" }]}>
+          <View style={styles.infoIconWrap}>
+            <Ionicons name="shield-checkmark" size={18} color="#60A5FA" />
+          </View>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.infoTitle, { color: "#7C3AED" }]}>Protection Network</Text>
-            <Text style={[styles.infoText, { color: "#6D28D9" }]}>
+            <Text style={[styles.infoTitle, { color: "#93C5FD" }]}>Protection Network</Text>
+            <Text style={[styles.infoText, { color: theme.textSecondary }]}>
               Your family members receive instant alerts for high-risk scams and can help you stay safe.
             </Text>
           </View>
@@ -302,14 +304,23 @@ const styles = StyleSheet.create({
   },
   infoCard: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 14,
-    padding: 16,
-    borderRadius: 16,
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 12,
     borderWidth: 1,
   },
-  infoTitle: { fontSize: 15, fontFamily: "Inter_600SemiBold", marginBottom: 4 },
-  infoText: { fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 18 },
+  infoIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: "rgba(37,99,235,0.15)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  infoTitle: { fontSize: 13, fontFamily: "Inter_600SemiBold", marginBottom: 2 },
+  infoText: { fontSize: 12, fontFamily: "Inter_400Regular", lineHeight: 16 },
   emptyState: { alignItems: "center", paddingVertical: 40, gap: 12 },
   emptyTitle: { fontSize: 20, fontFamily: "Inter_600SemiBold" },
   emptyText: { fontSize: 15, fontFamily: "Inter_400Regular", textAlign: "center", lineHeight: 22 },
