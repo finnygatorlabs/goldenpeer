@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -17,12 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
-import * as Google from "expo-auth-session/providers/google";
-import { makeRedirectUri } from "expo-auth-session";
-import * as WebBrowser from "expo-web-browser";
 import { useAuth } from "@/context/AuthContext";
-
-WebBrowser.maybeCompleteAuthSession();
 
 const { width } = Dimensions.get("window");
 const GRADIENT: [string, string, string] = ["#06102E", "#0E2D6B", "#0B5FAA"];
@@ -123,35 +118,15 @@ const successStyles = StyleSheet.create({
 });
 
 export default function LoginScreen() {
-  const { login, loginWithGoogle } = useAuth();
+  const { login } = useAuth();
   const insets = useSafeAreaInsets();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-
-  const [, googleResponse, googlePromptAsync] = Google.useAuthRequest({
-    webClientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID,
-    redirectUri: makeRedirectUri({ path: "/auth/google-callback" }),
-  });
-
-  useEffect(() => {
-    if (googleResponse?.type === "success") {
-      const token = googleResponse.authentication?.accessToken;
-      if (token) {
-        setGoogleLoading(true);
-        loginWithGoogle(token)
-          .catch(() => showError("Google sign-in failed. Please try again."))
-          .finally(() => setGoogleLoading(false));
-      }
-    } else if (googleResponse?.type === "error") {
-      showError("Google sign-in was cancelled or failed. Please try again.");
-    }
-  }, [googleResponse]);
 
   function showError(msg: string) {
     setError(msg);
@@ -235,33 +210,6 @@ export default function LoginScreen() {
           </View>
         </View>
 
-        <Pressable
-          style={[styles.googleButton, (loading || googleLoading) && styles.disabled]}
-          onPress={() => {
-            setError("");
-            setSuccess("");
-            googlePromptAsync();
-          }}
-          disabled={loading || googleLoading}
-        >
-          {googleLoading ? (
-            <ActivityIndicator size="small" color="#0E2D6B" />
-          ) : (
-            <>
-              <View style={styles.googleIconCircle}>
-                <Text style={styles.googleG}>G</Text>
-              </View>
-              <Text style={styles.googleButtonText}>Continue with Google</Text>
-            </>
-          )}
-        </Pressable>
-
-        <View style={styles.dividerRow}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>or sign in with email</Text>
-          <View style={styles.dividerLine} />
-        </View>
-
         <View style={styles.field}>
           <Text style={styles.label}>Email Address</Text>
           <View style={styles.input}>
@@ -318,8 +266,11 @@ export default function LoginScreen() {
           onPress={handleLogin}
           disabled={loading}
         >
-          {loading ? <ActivityIndicator color="#0E2D6B" /> : (
-            <Text style={styles.loginButtonText}>Sign In</Text>
+          {loading ? <ActivityIndicator color="#FFFFFF" /> : (
+            <>
+              <Ionicons name="log-in-outline" size={20} color="#FFFFFF" />
+              <Text style={styles.loginButtonText}>Sign In</Text>
+            </>
           )}
         </Pressable>
 
@@ -352,28 +303,6 @@ const styles = StyleSheet.create({
   logoImg: { width: 56, height: 56 },
   welcomeTitle: { fontSize: 22, fontFamily: "Inter_700Bold", color: "#FFFFFF" },
   welcomeSub: { fontSize: 14, fontFamily: "Inter_400Regular", marginTop: 2, color: "rgba(255,255,255,0.7)" },
-  googleButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-    borderRadius: 16,
-    backgroundColor: "#FFFFFF",
-    paddingVertical: 18,
-  },
-  googleIconCircle: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: "#4285F4",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  googleG: { fontSize: 15, fontFamily: "Inter_700Bold", color: "#FFFFFF", lineHeight: 18 },
-  googleButtonText: { fontSize: 17, fontFamily: "Inter_700Bold", color: "#0E2D6B" },
-  dividerRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: "rgba(255,255,255,0.15)" },
-  dividerText: { fontSize: 13, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.5)" },
   field: { gap: 8 },
   label: { fontSize: 14, fontFamily: "Inter_600SemiBold", color: "#FFFFFF" },
   labelRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
@@ -390,8 +319,18 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.15)",
   },
   textInput: { flex: 1, fontSize: 16, fontFamily: "Inter_400Regular", minWidth: 0, color: "#FFFFFF" },
-  loginButton: { backgroundColor: "#FFFFFF", borderRadius: 16, paddingVertical: 18, alignItems: "center" },
-  loginButtonText: { fontSize: 17, fontFamily: "Inter_700Bold", color: "#0E2D6B" },
+  loginButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    borderRadius: 14,
+    paddingVertical: 16,
+    backgroundColor: "rgba(52,211,153,0.2)",
+    borderWidth: 1,
+    borderColor: "rgba(52,211,153,0.4)",
+  },
+  loginButtonText: { fontSize: 17, fontFamily: "Inter_700Bold", color: "#34D399" },
   pressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
   disabled: { opacity: 0.6 },
   switchLink: { alignItems: "center", paddingVertical: 4 },
