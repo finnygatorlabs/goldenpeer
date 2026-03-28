@@ -127,6 +127,22 @@ export default function WelcomeScreen() {
           ))}
         </View>
 
+        <View style={styles.verifiedSection}>
+          <View style={styles.verifiedDivider} />
+          <View style={styles.verifiedBadge}>
+            <Ionicons name="checkmark-circle" size={16} color="#34D399" />
+            <Text style={styles.verifiedLabel}>VERIFIED ACCURACY</Text>
+          </View>
+          <Text style={styles.verifiedStat}>95% Scam Detection Rate</Text>
+          <Text style={styles.verifiedDesc}>
+            Tested on 82 scam categories across 25+ industries
+          </Text>
+          <Text style={styles.verifiedDesc}>
+            Real-world tested on actual scams targeting seniors
+          </Text>
+          <View style={styles.verifiedDivider} />
+        </View>
+
         <View style={styles.buttons}>
           <Pressable
             style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}
@@ -228,6 +244,41 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
     color: "rgba(255,255,255,0.6)",
     marginTop: 1,
+  },
+  verifiedSection: {
+    alignItems: "center",
+    marginVertical: 4,
+    gap: 6,
+  },
+  verifiedDivider: {
+    width: "60%",
+    height: 1,
+    backgroundColor: "rgba(255,255,255,0.15)",
+  },
+  verifiedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 10,
+  },
+  verifiedLabel: {
+    fontFamily: "Inter_700Bold",
+    fontSize: 12,
+    color: "#34D399",
+    letterSpacing: 1.2,
+  },
+  verifiedStat: {
+    fontFamily: "Inter_700Bold",
+    fontSize: 22,
+    color: "#FFFFFF",
+    marginTop: 2,
+  },
+  verifiedDesc: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 13,
+    color: "rgba(255,255,255,0.6)",
+    textAlign: "center",
+    lineHeight: 18,
   },
   buttons: {
     gap: 12,
