@@ -204,8 +204,8 @@ export const familyApi = {
     return request("/family/members", { token });
   },
 
-  addMember(adultChildEmail: string, relationship: string, token?: string) {
-    return request("/family/add-member", { method: "POST", body: { adult_child_email: adultChildEmail, relationship }, token });
+  addMember(adultChildEmail: string, relationship: string, token?: string, name?: string) {
+    return request("/family/add-member", { method: "POST", body: { adult_child_email: adultChildEmail, relationship, ...(name ? { name } : {}) }, token });
   },
 
   removeMember(id: string, token?: string) {

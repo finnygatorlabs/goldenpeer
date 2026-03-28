@@ -43,6 +43,7 @@ export default function FamilyScreen() {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [email, setEmail] = useState("");
+  const [memberName, setMemberName] = useState("");
   const [relationship, setRelationship] = useState("Daughter");
   const [adding, setAdding] = useState(false);
 
@@ -73,11 +74,12 @@ export default function FamilyScreen() {
     }
     setAdding(true);
     try {
-      const data = await familyApi.addMember(email.trim(), relationship.toLowerCase(), user?.token);
+      const data = await familyApi.addMember(email.trim(), relationship.toLowerCase(), user?.token, memberName.trim() || undefined);
       if (data.success) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setShowAddModal(false);
         setEmail("");
+        setMemberName("");
         fetchMembers();
       }
     } catch (err: any) {
@@ -180,11 +182,18 @@ export default function FamilyScreen() {
                 </View>
                 <View style={styles.memberInfo}>
                   <Text style={[styles.memberName, { color: theme.text }]}>
-                    {member.first_name && member.last_name
-                      ? `${member.first_name} ${member.last_name}`
+                    {member.first_name
+                      ? `${member.first_name}${member.last_name ? ` ${member.last_name}` : ""}`
                       : member.email}
                   </Text>
-                  <Text style={[styles.memberEmail, { color: theme.textSecondary }]}>{member.email}</Text>
+                  {member.first_name && (
+                    <Text style={[styles.memberEmail, { color: theme.textSecondary }]}>{member.email}</Text>
+                  )}
+                  {member.relationship && (
+                    <Text style={[styles.memberRelationship, { color: theme.textTertiary }]}>
+                      {member.relationship.charAt(0).toUpperCase() + member.relationship.slice(1)}
+                    </Text>
+                  )}
                   <View style={styles.alertBadges}>
                     {member.scam_alerts && (
                       <View style={[styles.badge, { backgroundColor: "#D1FAE5" }]}>
@@ -220,6 +229,22 @@ export default function FamilyScreen() {
 
             <View style={styles.modalBody}>
               <View style={styles.field}>
+                <Text style={[styles.fieldLabel, { color: theme.text }]}>Their Name</Text>
+                <View style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.border }]}>
+                  <Ionicons name="person-outline" size={20} color={theme.textTertiary} />
+                  <TextInput
+                    style={[styles.textInput, { color: theme.text }]}
+                    value={memberName}
+                    onChangeText={setMemberName}
+                    placeholder="e.g. Sarah Johnson"
+                    placeholderTextColor={theme.placeholder}
+                    autoCapitalize="words"
+                    autoFocus
+                  />
+                </View>
+              </View>
+
+              <View style={styles.field}>
                 <Text style={[styles.fieldLabel, { color: theme.text }]}>Email Address</Text>
                 <View style={[styles.input, { backgroundColor: theme.inputBackground, borderColor: theme.border }]}>
                   <Ionicons name="mail-outline" size={20} color={theme.textTertiary} />
@@ -231,7 +256,6 @@ export default function FamilyScreen() {
                     placeholderTextColor={theme.placeholder}
                     keyboardType="email-address"
                     autoCapitalize="none"
-                    autoFocus
                   />
                 </View>
               </View>
@@ -356,6 +380,7 @@ const styles = StyleSheet.create({
   memberInfo: { flex: 1, gap: 4 },
   memberName: { fontSize: 16, fontFamily: "Inter_600SemiBold" },
   memberEmail: { fontSize: 13, fontFamily: "Inter_400Regular" },
+  memberRelationship: { fontSize: 12, fontFamily: "Inter_500Medium" },
   alertBadges: { flexDirection: "row", gap: 6, flexWrap: "wrap", marginTop: 4 },
   badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   badgeText: { fontSize: 11, fontFamily: "Inter_600SemiBold" },

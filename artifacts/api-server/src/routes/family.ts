@@ -45,10 +45,18 @@ const MAX_FAMILY_MEMBERS = 3;
 
 router.post("/add-member", requireAuth, async (req: AuthRequest, res) => {
   try {
-    const { adult_child_email, relationship } = req.body;
+    const { adult_child_email, relationship, name } = req.body;
     if (!adult_child_email || !relationship) {
       res.status(400).json({ error: "Bad Request", message: "adult_child_email and relationship are required" });
       return;
+    }
+
+    let firstName: string | undefined;
+    let lastName: string | undefined;
+    if (name && typeof name === "string") {
+      const parts = name.trim().split(/\s+/);
+      firstName = parts[0];
+      lastName = parts.length > 1 ? parts.slice(1).join(" ") : undefined;
     }
 
     const existingMembers = await db
@@ -80,8 +88,17 @@ router.post("/add-member", requireAuth, async (req: AuthRequest, res) => {
         email: adult_child_email,
         password_hash: tempPassword,
         user_type: "adult_child",
+        ...(firstName ? { first_name: firstName } : {}),
+        ...(lastName ? { last_name: lastName } : {}),
       }).returning();
       adultChildId = newUser.id;
+    }
+
+    if (firstName && adultChild && !adultChild.first_name) {
+      await db.update(usersTable).set({
+        first_name: firstName,
+        ...(lastName ? { last_name: lastName } : {}),
+      }).where(eq(usersTable.id, adultChildId));
     }
 
     await db.insert(familyRelationshipsTable).values({
