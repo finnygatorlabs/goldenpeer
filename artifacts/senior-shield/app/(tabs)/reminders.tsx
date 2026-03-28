@@ -22,6 +22,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
 import { usePreferences } from "@/context/PreferencesContext";
 import PageHeader from "@/components/PageHeader";
+import ConfirmModal from "@/components/ConfirmModal";
 import { remindersApi } from "@/services/api";
 
 interface Preset {
@@ -69,7 +70,7 @@ export default function RemindersScreen() {
   const [customLabel, setCustomLabel] = useState("");
   const [customPrompt, setCustomPrompt] = useState("");
   const [saving, setSaving] = useState(false);
-
+  const [removingReminder, setRemovingReminder] = useState<Reminder | null>(null);
 
   const activeCount = myReminders.filter((r) => r.is_active).length;
 
@@ -173,31 +174,20 @@ export default function RemindersScreen() {
     }
   }
 
-  async function removeReminder(reminder: Reminder) {
-    const doRemove = async () => {
-      try {
-        await remindersApi.remove(reminder.id, user?.token);
-        setMyReminders((prev) => prev.filter((r) => r.id !== reminder.id));
-        if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      } catch {
-        if (Platform.OS === "web") {
-          window.alert("Could not remove reminder.");
-        } else {
-          Alert.alert("Error", "Could not remove reminder.");
-        }
-      }
-    };
+  function removeReminder(reminder: Reminder) {
+    setRemovingReminder(reminder);
+  }
 
-    if (Platform.OS === "web") {
-      if (window.confirm(`Remove "${reminder.label}" from your list?`)) {
-        await doRemove();
-      }
-    } else {
-      Alert.alert("Remove Reminder", `Remove "${reminder.label}" from your list?`, [
-        { text: "Cancel", style: "cancel" },
-        { text: "Remove", style: "destructive", onPress: doRemove },
-      ]);
+  async function confirmRemoveReminder() {
+    if (!removingReminder) return;
+    try {
+      await remindersApi.remove(removingReminder.id, user?.token);
+      setMyReminders((prev) => prev.filter((r) => r.id !== removingReminder.id));
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } catch {
+      Alert.alert("Error", "Could not remove reminder.");
     }
+    setRemovingReminder(null);
   }
 
   async function addCustom() {
@@ -460,6 +450,18 @@ export default function RemindersScreen() {
           </View>
         </View>
       </Modal>
+
+      <ConfirmModal
+        visible={removingReminder !== null}
+        title="Remove Reminder?"
+        message={removingReminder ? `Remove "${removingReminder.label}" from your daily reminders?` : ""}
+        confirmLabel="Remove"
+        cancelLabel="Keep"
+        destructive
+        icon="notifications-off-outline"
+        onConfirm={confirmRemoveReminder}
+        onCancel={() => setRemovingReminder(null)}
+      />
     </View>
   );
 }
