@@ -18,6 +18,7 @@ import * as Haptics from "expo-haptics";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
 import PageHeader from "@/components/PageHeader";
+import ConfirmModal from "@/components/ConfirmModal";
 import { familyApi } from "@/services/api";
 
 interface FamilyMember {
@@ -46,6 +47,7 @@ export default function FamilyScreen() {
   const [memberName, setMemberName] = useState("");
   const [relationship, setRelationship] = useState("Daughter");
   const [adding, setAdding] = useState(false);
+  const [removingId, setRemovingId] = useState<string | null>(null);
 
   async function fetchMembers() {
     try {
@@ -90,25 +92,18 @@ export default function FamilyScreen() {
     }
   }
 
-  async function removeMember(id: string) {
-    const doRemove = async () => {
-      try {
-        await familyApi.removeMember(id, user?.token);
-        setMembers(prev => prev.filter(m => m.id !== id));
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      } catch {}
-    };
+  function removeMember(id: string) {
+    setRemovingId(id);
+  }
 
-    if (Platform.OS === "web") {
-      if (window.confirm("Remove family member? They will no longer receive your alerts.")) {
-        await doRemove();
-      }
-    } else {
-      Alert.alert("Remove family member?", "They will no longer receive your alerts.", [
-        { text: "Cancel", style: "cancel" },
-        { text: "Remove", style: "destructive", onPress: doRemove },
-      ]);
-    }
+  async function confirmRemoveMember() {
+    if (!removingId) return;
+    try {
+      await familyApi.removeMember(removingId, user?.token);
+      setMembers(prev => prev.filter(m => m.id !== removingId));
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } catch {}
+    setRemovingId(null);
   }
 
   return (
@@ -306,6 +301,18 @@ export default function FamilyScreen() {
           </View>
         </View>
       </Modal>
+
+      <ConfirmModal
+        visible={removingId !== null}
+        title="Remove Family Member?"
+        message="They will no longer receive your scam alerts or weekly summaries."
+        confirmLabel="Remove"
+        cancelLabel="Keep"
+        destructive
+        icon="person-remove-outline"
+        onConfirm={confirmRemoveMember}
+        onCancel={() => setRemovingId(null)}
+      />
     </View>
   );
 }
