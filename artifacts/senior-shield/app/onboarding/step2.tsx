@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "@/context/AuthContext";
+import { usePreferences } from "@/context/PreferencesContext";
 import { userApi } from "@/services/api";
 
 const { width } = Dimensions.get("window");
@@ -66,6 +67,7 @@ const VOICE_OPTIONS = [
 export default function OnboardingStep2() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
+  const { reloadPrefs } = usePreferences();
 
   const [fontSize, setFontSize] = useState("large");
   const [voice, setVoice] = useState("female");
@@ -82,6 +84,7 @@ export default function OnboardingStep2() {
         assistant_name: assistantName,
         tts_voice: ttsVoice,
       }, user?.token);
+      await reloadPrefs();
     } catch {}
 
     router.push("/onboarding/step3");
