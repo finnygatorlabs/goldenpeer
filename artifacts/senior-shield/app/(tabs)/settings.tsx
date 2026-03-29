@@ -418,7 +418,7 @@ export default function SettingsScreen() {
         <SettingRow
           icon="mic"
           label="Assistant Voice"
-          subtitle={prefs.preferred_voice === "female" ? "Female (Ava)" : "Male (Max)"}
+          subtitle={prefs.preferred_voice === "female" ? `Female (${prefs.assistant_name})` : `Male (${prefs.assistant_name})`}
           onPress={() => {
             const newGender = prefs.preferred_voice === "female" ? "male" : "female";
             handlePrefChange("preferred_voice", newGender);
@@ -495,28 +495,48 @@ export default function SettingsScreen() {
               What your assistant is called
             </Text>
           </View>
-          <TextInput
-            style={[
-              styles.nameInput,
-              {
-                color: theme.text,
-                borderColor: "#2563EB",
-                backgroundColor: theme.inputBackground,
-                fontSize: ts.sm,
-              },
-            ]}
-            value={nameInput}
-            onChangeText={setNameInput}
-            maxLength={20}
-            placeholder={DEFAULT_NAMES[prefs.preferred_voice]}
-            placeholderTextColor={theme.placeholder}
-            returnKeyType="done"
-            onEndEditing={() => {
-              const trimmed = nameInput.trim() || DEFAULT_NAMES[prefs.preferred_voice];
-              setNameInput(trimmed);
-              handlePrefChange("assistant_name", trimmed);
-            }}
-          />
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <TextInput
+              style={[
+                styles.nameInput,
+                {
+                  color: theme.text,
+                  borderColor: "#2563EB",
+                  backgroundColor: theme.inputBackground,
+                  fontSize: ts.sm,
+                },
+              ]}
+              value={nameInput}
+              onChangeText={setNameInput}
+              maxLength={20}
+              placeholder={DEFAULT_NAMES[prefs.preferred_voice]}
+              placeholderTextColor={theme.placeholder}
+              returnKeyType="done"
+              onEndEditing={() => {
+                const trimmed = nameInput.trim() || DEFAULT_NAMES[prefs.preferred_voice];
+                setNameInput(trimmed);
+                handlePrefChange("assistant_name", trimmed);
+              }}
+            />
+            {nameInput.trim() && nameInput.trim() !== prefs.assistant_name && (
+              <Pressable
+                onPress={() => {
+                  const trimmed = nameInput.trim() || DEFAULT_NAMES[prefs.preferred_voice];
+                  setNameInput(trimmed);
+                  handlePrefChange("assistant_name", trimmed);
+                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                }}
+                style={{
+                  backgroundColor: "#2563EB",
+                  paddingHorizontal: 12,
+                  paddingVertical: 8,
+                  borderRadius: 8,
+                }}
+              >
+                <Text style={{ color: "#FFFFFF", fontFamily: "Inter_600SemiBold", fontSize: ts.xs }}>Save</Text>
+              </Pressable>
+            )}
+          </View>
         </View>
 
         <SettingRow
