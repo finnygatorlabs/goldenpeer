@@ -121,6 +121,12 @@ export default function SubscriptionScreen() {
 
   const handleCheckout = async () => {
     setCheckoutModalVisible(false);
+
+    let checkoutWindow: Window | null = null;
+    if (Platform.OS === 'web') {
+      checkoutWindow = window.open('about:blank', '_blank');
+    }
+
     try {
       setLoading(true);
 
@@ -131,15 +137,16 @@ export default function SubscriptionScreen() {
 
       if (response?.checkout_url) {
         if (Platform.OS === 'web') {
-          try {
-            window.top!.location.href = response.checkout_url;
-          } catch {
+          if (checkoutWindow) {
+            checkoutWindow.location.href = response.checkout_url;
+          } else {
             window.location.href = response.checkout_url;
           }
         } else {
           await Linking.openURL(response.checkout_url);
         }
       } else {
+        if (checkoutWindow) checkoutWindow.close();
         showModal(
           'Checkout Error',
           'Could not create checkout session. Please try again.',
@@ -147,6 +154,7 @@ export default function SubscriptionScreen() {
         );
       }
     } catch (error) {
+      if (checkoutWindow) checkoutWindow.close();
       showModal(
         'Error',
         'Failed to initiate checkout. Please try again.',
