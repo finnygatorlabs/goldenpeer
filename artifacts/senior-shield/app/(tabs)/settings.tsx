@@ -662,20 +662,11 @@ export default function SettingsScreen() {
       {/* LEGAL */}
       <View style={[styles.section, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
         <Text style={[styles.sectionTitle, { color: theme.textSecondary, fontSize: ts.tiny }]}>LEGAL & SECURITY</Text>
-        <SettingRow icon="lock-closed" label="Privacy Policy" subtitle="GDPR, CCPA & ADA compliant" onPress={() => router.push("/legal?page=privacy")} theme={theme} ts={ts} iconColor="#6366F1" iconBg="#EDE9FE" />
+        <SettingRow icon="lock-closed" label="Privacy Policy" onPress={() => router.push("/legal?page=privacy")} theme={theme} ts={ts} iconColor="#6366F1" iconBg="#EDE9FE" />
         <SettingRow icon="document-text" label="Terms of Service" onPress={() => router.push("/legal?page=terms")} theme={theme} ts={ts} iconColor="#6366F1" iconBg="#EDE9FE" />
         <SettingRow icon="information-circle" label="Cookie Policy" onPress={() => router.push("/legal?page=cookies")} theme={theme} ts={ts} iconColor="#6366F1" iconBg="#EDE9FE" />
-        <SettingRow icon="shield-checkmark" label="Security Checklist" subtitle="AES-256, TLS, audit logs" onPress={() => router.push("/legal?page=security")} theme={theme} ts={ts} iconColor="#6366F1" iconBg="#EDE9FE" />
-        <SettingRow
-          icon="mail"
-          label="Contact Us"
-          subtitle={CONTACT_EMAIL}
-          onPress={() => router.push("/legal?page=contact")}
-          theme={theme}
-          ts={ts}
-          iconColor="#6366F1"
-          iconBg="#EDE9FE"
-        />
+        <SettingRow icon="shield-checkmark" label="Security Checklist" onPress={() => router.push("/legal?page=security")} theme={theme} ts={ts} iconColor="#6366F1" iconBg="#EDE9FE" />
+        <SettingRow icon="mail" label="Contact Us" onPress={() => router.push("/legal?page=contact")} theme={theme} ts={ts} iconColor="#6366F1" iconBg="#EDE9FE" />
       </View>
 
       <Pressable

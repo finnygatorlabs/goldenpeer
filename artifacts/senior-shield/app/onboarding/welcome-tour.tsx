@@ -32,7 +32,7 @@ const SLIDES = [
     icon: "mic" as const,
     iconColor: "#60A5FA",
     title: "Voice Assistant",
-    subtitle: "Just tap the microphone and talk naturally. Ask questions, get help with your phone, or have a friendly conversation.",
+    subtitle: "Just tap the microphone and talk naturally. Ask questions, get help with general tasks and technical challenges, or just have a friendly conversation.",
     highlight: "Your personal tech helper is always ready",
   },
   {
