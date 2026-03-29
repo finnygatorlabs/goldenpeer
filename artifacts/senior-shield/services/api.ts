@@ -242,8 +242,8 @@ export const conversationApi = {
 
 
 export const billingApi = {
-  createCheckout(plan: string, token?: string) {
-    return request("/billing/create-checkout", { method: "POST", body: { plan }, token });
+  createCheckout(billing_cycle: string, token?: string) {
+    return request("/billing/create-checkout", { method: "POST", body: { billing_cycle }, token });
   },
 
   getSubscription(token?: string) {

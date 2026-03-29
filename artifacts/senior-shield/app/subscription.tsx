@@ -5,10 +5,11 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
   StyleSheet,
   Dimensions,
   StatusBar,
+  Linking,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,6 +17,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/context/AuthContext';
 import { billingApi } from '@/services/api';
+import ConfirmModal from '@/components/ConfirmModal';
 
 const { width } = Dimensions.get('window');
 const GRADIENT: [string, string, string] = ['#06102E', '#0E2D6B', '#0B5FAA'];
@@ -89,6 +91,13 @@ export default function SubscriptionScreen() {
   const [carrierDropdownOpen, setCarrierDropdownOpen] = useState(false);
   const [insuranceDropdownOpen, setInsuranceDropdownOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalConfig, setModalConfig] = useState({ title: '', message: '', confirmLabel: 'OK', icon: 'information-circle-outline' as any });
+
+  const showModal = (title: string, message: string, icon?: string) => {
+    setModalConfig({ title, message, confirmLabel: 'OK', icon: (icon || 'information-circle-outline') as any });
+    setModalVisible(true);
+  };
 
   const planDetails = selectedPlan === 'monthly'
     ? { label: 'Premium Monthly', price: '$19.99/month', renewal: 'Auto-renews monthly' }
@@ -96,10 +105,10 @@ export default function SubscriptionScreen() {
 
   const handleSelectMethod = (method: PaymentMethod) => {
     if (method === 'carrier' || method === 'insurance') {
-      Alert.alert(
+      showModal(
         'Coming Soon',
         `${method === 'carrier' ? 'Carrier billing' : 'Insurance'} integration is coming soon. We'll notify you when it's available.\n\nFor now, please select Credit Card to get started.`,
-        [{ text: 'OK' }]
+        'time-outline'
       );
       return;
     }
@@ -116,18 +125,24 @@ export default function SubscriptionScreen() {
           user?.token
         );
 
-        if (response?.url) {
-          Alert.alert(
-            'Stripe Checkout',
-            'Stripe checkout URL ready. Implementation pending environment variable setup.',
-            [{ text: 'OK' }]
+        if (response?.checkout_url) {
+          if (Platform.OS === 'web') {
+            window.open(response.checkout_url, '_blank');
+          } else {
+            await Linking.openURL(response.checkout_url);
+          }
+        } else {
+          showModal(
+            'Checkout Error',
+            'Could not create checkout session. Please try again.',
+            'alert-circle-outline'
           );
         }
       } catch (error) {
-        Alert.alert(
+        showModal(
           'Error',
           'Failed to initiate checkout. Please try again.',
-          [{ text: 'OK' }]
+          'alert-circle-outline'
         );
         console.error('Checkout error:', error);
       } finally {
@@ -137,10 +152,10 @@ export default function SubscriptionScreen() {
   };
 
   const handleNotifyMe = (type: 'carrier' | 'insurance', name: string) => {
-    Alert.alert(
+    showModal(
       'Notify Me',
       `We'll let you know when ${name} billing is available!`,
-      [{ text: 'OK' }]
+      'notifications-outline'
     );
   };
 
@@ -370,6 +385,17 @@ export default function SubscriptionScreen() {
           By continuing, you agree to our Terms of Service and Privacy Policy
         </Text>
       </ScrollView>
+
+      <ConfirmModal
+        visible={modalVisible}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        confirmLabel={modalConfig.confirmLabel}
+        cancelLabel="Close"
+        icon={modalConfig.icon}
+        onConfirm={() => setModalVisible(false)}
+        onCancel={() => setModalVisible(false)}
+      />
     </View>
   );
 }
