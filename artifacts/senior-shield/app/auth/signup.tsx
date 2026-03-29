@@ -21,6 +21,7 @@ import { makeRedirectUri } from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
 import * as AppleAuthentication from "expo-apple-authentication";
 import { useAuth } from "@/context/AuthContext";
+import GoogleLogo from "@/components/GoogleLogo";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -116,23 +117,30 @@ export default function SignupScreen() {
 
   const [, googleResponse, googlePromptAsync] = Google.useAuthRequest({
     webClientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID,
-    redirectUri: makeRedirectUri({ path: "/auth/google-callback" }),
+    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+    redirectUri: makeRedirectUri({
+      scheme: "senior-shield",
+      path: "auth/google-callback",
+    }),
   });
 
   useEffect(() => {
-    if (googleResponse?.type === "success") {
+    if (!googleResponse) return;
+    if (googleResponse.type === "success") {
       const token = googleResponse.authentication?.accessToken;
       if (token) {
         setSocialLoading(true);
         loginWithGoogle(token, userType)
-          .catch(() => {
+          .catch((err) => {
             if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            showError("Google sign-in failed. Please try again.");
+            showError(err?.message || "Google sign-in failed. Please try again.");
           })
           .finally(() => setSocialLoading(false));
+      } else {
+        showError("Could not get access token from Google. Please try again.");
       }
-    } else if (googleResponse?.type === "error") {
-      showError("Google sign-in was cancelled. Please try again.");
+    } else if (googleResponse.type === "error") {
+      showError("Google sign-in failed. Please try again.");
     }
   }, [googleResponse]);
 
@@ -247,7 +255,7 @@ export default function SignupScreen() {
               ) : (
                 <>
                   <View style={styles.socialIconCircle}>
-                    <Text style={styles.googleG}>G</Text>
+                    <GoogleLogo size={18} />
                   </View>
                   <Text style={styles.socialButtonText}>Continue with Google</Text>
                 </>
