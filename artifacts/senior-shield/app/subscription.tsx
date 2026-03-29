@@ -95,6 +95,7 @@ export default function SubscriptionScreen() {
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalConfig, setModalConfig] = useState({ title: '', message: '', confirmLabel: 'OK', icon: 'information-circle-outline' as any });
+  const [checkoutModalVisible, setCheckoutModalVisible] = useState(false);
 
   const showModal = (title: string, message: string, icon?: string) => {
     setModalConfig({ title, message, confirmLabel: 'OK', icon: (icon || 'information-circle-outline') as any });
@@ -106,7 +107,6 @@ export default function SubscriptionScreen() {
     : { label: 'Premium Annual', price: '$203.90/year', renewal: 'Auto-renews yearly (save 15%)' };
 
   const handleSelectMethod = (method: PaymentMethod) => {
-    console.log('[SUB] handleSelectMethod called, method:', method);
     if (method === 'carrier' || method === 'insurance') {
       showModal(
         'Coming Soon',
@@ -116,42 +116,41 @@ export default function SubscriptionScreen() {
       return;
     }
     setSelectedMethod(method);
+    setCheckoutModalVisible(true);
   };
 
-  const handleContinue = async () => {
-    console.log('[SUB] handleContinue called, selectedMethod:', selectedMethod, 'selectedPlan:', selectedPlan);
-    if (selectedMethod === 'stripe') {
-      try {
-        setLoading(true);
+  const handleCheckout = async () => {
+    setCheckoutModalVisible(false);
+    try {
+      setLoading(true);
 
-        const response = await billingApi.createCheckout(
-          selectedPlan,
-          user?.token
-        );
+      const response = await billingApi.createCheckout(
+        selectedPlan,
+        user?.token
+      );
 
-        if (response?.checkout_url) {
-          if (Platform.OS === 'web') {
-            window.location.href = response.checkout_url;
-          } else {
-            await Linking.openURL(response.checkout_url);
-          }
+      if (response?.checkout_url) {
+        if (Platform.OS === 'web') {
+          window.location.href = response.checkout_url;
         } else {
-          showModal(
-            'Checkout Error',
-            'Could not create checkout session. Please try again.',
-            'alert-circle-outline'
-          );
+          await Linking.openURL(response.checkout_url);
         }
-      } catch (error) {
+      } else {
         showModal(
-          'Error',
-          'Failed to initiate checkout. Please try again.',
+          'Checkout Error',
+          'Could not create checkout session. Please try again.',
           'alert-circle-outline'
         );
-        console.error('Checkout error:', error);
-      } finally {
-        setLoading(false);
       }
+    } catch (error) {
+      showModal(
+        'Error',
+        'Failed to initiate checkout. Please try again.',
+        'alert-circle-outline'
+      );
+      console.error('Checkout error:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -225,10 +224,7 @@ export default function SubscriptionScreen() {
         <View style={styles.optionsContainer}>
           <Pressable
             style={({ pressed }) => [styles.optionCard, selectedMethod === 'stripe' && styles.optionCardSelected, pressed && { opacity: 0.7, transform: [{ scale: 0.98 }] }]}
-            onPress={() => {
-              setSelectedMethod('stripe');
-              handleContinue();
-            }}
+            onPress={() => handleSelectMethod('stripe')}
           >
             <View style={styles.optionCardHeader}>
               <View style={styles.optionCardLeft}>
@@ -378,7 +374,7 @@ export default function SubscriptionScreen() {
 
         <Pressable
           style={({ pressed }) => [styles.continueButton, loading && styles.continueButtonDisabled, pressed && { opacity: 0.7 }]}
-          onPress={handleContinue}
+          onPress={() => setCheckoutModalVisible(true)}
           disabled={loading}
         >
           {loading ? (
@@ -405,6 +401,17 @@ export default function SubscriptionScreen() {
         icon={modalConfig.icon}
         onConfirm={() => setModalVisible(false)}
         onCancel={() => setModalVisible(false)}
+      />
+
+      <ConfirmModal
+        visible={checkoutModalVisible}
+        title="Confirm Your Plan"
+        message={`${planDetails.label}\n${planDetails.price}\n${planDetails.renewal}\n\nYou'll be redirected to Stripe's secure checkout to complete your payment.`}
+        confirmLabel={loading ? "Processing..." : "Pay Now"}
+        cancelLabel="Go Back"
+        icon="card-outline"
+        onConfirm={handleCheckout}
+        onCancel={() => setCheckoutModalVisible(false)}
       />
     </View>
   );
