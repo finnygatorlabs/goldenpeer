@@ -19,7 +19,6 @@ import * as Haptics from "expo-haptics";
 import * as Google from "expo-auth-session/providers/google";
 import { makeRedirectUri } from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
-import * as AppleAuthentication from "expo-apple-authentication";
 import { useAuth } from "@/context/AuthContext";
 import GoogleLogo from "@/components/GoogleLogo";
 
@@ -80,6 +79,38 @@ function InlineError({ message, onDismiss }: { message: string; onDismiss: () =>
   );
 }
 
+function InlineInfo({ message, onDismiss }: { message: string; onDismiss: () => void }) {
+  return (
+    <View style={infoStyles.container}>
+      <Ionicons name="information-circle" size={18} color="#93C5FD" />
+      <Text style={infoStyles.text}>{message}</Text>
+      <Pressable onPress={onDismiss} hitSlop={8}>
+        <Ionicons name="close" size={18} color="#93C5FD" />
+      </Pressable>
+    </View>
+  );
+}
+
+const infoStyles = StyleSheet.create({
+  container: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: "rgba(59,130,246,0.15)",
+    borderColor: "rgba(59,130,246,0.3)",
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 14,
+  },
+  text: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: "Inter_500Medium",
+    color: "#93C5FD",
+    lineHeight: 20,
+  },
+});
+
 const errStyles = StyleSheet.create({
   container: {
     flexDirection: "row",
@@ -114,6 +145,7 @@ export default function SignupScreen() {
   const [loading, setLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState(false);
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
 
   const [, googleResponse, googlePromptAsync] = Google.useAuthRequest({
     webClientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID,
@@ -262,39 +294,16 @@ export default function SignupScreen() {
               )}
             </Pressable>
 
-            {Platform.OS === "ios" && (
-              <Pressable
-                style={[styles.socialButton, styles.appleBtn, socialLoading && styles.disabled]}
-                disabled={socialLoading}
-                onPress={async () => {
-                  try {
-                    const credential = await AppleAuthentication.signInAsync({
-                      requestedScopes: [
-                        AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-                        AppleAuthentication.AppleAuthenticationScope.EMAIL,
-                      ],
-                    });
-                    if (credential.identityToken) {
-                      setSocialLoading(true);
-                      try {
-                        await loginWithGoogle(credential.identityToken, userType, "apple");
-                      } catch {
-                        showError("Apple sign-in failed. Please try again.");
-                      } finally {
-                        setSocialLoading(false);
-                      }
-                    }
-                  } catch (e: any) {
-                    if (e.code !== "ERR_REQUEST_CANCELED") {
-                      showError("Apple sign-in failed. Please try again.");
-                    }
-                  }
-                }}
-              >
-                <Ionicons name="logo-apple" size={20} color="#FFFFFF" />
-                <Text style={styles.socialButtonText}>Continue with Apple</Text>
-              </Pressable>
-            )}
+            <Pressable
+              style={[styles.socialButton, styles.appleBtn]}
+              onPress={() => {
+                setError("");
+                setInfo("Apple sign-in is coming soon! For now, please use Google or Email.");
+              }}
+            >
+              <Ionicons name="logo-apple" size={20} color="#FFFFFF" />
+              <Text style={styles.socialButtonText}>Continue with Apple</Text>
+            </Pressable>
 
             <View style={styles.dividerRow}>
               <View style={styles.dividerLine} />
@@ -314,6 +323,9 @@ export default function SignupScreen() {
               <Ionicons name="arrow-forward" size={18} color="rgba(255,255,255,0.7)" />
             </Pressable>
           </View>
+
+          {!!info && <InlineInfo message={info} onDismiss={() => setInfo("")} />}
+          {!!error && <InlineError message={error} onDismiss={() => setError("")} />}
 
           <Pressable onPress={() => router.push("/auth/login")} style={styles.switchLink}>
             <Text style={styles.switchText}>

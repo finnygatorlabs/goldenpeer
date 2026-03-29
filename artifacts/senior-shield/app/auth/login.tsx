@@ -20,7 +20,6 @@ import * as Haptics from "expo-haptics";
 import * as Google from "expo-auth-session/providers/google";
 import { makeRedirectUri } from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
-import * as AppleAuthentication from "expo-apple-authentication";
 import { useAuth } from "@/context/AuthContext";
 import GoogleLogo from "@/components/GoogleLogo";
 
@@ -173,29 +172,9 @@ export default function LoginScreen() {
     }
   }
 
-  async function handleAppleSignIn() {
-    try {
-      const credential = await AppleAuthentication.signInAsync({
-        requestedScopes: [
-          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-          AppleAuthentication.AppleAuthenticationScope.EMAIL,
-        ],
-      });
-      if (credential.identityToken) {
-        setSocialLoading(true);
-        try {
-          await loginWithGoogle(credential.identityToken, undefined, "apple");
-        } catch {
-          showError("Apple sign-in failed. Please try again.");
-        } finally {
-          setSocialLoading(false);
-        }
-      }
-    } catch (e: any) {
-      if (e.code !== "ERR_REQUEST_CANCELED") {
-        showError("Apple sign-in failed. Please try again.");
-      }
-    }
+  function handleAppleSignIn() {
+    setError("");
+    setSuccess("Apple sign-in is coming soon! For now, please use Google or Email.");
   }
 
   async function handleLogin() {
@@ -298,15 +277,13 @@ export default function LoginScreen() {
               )}
             </Pressable>
 
-            {Platform.OS === "ios" && (
-              <Pressable
-                style={[styles.socialButton, styles.appleBtn]}
-                onPress={handleAppleSignIn}
-              >
-                <Ionicons name="logo-apple" size={20} color="#FFFFFF" />
-                <Text style={styles.socialButtonText}>Sign In with Apple</Text>
-              </Pressable>
-            )}
+            <Pressable
+              style={[styles.socialButton, styles.appleBtn]}
+              onPress={handleAppleSignIn}
+            >
+              <Ionicons name="logo-apple" size={20} color="#FFFFFF" />
+              <Text style={styles.socialButtonText}>Sign In with Apple</Text>
+            </Pressable>
 
             <View style={styles.dividerRow}>
               <View style={styles.dividerLine} />
@@ -323,6 +300,7 @@ export default function LoginScreen() {
             </Pressable>
 
             {!!error && <InlineError message={error} onDismiss={() => setError("")} />}
+            {!!success && <InlineSuccess message={success} />}
           </View>
         ) : (
           <>
