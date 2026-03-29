@@ -707,10 +707,10 @@ export default function SettingsScreen() {
           <View style={styles.deleteConfirmRow}>
             <Pressable
               onPress={() => setConfirmingDelete(false)}
-              style={[styles.deleteConfirmCancel, { borderColor: theme.border }]}
+              style={[styles.deleteConfirmCancel, { borderColor: "#D1D5DB" }]}
               disabled={deleting}
             >
-              <Text style={[styles.deleteConfirmCancelText, { color: theme.text, fontSize: ts.sm }]}>Cancel</Text>
+              <Text style={[styles.deleteConfirmCancelText, { color: "#374151", fontSize: ts.sm }]}>Cancel</Text>
             </Pressable>
             <Pressable
               onPress={handleDeleteAccount}
