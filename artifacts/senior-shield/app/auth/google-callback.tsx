@@ -1,9 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { View, ActivityIndicator, Text, Platform } from "react-native";
+import * as WebBrowser from "expo-web-browser";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 
+WebBrowser.maybeCompleteAuthSession();
+
 const STORAGE_KEY = "seniorshield_user";
+const GOOGLE_AUTH_SIGNAL = "seniorshield_google_auth_complete";
 
 export default function GoogleCallbackScreen() {
   const [error, setError] = useState("");
@@ -14,29 +18,18 @@ export default function GoogleCallbackScreen() {
     async function handleGoogleRedirect() {
       try {
         const hash = window.location.hash;
-        const search = window.location.search;
-        console.log("[GoogleCallback] URL hash:", hash?.substring(0, 100));
-        console.log("[GoogleCallback] URL search:", search?.substring(0, 100));
 
-        let accessToken: string | null = null;
-
-        if (hash && hash.includes("access_token")) {
-          const params = new URLSearchParams(hash.substring(1));
-          accessToken = params.get("access_token");
-        }
-
-        if (!accessToken && search) {
-          const params = new URLSearchParams(search);
-          accessToken = params.get("access_token");
-        }
-
-        if (!accessToken) {
-          console.log("[GoogleCallback] No access_token found in URL");
-          setError("No access token received from Google.");
+        if (!hash || !hash.includes("access_token")) {
           return;
         }
 
-        console.log("[GoogleCallback] Got access_token, calling backend...");
+        const params = new URLSearchParams(hash.substring(1));
+        const accessToken = params.get("access_token");
+
+        if (!accessToken) {
+          setError("No access token received from Google.");
+          return;
+        }
 
         const domain = process.env.EXPO_PUBLIC_DOMAIN;
         const base = domain ? `https://${domain}` : "http://localhost:8080";
@@ -49,12 +42,9 @@ export default function GoogleCallbackScreen() {
         const data = await response.json();
 
         if (!response.ok) {
-          console.log("[GoogleCallback] Backend error:", data.message);
           setError(data.message || "Google sign-in failed");
           return;
         }
-
-        console.log("[GoogleCallback] Login successful, storing user data...");
 
         const userData = {
           user_id: data.user_id,
@@ -67,20 +57,17 @@ export default function GoogleCallbackScreen() {
         };
 
         await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(userData));
-        console.log("[GoogleCallback] User data stored in AsyncStorage");
+        localStorage.setItem(GOOGLE_AUTH_SIGNAL, JSON.stringify(userData));
 
         if (window.opener && !window.opener.closed) {
           try {
             window.opener.postMessage({ type: "google-auth-success", userData }, "*");
-            console.log("[GoogleCallback] Sent postMessage to opener, closing popup...");
-            window.close();
-            return;
           } catch (e) {
-            console.log("[GoogleCallback] postMessage failed, will redirect instead");
           }
+          setTimeout(() => window.close(), 200);
+          return;
         }
 
-        console.log("[GoogleCallback] No opener found, redirecting in main window...");
         window.location.hash = "";
         if (data.onboarding_completed) {
           router.replace("/(tabs)/home");
@@ -93,7 +80,7 @@ export default function GoogleCallbackScreen() {
       }
     }
 
-    const timer = setTimeout(handleGoogleRedirect, 100);
+    const timer = setTimeout(handleGoogleRedirect, 150);
     return () => clearTimeout(timer);
   }, []);
 

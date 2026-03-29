@@ -187,9 +187,13 @@ export default function SignupScreen() {
       console.log("[GoogleAuth] Error:", googleResponse.error);
       showError("Google sign-in failed. Please try again.");
     } else if (googleResponse.type === "dismiss") {
-      console.log("[GoogleAuth] Dismissed");
       if (Platform.OS === "web") {
-        setTimeout(() => refreshUser(), 500);
+        let attempts = 0;
+        const poll = setInterval(() => {
+          attempts++;
+          refreshUser();
+          if (attempts >= 10) clearInterval(poll);
+        }, 500);
       }
     }
   }, [googleResponse]);
@@ -204,7 +208,7 @@ export default function SignupScreen() {
     }
 
     function handleStorage(event: StorageEvent) {
-      if (event.key === "seniorshield_user" && event.newValue) {
+      if (event.key === "seniorshield_google_auth_complete" && event.newValue) {
         refreshUser();
       }
     }

@@ -161,7 +161,12 @@ export default function LoginScreen() {
       showError("Google sign-in failed. Please try again.");
     } else if (googleResponse.type === "dismiss") {
       if (Platform.OS === "web") {
-        setTimeout(() => refreshUser(), 500);
+        let attempts = 0;
+        const poll = setInterval(() => {
+          attempts++;
+          refreshUser();
+          if (attempts >= 10) clearInterval(poll);
+        }, 500);
       }
     }
   }, [googleResponse]);
@@ -176,7 +181,7 @@ export default function LoginScreen() {
     }
 
     function handleStorage(event: StorageEvent) {
-      if (event.key === "seniorshield_user" && event.newValue) {
+      if (event.key === "seniorshield_google_auth_complete" && event.newValue) {
         refreshUser();
       }
     }
