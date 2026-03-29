@@ -30,6 +30,7 @@ interface AuthContextType {
   loginWithGoogle: (accessToken: string, userType?: string, provider?: string) => Promise<void>;
   logout: () => Promise<void>;
   updateUser: (updates: Partial<User>) => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -156,8 +157,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
   }
 
+  async function refreshUser() {
+    try {
+      const stored = await AsyncStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setUser(parsed);
+      }
+    } catch (e) {
+    }
+  }
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, signup, loginWithGoogle, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, isLoading, login, signup, loginWithGoogle, logout, updateUser, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

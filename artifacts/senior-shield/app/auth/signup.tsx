@@ -132,7 +132,7 @@ const errStyles = StyleSheet.create({
 });
 
 export default function SignupScreen() {
-  const { signup, loginWithGoogle } = useAuth();
+  const { signup, loginWithGoogle, refreshUser } = useAuth();
   const insets = useSafeAreaInsets();
 
   const [step, setStep] = useState<"type" | "details">("type");
@@ -188,8 +188,34 @@ export default function SignupScreen() {
       showError("Google sign-in failed. Please try again.");
     } else if (googleResponse.type === "dismiss") {
       console.log("[GoogleAuth] Dismissed");
+      if (Platform.OS === "web") {
+        setTimeout(() => refreshUser(), 500);
+      }
     }
   }, [googleResponse]);
+
+  useEffect(() => {
+    if (Platform.OS !== "web") return;
+
+    function handleMessage(event: MessageEvent) {
+      if (event.data?.type === "google-auth-success") {
+        refreshUser();
+      }
+    }
+
+    function handleStorage(event: StorageEvent) {
+      if (event.key === "seniorshield_user" && event.newValue) {
+        refreshUser();
+      }
+    }
+
+    window.addEventListener("message", handleMessage);
+    window.addEventListener("storage", handleStorage);
+    return () => {
+      window.removeEventListener("message", handleMessage);
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, []);
 
   function showError(msg: string) {
     setError(msg);
