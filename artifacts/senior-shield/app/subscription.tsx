@@ -201,24 +201,37 @@ export default function SubscriptionScreen() {
           </Text>
         </View>
 
-        <View style={styles.planToggle}>
-          <Pressable
-            style={[styles.planOption, selectedPlan === 'monthly' && styles.planOptionActive]}
-            onPress={() => setSelectedPlan('monthly')}
-          >
-            <Text style={[styles.planOptionLabel, selectedPlan === 'monthly' && styles.planOptionLabelActive]}>Monthly</Text>
-            <Text style={[styles.planOptionPrice, selectedPlan === 'monthly' && styles.planOptionPriceActive]}>$19.99/mo</Text>
-          </Pressable>
-          <Pressable
-            style={[styles.planOption, selectedPlan === 'annual' && styles.planOptionActive]}
-            onPress={() => setSelectedPlan('annual')}
-          >
-            <View style={styles.planSaveBadge}>
-              <Text style={styles.planSaveText}>Save 15%</Text>
-            </View>
-            <Text style={[styles.planOptionLabel, selectedPlan === 'annual' && styles.planOptionLabelActive]}>Annual</Text>
-            <Text style={[styles.planOptionPrice, selectedPlan === 'annual' && styles.planOptionPriceActive]}>$203.90/yr</Text>
-          </Pressable>
+        <View style={styles.planFrame}>
+          <Text style={styles.planFrameLabel}>Select a Plan</Text>
+          <View style={styles.planToggle}>
+            <Pressable
+              style={({ pressed }) => [styles.planOption, selectedPlan === 'monthly' && styles.planOptionActive, pressed && { opacity: 0.7 }]}
+              onPress={() => setSelectedPlan('monthly')}
+            >
+              {selectedPlan === 'monthly' && (
+                <View style={styles.planCheck}>
+                  <Ionicons name="checkmark-circle" size={20} color="#34D399" />
+                </View>
+              )}
+              <Text style={[styles.planOptionLabel, selectedPlan === 'monthly' && styles.planOptionLabelActive]}>Monthly</Text>
+              <Text style={[styles.planOptionPrice, selectedPlan === 'monthly' && styles.planOptionPriceActive]}>$19.99/mo</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.planOption, selectedPlan === 'annual' && styles.planOptionActive, pressed && { opacity: 0.7 }]}
+              onPress={() => setSelectedPlan('annual')}
+            >
+              <View style={styles.planSaveBadge}>
+                <Text style={styles.planSaveText}>Save 15%</Text>
+              </View>
+              {selectedPlan === 'annual' && (
+                <View style={styles.planCheck}>
+                  <Ionicons name="checkmark-circle" size={20} color="#34D399" />
+                </View>
+              )}
+              <Text style={[styles.planOptionLabel, selectedPlan === 'annual' && styles.planOptionLabelActive]}>Annual</Text>
+              <Text style={[styles.planOptionPrice, selectedPlan === 'annual' && styles.planOptionPriceActive]}>$203.90/yr</Text>
+            </Pressable>
+          </View>
         </View>
 
         <View style={styles.optionsContainer}>
@@ -372,21 +385,6 @@ export default function SubscriptionScreen() {
           </View>
         </View>
 
-        <Pressable
-          style={({ pressed }) => [styles.continueButton, loading && styles.continueButtonDisabled, pressed && { opacity: 0.7 }]}
-          onPress={() => setCheckoutModalVisible(true)}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#0E2D6B" />
-          ) : (
-            <>
-              <Text style={styles.continueButtonText}>Continue to Payment</Text>
-              <Ionicons name="arrow-forward" size={20} color="#0E2D6B" />
-            </>
-          )}
-        </Pressable>
-
         <Text style={styles.termsText}>
           By continuing, you agree to our Terms of Service and Privacy Policy
         </Text>
@@ -504,10 +502,30 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
 
+  planFrame: {
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 20,
+  },
+  planFrameLabel: {
+    fontFamily: 'Inter_600SemiBold',
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 13,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  planCheck: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+  },
   planToggle: {
     flexDirection: 'row',
     gap: 12,
-    marginBottom: 20,
   },
   planOption: {
     flex: 1,

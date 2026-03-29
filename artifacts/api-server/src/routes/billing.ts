@@ -198,10 +198,13 @@ router.post("/create-checkout", requireAuth, async (req: AuthRequest, res) => {
     const domains = process.env.REPLIT_DOMAINS?.split(",")[0] || "localhost";
     const baseUrl = `https://${domains}`;
 
+    const priceId = priceIds[billing_cycle] || priceIds.monthly;
+    req.log.info({ billing_cycle, priceId }, "Creating checkout session");
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: [{
-        price: priceIds[billing_cycle] || priceIds.monthly,
+        price: priceId,
         quantity: 1,
       }],
       mode: "subscription",
