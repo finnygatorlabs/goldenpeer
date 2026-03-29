@@ -131,7 +131,7 @@ export default function SubscriptionScreen() {
 
       if (response?.checkout_url) {
         if (Platform.OS === 'web') {
-          window.location.href = response.checkout_url;
+          window.open(response.checkout_url, '_top');
         } else {
           await Linking.openURL(response.checkout_url);
         }
