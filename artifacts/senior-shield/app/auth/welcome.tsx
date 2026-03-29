@@ -133,7 +133,7 @@ export default function WelcomeScreen() {
             <Ionicons name="checkmark-circle" size={16} color="#34D399" />
             <Text style={styles.verifiedLabel}>VERIFIED ACCURACY</Text>
           </View>
-          <Text style={styles.verifiedStat}>95% Scam Detection Rate</Text>
+          <Text style={styles.verifiedStat}>95% Scam Detection Accuracy</Text>
           <Text style={styles.verifiedDesc}>
             Tested on 82 scam categories across 25+ industries
           </Text>
