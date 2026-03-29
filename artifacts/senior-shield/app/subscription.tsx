@@ -91,8 +91,8 @@ export default function SubscriptionScreen() {
   const [loading, setLoading] = useState(false);
 
   const planDetails = selectedPlan === 'monthly'
-    ? { label: 'Premium Monthly', price: '$12.99/month', renewal: 'Auto-renews monthly' }
-    : { label: 'Premium Annual', price: '$99.99/year', renewal: 'Auto-renews yearly (save 36%)' };
+    ? { label: 'Premium Monthly', price: '$19.99/month', renewal: 'Auto-renews monthly' }
+    : { label: 'Premium Annual', price: '$203.90/year', renewal: 'Auto-renews yearly (save 15%)' };
 
   const handleSelectMethod = (method: PaymentMethod) => {
     if (method === 'carrier' || method === 'insurance') {
@@ -186,17 +186,17 @@ export default function SubscriptionScreen() {
             onPress={() => setSelectedPlan('monthly')}
           >
             <Text style={[styles.planOptionLabel, selectedPlan === 'monthly' && styles.planOptionLabelActive]}>Monthly</Text>
-            <Text style={[styles.planOptionPrice, selectedPlan === 'monthly' && styles.planOptionPriceActive]}>$12.99/mo</Text>
+            <Text style={[styles.planOptionPrice, selectedPlan === 'monthly' && styles.planOptionPriceActive]}>$19.99/mo</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.planOption, selectedPlan === 'annual' && styles.planOptionActive]}
             onPress={() => setSelectedPlan('annual')}
           >
             <View style={styles.planSaveBadge}>
-              <Text style={styles.planSaveText}>Save 36%</Text>
+              <Text style={styles.planSaveText}>Save 15%</Text>
             </View>
             <Text style={[styles.planOptionLabel, selectedPlan === 'annual' && styles.planOptionLabelActive]}>Annual</Text>
-            <Text style={[styles.planOptionPrice, selectedPlan === 'annual' && styles.planOptionPriceActive]}>$99.99/yr</Text>
+            <Text style={[styles.planOptionPrice, selectedPlan === 'annual' && styles.planOptionPriceActive]}>$203.90/yr</Text>
           </TouchableOpacity>
         </View>
 
