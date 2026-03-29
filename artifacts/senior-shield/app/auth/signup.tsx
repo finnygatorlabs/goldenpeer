@@ -147,23 +147,35 @@ export default function SignupScreen() {
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
 
-  const [, googleResponse, googlePromptAsync] = Google.useAuthRequest({
+  const redirectUri = makeRedirectUri({
+    scheme: "senior-shield",
+    path: "auth/google-callback",
+  });
+
+  const [request, googleResponse, googlePromptAsync] = Google.useAuthRequest({
     webClientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID,
     iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-    redirectUri: makeRedirectUri({
-      scheme: "senior-shield",
-      path: "auth/google-callback",
-    }),
+    redirectUri,
   });
 
   useEffect(() => {
+    console.log("[GoogleAuth] Redirect URI:", redirectUri);
+    console.log("[GoogleAuth] Web Client ID:", process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID?.substring(0, 20) + "...");
+    console.log("[GoogleAuth] Request ready:", !!request);
+  }, [request]);
+
+  useEffect(() => {
     if (!googleResponse) return;
+    console.log("[GoogleAuth] Response type:", googleResponse.type, JSON.stringify(googleResponse, null, 2));
     if (googleResponse.type === "success") {
       const token = googleResponse.authentication?.accessToken;
+      console.log("[GoogleAuth] Got access token:", !!token);
       if (token) {
         setSocialLoading(true);
         loginWithGoogle(token, userType)
+          .then(() => console.log("[GoogleAuth] Login successful"))
           .catch((err) => {
+            console.log("[GoogleAuth] Login error:", err?.message);
             if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
             showError(err?.message || "Google sign-in failed. Please try again.");
           })
@@ -172,7 +184,10 @@ export default function SignupScreen() {
         showError("Could not get access token from Google. Please try again.");
       }
     } else if (googleResponse.type === "error") {
+      console.log("[GoogleAuth] Error:", googleResponse.error);
       showError("Google sign-in failed. Please try again.");
+    } else if (googleResponse.type === "dismiss") {
+      console.log("[GoogleAuth] Dismissed");
     }
   }, [googleResponse]);
 
