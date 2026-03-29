@@ -3,7 +3,7 @@ import {
   View,
   Text,
   ScrollView,
-  TouchableOpacity,
+  Pressable,
   ActivityIndicator,
   StyleSheet,
   Dimensions,
@@ -25,7 +25,6 @@ const GRADIENT: [string, string, string] = ['#06102E', '#0E2D6B', '#0B5FAA'];
 function DecoCircle({ size, top, left, right, opacity }: { size: number; top?: number; left?: number; right?: number; opacity: number }) {
   return (
     <View
-      pointerEvents="none"
       style={{
         position: 'absolute',
         width: size,
@@ -36,15 +35,15 @@ function DecoCircle({ size, top, left, right, opacity }: { size: number; top?: n
         top,
         left,
         right,
+        pointerEvents: 'none' as any,
       }}
     />
   );
 }
 
-function DecoLine({ width: w, top, left, rotate, opacity }: { width: number; top: number; left: number; rotate: string; opacity: number }) {
+function DecoLine({ width: w, top, left, rotate, opacity }: { size?: number; width: number; top: number; left: number; rotate: string; opacity: number }) {
   return (
     <View
-      pointerEvents="none"
       style={{
         position: 'absolute',
         width: w,
@@ -53,6 +52,7 @@ function DecoLine({ width: w, top, left, rotate, opacity }: { width: number; top
         top,
         left,
         transform: [{ rotate }],
+        pointerEvents: 'none' as any,
       }}
     />
   );
@@ -106,6 +106,7 @@ export default function SubscriptionScreen() {
     : { label: 'Premium Annual', price: '$203.90/year', renewal: 'Auto-renews yearly (save 15%)' };
 
   const handleSelectMethod = (method: PaymentMethod) => {
+    console.log('[SUB] handleSelectMethod called, method:', method);
     if (method === 'carrier' || method === 'insurance') {
       showModal(
         'Coming Soon',
@@ -118,6 +119,7 @@ export default function SubscriptionScreen() {
   };
 
   const handleContinue = async () => {
+    console.log('[SUB] handleContinue called, selectedMethod:', selectedMethod, 'selectedPlan:', selectedPlan);
     if (selectedMethod === 'stripe') {
       try {
         setLoading(true);
@@ -164,18 +166,20 @@ export default function SubscriptionScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
-      <LinearGradient colors={GRADIENT} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
-      <DecoCircle size={260} top={-80} right={-100} opacity={0.08} />
-      <DecoCircle size={140} top={30} right={30} opacity={0.06} />
-      <DecoCircle size={300} top={-120} left={-150} opacity={0.06} />
-      <DecoCircle size={180} top={500} left={-90} opacity={0.04} />
-      <DecoLine width={250} top={40} left={-60} rotate="-18deg" opacity={0.08} />
-      <DecoLine width={180} top={120} left={width - 100} rotate="22deg" opacity={0.06} />
+      <View style={{ ...StyleSheet.absoluteFillObject, pointerEvents: 'none' as any, zIndex: 0 }}>
+        <LinearGradient colors={GRADIENT} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
+        <DecoCircle size={260} top={-80} right={-100} opacity={0.08} />
+        <DecoCircle size={140} top={30} right={30} opacity={0.06} />
+        <DecoCircle size={300} top={-120} left={-150} opacity={0.06} />
+        <DecoCircle size={180} top={500} left={-90} opacity={0.04} />
+        <DecoLine width={250} top={40} left={-60} rotate="-18deg" opacity={0.08} />
+        <DecoLine width={180} top={120} left={width - 100} rotate="22deg" opacity={0.06} />
+      </View>
 
       <View style={[styles.header, { paddingTop: Math.max(insets.top, 50) + 10 }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <Pressable onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
-        </TouchableOpacity>
+        </Pressable>
         <Text style={styles.headerTitle}>Choose Payment Method</Text>
         <View style={styles.stepIndicator}>
           <Text style={styles.stepText}>Step 2 of 3</Text>
@@ -185,6 +189,7 @@ export default function SubscriptionScreen() {
       <ScrollView
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 40 }]}
         showsVerticalScrollIndicator={false}
+        style={{ position: 'relative' as any, zIndex: 5 }}
       >
         <View style={styles.progressContainer}>
           <View style={[styles.progressBar, { width: '66%' }]} />
@@ -198,14 +203,14 @@ export default function SubscriptionScreen() {
         </View>
 
         <View style={styles.planToggle}>
-          <TouchableOpacity
+          <Pressable
             style={[styles.planOption, selectedPlan === 'monthly' && styles.planOptionActive]}
             onPress={() => setSelectedPlan('monthly')}
           >
             <Text style={[styles.planOptionLabel, selectedPlan === 'monthly' && styles.planOptionLabelActive]}>Monthly</Text>
             <Text style={[styles.planOptionPrice, selectedPlan === 'monthly' && styles.planOptionPriceActive]}>$19.99/mo</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+          </Pressable>
+          <Pressable
             style={[styles.planOption, selectedPlan === 'annual' && styles.planOptionActive]}
             onPress={() => setSelectedPlan('annual')}
           >
@@ -214,13 +219,16 @@ export default function SubscriptionScreen() {
             </View>
             <Text style={[styles.planOptionLabel, selectedPlan === 'annual' && styles.planOptionLabelActive]}>Annual</Text>
             <Text style={[styles.planOptionPrice, selectedPlan === 'annual' && styles.planOptionPriceActive]}>$203.90/yr</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         <View style={styles.optionsContainer}>
-          <TouchableOpacity
-            style={[styles.optionCard, selectedMethod === 'stripe' && styles.optionCardSelected]}
-            onPress={() => setSelectedMethod('stripe')}
+          <Pressable
+            style={({ pressed }) => [styles.optionCard, selectedMethod === 'stripe' && styles.optionCardSelected, pressed && { opacity: 0.7, transform: [{ scale: 0.98 }] }]}
+            onPress={() => {
+              setSelectedMethod('stripe');
+              handleContinue();
+            }}
           >
             <View style={styles.optionCardHeader}>
               <View style={styles.optionCardLeft}>
@@ -239,10 +247,10 @@ export default function SubscriptionScreen() {
               </View>
             </View>
             <Text style={styles.optionPrice}>{planDetails.price}</Text>
-          </TouchableOpacity>
+          </Pressable>
 
           <View style={styles.dropdownSection}>
-            <TouchableOpacity
+            <Pressable
               style={[styles.dropdownHeader, carrierDropdownOpen && styles.dropdownHeaderOpen]}
               onPress={() => setCarrierDropdownOpen(!carrierDropdownOpen)}
             >
@@ -261,7 +269,7 @@ export default function SubscriptionScreen() {
                 </View>
                 <Ionicons name={carrierDropdownOpen ? 'chevron-up' : 'chevron-down'} size={18} color="rgba(255,255,255,0.5)" />
               </View>
-            </TouchableOpacity>
+            </Pressable>
             {carrierDropdownOpen && (
               <View style={styles.dropdownList}>
                 {CARRIER_OPTIONS.map((carrier) => (
@@ -270,12 +278,12 @@ export default function SubscriptionScreen() {
                       <Text style={styles.dropdownItemName}>{carrier.name}</Text>
                       <Text style={styles.dropdownItemPrice}>{carrier.price}</Text>
                     </View>
-                    <TouchableOpacity
+                    <Pressable
                       style={styles.notifyButton}
                       onPress={() => handleNotifyMe('carrier', carrier.name)}
                     >
                       <Text style={styles.notifyButtonText}>Notify Me</Text>
-                    </TouchableOpacity>
+                    </Pressable>
                   </View>
                 ))}
               </View>
@@ -283,7 +291,7 @@ export default function SubscriptionScreen() {
           </View>
 
           <View style={styles.dropdownSection}>
-            <TouchableOpacity
+            <Pressable
               style={[styles.dropdownHeader, insuranceDropdownOpen && styles.dropdownHeaderOpen]}
               onPress={() => setInsuranceDropdownOpen(!insuranceDropdownOpen)}
             >
@@ -302,7 +310,7 @@ export default function SubscriptionScreen() {
                 </View>
                 <Ionicons name={insuranceDropdownOpen ? 'chevron-up' : 'chevron-down'} size={18} color="rgba(255,255,255,0.5)" />
               </View>
-            </TouchableOpacity>
+            </Pressable>
             {insuranceDropdownOpen && (
               <View style={styles.dropdownList}>
                 {INSURANCE_OPTIONS.map((ins) => (
@@ -311,12 +319,12 @@ export default function SubscriptionScreen() {
                       <Text style={styles.dropdownItemName}>{ins.name}</Text>
                       <Text style={styles.dropdownItemPrice}>{ins.price}</Text>
                     </View>
-                    <TouchableOpacity
+                    <Pressable
                       style={styles.notifyButton}
                       onPress={() => handleNotifyMe('insurance', ins.name)}
                     >
                       <Text style={styles.notifyButtonText}>Notify Me</Text>
-                    </TouchableOpacity>
+                    </Pressable>
                   </View>
                 ))}
               </View>
@@ -368,8 +376,8 @@ export default function SubscriptionScreen() {
           </View>
         </View>
 
-        <TouchableOpacity
-          style={[styles.continueButton, loading && styles.continueButtonDisabled]}
+        <Pressable
+          style={({ pressed }) => [styles.continueButton, loading && styles.continueButtonDisabled, pressed && { opacity: 0.7 }]}
           onPress={handleContinue}
           disabled={loading}
         >
@@ -381,7 +389,7 @@ export default function SubscriptionScreen() {
               <Ionicons name="arrow-forward" size={20} color="#0E2D6B" />
             </>
           )}
-        </TouchableOpacity>
+        </Pressable>
 
         <Text style={styles.termsText}>
           By continuing, you agree to our Terms of Service and Privacy Policy
@@ -423,6 +431,8 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
+    position: 'relative' as any,
+    zIndex: 5,
   },
 
   header: {
@@ -432,6 +442,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingHorizontal: 20,
     zIndex: 10,
+    position: 'relative' as any,
   },
   backButton: {
     padding: 8,
