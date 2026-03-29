@@ -27,7 +27,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, userType: string, firstName?: string, lastName?: string) => Promise<void>;
-  loginWithGoogle: (accessToken: string, userType?: string) => Promise<void>;
+  loginWithGoogle: (accessToken: string, userType?: string, provider?: string) => Promise<void>;
   logout: () => Promise<void>;
   updateUser: (updates: Partial<User>) => void;
 }
@@ -134,9 +134,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     storeUser(data);
   }
 
-  async function loginWithGoogle(accessToken: string, userType?: string) {
-    const data = await apiCall("/auth/google", {
-      access_token: accessToken,
+  async function loginWithGoogle(accessToken: string, userType?: string, provider?: string) {
+    const endpoint = provider === "apple" ? "/auth/apple" : "/auth/google";
+    const tokenKey = provider === "apple" ? "identity_token" : "access_token";
+    const data = await apiCall(endpoint, {
+      [tokenKey]: accessToken,
       user_type: userType || "senior",
     });
     storeUser(data);

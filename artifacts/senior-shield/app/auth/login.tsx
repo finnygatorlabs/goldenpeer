@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -17,7 +17,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
+import * as Google from "expo-auth-session/providers/google";
+import { makeRedirectUri } from "expo-auth-session";
+import * as WebBrowser from "expo-web-browser";
+import * as AppleAuthentication from "expo-apple-authentication";
 import { useAuth } from "@/context/AuthContext";
+
+WebBrowser.maybeCompleteAuthSession();
 
 const { width } = Dimensions.get("window");
 const GRADIENT: [string, string, string] = ["#06102E", "#0E2D6B", "#0B5FAA"];
@@ -118,21 +124,67 @@ const successStyles = StyleSheet.create({
 });
 
 export default function LoginScreen() {
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const insets = useSafeAreaInsets();
 
+  const [showEmailForm, setShowEmailForm] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  const [, googleResponse, googlePromptAsync] = Google.useAuthRequest({
+    webClientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID,
+    redirectUri: makeRedirectUri({ path: "/auth/google-callback" }),
+  });
+
+  useEffect(() => {
+    if (googleResponse?.type === "success") {
+      const token = googleResponse.authentication?.accessToken;
+      if (token) {
+        setSocialLoading(true);
+        loginWithGoogle(token)
+          .catch(() => showError("Google sign-in failed. Please try again."))
+          .finally(() => setSocialLoading(false));
+      }
+    } else if (googleResponse?.type === "error") {
+      showError("Google sign-in was cancelled or failed.");
+    }
+  }, [googleResponse]);
 
   function showError(msg: string) {
     setError(msg);
     setSuccess("");
     if (Platform.OS !== "web") {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    }
+  }
+
+  async function handleAppleSignIn() {
+    try {
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+      if (credential.identityToken) {
+        setSocialLoading(true);
+        try {
+          await loginWithGoogle(credential.identityToken, undefined, "apple");
+        } catch {
+          showError("Apple sign-in failed. Please try again.");
+        } finally {
+          setSocialLoading(false);
+        }
+      }
+    } catch (e: any) {
+      if (e.code !== "ERR_REQUEST_CANCELED") {
+        showError("Apple sign-in failed. Please try again.");
+      }
     }
   }
 
@@ -185,7 +237,11 @@ export default function LoginScreen() {
       <DecoLine width={180} top={120} left={width - 100} rotate="22deg" opacity={0.06} />
 
       <View style={[styles.header, { paddingTop: insets.top + 4 }]}>
-        <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
+        <Pressable
+          onPress={() => showEmailForm ? setShowEmailForm(false) : router.back()}
+          style={styles.backButton}
+          hitSlop={12}
+        >
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </Pressable>
         <Text style={styles.headerTitle}>Sign in</Text>
@@ -210,69 +266,119 @@ export default function LoginScreen() {
           </View>
         </View>
 
-        <View style={styles.field}>
-          <Text style={styles.label}>Email Address</Text>
-          <View style={styles.input}>
-            <Ionicons name="mail-outline" size={20} color="rgba(255,255,255,0.5)" />
-            <TextInput
-              style={styles.textInput}
-              value={email}
-              onChangeText={v => { setEmail(v); setError(""); setSuccess(""); }}
-              placeholder="your@email.com"
-              placeholderTextColor="rgba(255,255,255,0.35)"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              returnKeyType="next"
-            />
-          </View>
-        </View>
-
-        <View style={styles.field}>
-          <View style={styles.labelRow}>
-            <Text style={styles.label}>Password</Text>
-            <Pressable onPress={handleForgotPassword} hitSlop={10}>
-              <Text style={styles.forgotLink}>Forgot password?</Text>
+        {!showEmailForm ? (
+          <View style={styles.socialSection}>
+            <Pressable
+              style={[styles.socialButton, styles.googleBtn, socialLoading && styles.disabled]}
+              onPress={() => {
+                setError("");
+                googlePromptAsync();
+              }}
+              disabled={socialLoading}
+            >
+              {socialLoading ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <>
+                  <View style={styles.socialIconCircle}>
+                    <Text style={styles.googleG}>G</Text>
+                  </View>
+                  <Text style={styles.socialButtonText}>Sign In with Google</Text>
+                </>
+              )}
             </Pressable>
-          </View>
-          <View style={styles.input}>
-            <Ionicons name="lock-closed-outline" size={20} color="rgba(255,255,255,0.5)" />
-            <TextInput
-              style={styles.textInput}
-              value={password}
-              onChangeText={v => { setPassword(v); setError(""); setSuccess(""); }}
-              placeholder="Your password"
-              placeholderTextColor="rgba(255,255,255,0.35)"
-              secureTextEntry={!showPassword}
-              autoCapitalize="none"
-              returnKeyType="done"
-              onSubmitEditing={handleLogin}
-            />
-            <Pressable onPress={() => setShowPassword(!showPassword)} hitSlop={8}>
-              <Ionicons
-                name={showPassword ? "eye-off-outline" : "eye-outline"}
-                size={20}
-                color="rgba(255,255,255,0.5)"
-              />
+
+            {Platform.OS === "ios" && (
+              <Pressable
+                style={[styles.socialButton, styles.appleBtn]}
+                onPress={handleAppleSignIn}
+              >
+                <Ionicons name="logo-apple" size={20} color="#FFFFFF" />
+                <Text style={styles.socialButtonText}>Sign In with Apple</Text>
+              </Pressable>
+            )}
+
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            <Pressable
+              style={[styles.socialButton, styles.emailBtn]}
+              onPress={() => setShowEmailForm(true)}
+            >
+              <Ionicons name="mail-outline" size={20} color="#FFFFFF" />
+              <Text style={styles.socialButtonText}>Sign In with Email</Text>
             </Pressable>
+
+            {!!error && <InlineError message={error} onDismiss={() => setError("")} />}
           </View>
-        </View>
+        ) : (
+          <>
+            <View style={styles.field}>
+              <Text style={styles.label}>Email Address</Text>
+              <View style={styles.input}>
+                <Ionicons name="mail-outline" size={20} color="rgba(255,255,255,0.5)" />
+                <TextInput
+                  style={styles.textInput}
+                  value={email}
+                  onChangeText={v => { setEmail(v); setError(""); setSuccess(""); }}
+                  placeholder="your@email.com"
+                  placeholderTextColor="rgba(255,255,255,0.35)"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  returnKeyType="next"
+                  autoFocus
+                />
+              </View>
+            </View>
 
-        {!!error && <InlineError message={error} onDismiss={() => setError("")} />}
-        {!!success && <InlineSuccess message={success} />}
+            <View style={styles.field}>
+              <View style={styles.labelRow}>
+                <Text style={styles.label}>Password</Text>
+                <Pressable onPress={handleForgotPassword} hitSlop={10}>
+                  <Text style={styles.forgotLink}>Forgot password?</Text>
+                </Pressable>
+              </View>
+              <View style={styles.input}>
+                <Ionicons name="lock-closed-outline" size={20} color="rgba(255,255,255,0.5)" />
+                <TextInput
+                  style={styles.textInput}
+                  value={password}
+                  onChangeText={v => { setPassword(v); setError(""); setSuccess(""); }}
+                  placeholder="Your password"
+                  placeholderTextColor="rgba(255,255,255,0.35)"
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                  returnKeyType="done"
+                  onSubmitEditing={handleLogin}
+                />
+                <Pressable onPress={() => setShowPassword(!showPassword)} hitSlop={8}>
+                  <Ionicons
+                    name={showPassword ? "eye-off-outline" : "eye-outline"}
+                    size={20}
+                    color="rgba(255,255,255,0.5)"
+                  />
+                </Pressable>
+              </View>
+            </View>
 
-        <Pressable
-          style={({ pressed }) => [styles.loginButton, pressed && styles.pressed, loading && styles.disabled]}
-          onPress={handleLogin}
-          disabled={loading}
-        >
-          {loading ? <ActivityIndicator color="#FFFFFF" /> : (
-            <>
-              <Ionicons name="log-in-outline" size={20} color="#FFFFFF" />
-              <Text style={styles.loginButtonText}>Sign In</Text>
-            </>
-          )}
-        </Pressable>
+            {!!error && <InlineError message={error} onDismiss={() => setError("")} />}
+            {!!success && <InlineSuccess message={success} />}
+
+            <Pressable
+              style={({ pressed }) => [styles.signInButton, pressed && styles.pressed, loading && styles.disabled]}
+              onPress={handleLogin}
+              disabled={loading}
+            >
+              {loading ? <ActivityIndicator color="#0E2D6B" /> : (
+                <Text style={styles.signInButtonText}>Sign In</Text>
+              )}
+            </Pressable>
+          </>
+        )}
 
         <Pressable onPress={() => router.push("/auth/signup")} style={styles.switchLink}>
           <Text style={styles.switchText}>
@@ -303,6 +409,41 @@ const styles = StyleSheet.create({
   logoImg: { width: 56, height: 56 },
   welcomeTitle: { fontSize: 22, fontFamily: "Inter_700Bold", color: "#FFFFFF" },
   welcomeSub: { fontSize: 14, fontFamily: "Inter_400Regular", marginTop: 2, color: "rgba(255,255,255,0.7)" },
+  socialSection: { gap: 14 },
+  socialButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    borderRadius: 14,
+    paddingVertical: 16,
+  },
+  googleBtn: {
+    backgroundColor: "#4285F4",
+  },
+  appleBtn: {
+    backgroundColor: "#000000",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+  },
+  emailBtn: {
+    backgroundColor: "rgba(255,255,255,0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.25)",
+  },
+  socialIconCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  googleG: { fontSize: 14, fontFamily: "Inter_700Bold", color: "#4285F4", lineHeight: 17 },
+  socialButtonText: { fontSize: 16, fontFamily: "Inter_600SemiBold", color: "#FFFFFF" },
+  dividerRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: "rgba(255,255,255,0.15)" },
+  dividerText: { fontSize: 13, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.5)" },
   field: { gap: 8 },
   label: { fontSize: 14, fontFamily: "Inter_600SemiBold", color: "#FFFFFF" },
   labelRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
@@ -319,18 +460,13 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.15)",
   },
   textInput: { flex: 1, fontSize: 16, fontFamily: "Inter_400Regular", minWidth: 0, color: "#FFFFFF" },
-  loginButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
+  signInButton: {
+    backgroundColor: "#FFFFFF",
     borderRadius: 14,
     paddingVertical: 16,
-    backgroundColor: "rgba(52,211,153,0.2)",
-    borderWidth: 1,
-    borderColor: "rgba(52,211,153,0.4)",
+    alignItems: "center",
   },
-  loginButtonText: { fontSize: 17, fontFamily: "Inter_700Bold", color: "#34D399" },
+  signInButtonText: { fontSize: 17, fontFamily: "Inter_700Bold", color: "#0E2D6B" },
   pressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
   disabled: { opacity: 0.6 },
   switchLink: { alignItems: "center", paddingVertical: 4 },

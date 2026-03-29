@@ -56,6 +56,7 @@
     "zod-validation-error": "^3.4.0"
   },
   "dependencies": {
+    "expo-apple-authentication": "56.0.0-canary-20260305-5163746",
     "expo-auth-session": "^7.0.10",
     "expo-av": "^16.0.8",
     "expo-device": "^55.0.10",

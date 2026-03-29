@@ -19,6 +19,7 @@ import * as Haptics from "expo-haptics";
 import * as Google from "expo-auth-session/providers/google";
 import { makeRedirectUri } from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
+import * as AppleAuthentication from "expo-apple-authentication";
 import { useAuth } from "@/context/AuthContext";
 
 WebBrowser.maybeCompleteAuthSession();
@@ -110,7 +111,7 @@ export default function SignupScreen() {
   const [lastName, setLastName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState(false);
   const [error, setError] = useState("");
 
   const [, googleResponse, googlePromptAsync] = Google.useAuthRequest({
@@ -122,13 +123,13 @@ export default function SignupScreen() {
     if (googleResponse?.type === "success") {
       const token = googleResponse.authentication?.accessToken;
       if (token) {
-        setGoogleLoading(true);
+        setSocialLoading(true);
         loginWithGoogle(token, userType)
           .catch(() => {
             if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
             showError("Google sign-in failed. Please try again.");
           })
-          .finally(() => setGoogleLoading(false));
+          .finally(() => setSocialLoading(false));
       }
     } else if (googleResponse?.type === "error") {
       showError("Google sign-in was cancelled. Please try again.");
@@ -234,24 +235,58 @@ export default function SignupScreen() {
 
           <View style={styles.signInOptions}>
             <Pressable
-              style={[styles.googleButton, googleLoading && styles.disabled]}
+              style={[styles.socialButton, styles.googleBtn, socialLoading && styles.disabled]}
               onPress={() => {
                 setError("");
                 googlePromptAsync();
               }}
-              disabled={googleLoading}
+              disabled={socialLoading}
             >
-              {googleLoading ? (
-                <ActivityIndicator size="small" color="#0E2D6B" />
+              {socialLoading ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
                 <>
-                  <View style={styles.googleIconCircle}>
+                  <View style={styles.socialIconCircle}>
                     <Text style={styles.googleG}>G</Text>
                   </View>
-                  <Text style={styles.googleButtonText}>Continue with Google</Text>
+                  <Text style={styles.socialButtonText}>Continue with Google</Text>
                 </>
               )}
             </Pressable>
+
+            {Platform.OS === "ios" && (
+              <Pressable
+                style={[styles.socialButton, styles.appleBtn, socialLoading && styles.disabled]}
+                disabled={socialLoading}
+                onPress={async () => {
+                  try {
+                    const credential = await AppleAuthentication.signInAsync({
+                      requestedScopes: [
+                        AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+                        AppleAuthentication.AppleAuthenticationScope.EMAIL,
+                      ],
+                    });
+                    if (credential.identityToken) {
+                      setSocialLoading(true);
+                      try {
+                        await loginWithGoogle(credential.identityToken, userType, "apple");
+                      } catch {
+                        showError("Apple sign-in failed. Please try again.");
+                      } finally {
+                        setSocialLoading(false);
+                      }
+                    }
+                  } catch (e: any) {
+                    if (e.code !== "ERR_REQUEST_CANCELED") {
+                      showError("Apple sign-in failed. Please try again.");
+                    }
+                  }
+                }}
+              >
+                <Ionicons name="logo-apple" size={20} color="#FFFFFF" />
+                <Text style={styles.socialButtonText}>Continue with Apple</Text>
+              </Pressable>
+            )}
 
             <View style={styles.dividerRow}>
               <View style={styles.dividerLine} />
@@ -260,14 +295,15 @@ export default function SignupScreen() {
             </View>
 
             <Pressable
-              style={({ pressed }) => [styles.continueButton, pressed && styles.pressed]}
+              style={[styles.socialButton, styles.emailBtn]}
               onPress={() => {
                 if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 setStep("details");
               }}
             >
-              <Text style={styles.continueButtonText}>Continue with Email</Text>
-              <Ionicons name="arrow-forward" size={20} color="#0E2D6B" />
+              <Ionicons name="mail-outline" size={20} color="#FFFFFF" />
+              <Text style={styles.socialButtonText}>Continue with Email</Text>
+              <Ionicons name="arrow-forward" size={18} color="rgba(255,255,255,0.7)" />
             </Pressable>
           </View>
 
@@ -464,38 +500,40 @@ const styles = StyleSheet.create({
   typeCardLabel: { fontSize: 16, fontFamily: "Inter_600SemiBold", marginBottom: 2, color: "#FFFFFF" },
   typeCardDesc: { fontSize: 13, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.6)" },
   signInOptions: { gap: 14 },
-  googleButton: {
+  socialButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 12,
-    borderRadius: 16,
-    backgroundColor: "#FFFFFF",
-    paddingVertical: 18,
+    borderRadius: 14,
+    paddingVertical: 16,
   },
-  googleIconCircle: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+  googleBtn: {
     backgroundColor: "#4285F4",
+  },
+  appleBtn: {
+    backgroundColor: "#000000",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+  },
+  emailBtn: {
+    backgroundColor: "rgba(255,255,255,0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.25)",
+  },
+  socialIconCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
   },
-  googleG: { fontSize: 15, fontFamily: "Inter_700Bold", color: "#FFFFFF", lineHeight: 18 },
-  googleButtonText: { fontSize: 17, fontFamily: "Inter_700Bold", color: "#0E2D6B" },
+  googleG: { fontSize: 14, fontFamily: "Inter_700Bold", color: "#4285F4", lineHeight: 17 },
+  socialButtonText: { fontSize: 16, fontFamily: "Inter_600SemiBold", color: "#FFFFFF" },
   dividerRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   dividerLine: { flex: 1, height: 1, backgroundColor: "rgba(255,255,255,0.15)" },
   dividerText: { fontSize: 13, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.5)" },
-  continueButton: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    paddingVertical: 18,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-  },
-  continueButtonText: { fontSize: 17, fontFamily: "Inter_700Bold", color: "#0E2D6B" },
   content: { paddingHorizontal: 24, paddingTop: 16, gap: 18 },
   selectedTypeBadge: {
     flexDirection: "row",
