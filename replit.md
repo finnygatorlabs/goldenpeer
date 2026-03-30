@@ -40,6 +40,14 @@ The project is built as a pnpm monorepo, utilizing Node.js 24 and TypeScript 5.9
 - PostgreSQL is used as the primary database, managed by Drizzle ORM.
 - The database schema is defined within the `lib/db` package.
 
+**Adaptive Learning System**:
+- Integrated from 9 reference files into the project for senior profile management, conversation personalization, and engagement tracking.
+- Directory structure: `src/backend/` (server entry, services, routes), `src/frontend/` (React components, CSS), `src/database/` (SQL schema), `data/` (JSON content files).
+- Database tables: `seniors`, `discovered_interests`, `emotional_patterns`, `memory_anchors`, `behavioral_patterns`, `conversation_preferences`, `conversations` (adaptive), `learning_history`, `engagement_metrics`. Plus 4 views and 3 triggers.
+- Content data: `data/life_story_questions.json` (600 questions across 25+ categories), `data/conversation_templates.json` (conversation template library), `data/learning_patterns.json` (pattern recognition definitions).
+- Backend services: `SeniorProfileService` (profile CRUD, memory anchors, interests), `AdaptiveLearningEngine` (conversation analysis, pattern extraction), `ContextAssemblyEngine` (LLM prompt assembly, question selection).
+- Dev script: `pnpm run dev:learning` runs the standalone adaptive learning server via ts-node.
+
 **Monorepo Structure**:
 - `artifacts/api-server`: Express API server.
 - `artifacts/senior-shield`: Expo React Native mobile application.
