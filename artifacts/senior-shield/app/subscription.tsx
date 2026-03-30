@@ -158,7 +158,7 @@ export default function SubscriptionScreen() {
     }
   };
 
-  const isSubscribed = subscriptionInfo?.status === 'active' || subscriptionInfo?.status === 'cancelling';
+  const isSubscribed = subscriptionInfo?.tier === 'premium' && (subscriptionInfo?.status === 'active' || subscriptionInfo?.status === 'cancelling');
 
   const showModal = (title: string, message: string, icon?: string) => {
     setModalConfig({ title, message, confirmLabel: 'OK', icon: (icon || 'information-circle-outline') as any });
