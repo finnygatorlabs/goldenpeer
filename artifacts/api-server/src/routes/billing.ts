@@ -123,6 +123,43 @@ router.delete("/subscription", requireAuth, async (req: AuthRequest, res) => {
   }
 });
 
+router.post("/reactivate", requireAuth, async (req: AuthRequest, res) => {
+  try {
+    const [tier] = await db.select()
+      .from(userTiersTable)
+      .where(eq(userTiersTable.user_id, req.user!.userId))
+      .limit(1);
+
+    if (!tier || tier.status !== "cancelling") {
+      res.status(400).json({ error: "No cancelling subscription found" });
+      return;
+    }
+
+    const stripe = getStripe();
+    if (stripe && tier.stripe_subscription_id) {
+      try {
+        await stripe.subscriptions.update(tier.stripe_subscription_id, {
+          cancel_at_period_end: false,
+        });
+        req.log.info({ subscriptionId: tier.stripe_subscription_id }, "Stripe subscription reactivated");
+      } catch (stripeErr) {
+        req.log.error({ stripeErr }, "Stripe reactivation failed");
+        res.status(500).json({ error: "Failed to reactivate with Stripe" });
+        return;
+      }
+    }
+
+    await db.update(userTiersTable)
+      .set({ status: "active", updated_at: new Date() } as any)
+      .where(eq(userTiersTable.user_id, req.user!.userId));
+
+    res.json({ success: true, message: "Subscription reactivated!" });
+  } catch (err) {
+    req.log.error({ err }, "Reactivate subscription error");
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 router.get("/trial-status", requireAuth, async (req: AuthRequest, res) => {
   try {
     const [tier] = await db.select().from(userTiersTable)

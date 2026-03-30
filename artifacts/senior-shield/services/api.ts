@@ -258,6 +258,10 @@ export const billingApi = {
     return request("/billing/subscription", { method: "DELETE", token });
   },
 
+  reactivateSubscription(token?: string) {
+    return request("/billing/reactivate", { method: "POST", token });
+  },
+
   getInvoices(token?: string) {
     return request("/billing/invoices", { token });
   },

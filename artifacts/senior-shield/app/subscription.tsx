@@ -137,6 +137,27 @@ export default function SubscriptionScreen() {
     }
   };
 
+  const handleReactivate = async () => {
+    try {
+      setLoading(true);
+      await billingApi.reactivateSubscription(user?.token);
+      showModal(
+        'Subscription Reactivated!',
+        'Your subscription is active again. You\'ll continue to enjoy all premium features.',
+        'checkmark-circle-outline'
+      );
+      fetchSubscription();
+    } catch {
+      showModal(
+        'Error',
+        'Failed to reactivate subscription. Please try again or contact support.',
+        'alert-circle-outline'
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const isSubscribed = subscriptionInfo?.status === 'active' || subscriptionInfo?.status === 'cancelling';
 
   const showModal = (title: string, message: string, icon?: string) => {
@@ -282,7 +303,19 @@ export default function SubscriptionScreen() {
               ))}
             </View>
 
-            {subscriptionInfo?.status !== 'cancelling' && (
+            {subscriptionInfo?.status === 'cancelling' ? (
+              <Pressable
+                style={({ pressed }) => [styles.reactivateButton, pressed && { opacity: 0.7 }]}
+                onPress={handleReactivate}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.reactivateButtonText}>Reactivate Subscription</Text>
+                )}
+              </Pressable>
+            ) : (
               <Pressable
                 style={({ pressed }) => [styles.cancelSubButton, pressed && { opacity: 0.7 }]}
                 onPress={() => setCancelModalVisible(true)}
@@ -694,6 +727,18 @@ const styles = StyleSheet.create({
   cancelSubButtonText: {
     fontFamily: 'Inter_600SemiBold',
     color: '#EF4444',
+    fontSize: 15,
+  },
+  reactivateButton: {
+    backgroundColor: '#16A34A',
+    borderRadius: 14,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  reactivateButtonText: {
+    fontFamily: 'Inter_600SemiBold',
+    color: '#FFFFFF',
     fontSize: 15,
   },
   planFrame: {
