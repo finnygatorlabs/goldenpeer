@@ -80,23 +80,24 @@ function loadContentFiles() {
     const questionsPath = path.join(__dirname, '../../data/life_story_questions.json');
     if (fs.existsSync(questionsPath)) {
       const questionsData = fs.readFileSync(questionsPath, 'utf-8');
-      contentCache.lifeStoryQuestions = JSON.parse(questionsData);
+      const parsed = JSON.parse(questionsData);
+      contentCache.lifeStoryQuestions = parsed.life_story_questions || parsed;
       console.log(`✓ Loaded ${contentCache.lifeStoryQuestions.length} life story questions`);
     }
 
-    // Load conversation templates
     const templatesPath = path.join(__dirname, '../../data/conversation_templates.json');
     if (fs.existsSync(templatesPath)) {
       const templatesData = fs.readFileSync(templatesPath, 'utf-8');
-      contentCache.conversationTemplates = JSON.parse(templatesData);
+      const parsed = JSON.parse(templatesData);
+      contentCache.conversationTemplates = parsed.conversation_templates || parsed;
       console.log(`✓ Loaded ${contentCache.conversationTemplates.length} conversation templates`);
     }
 
-    // Load learning patterns
     const patternsPath = path.join(__dirname, '../../data/learning_patterns.json');
     if (fs.existsSync(patternsPath)) {
       const patternsData = fs.readFileSync(patternsPath, 'utf-8');
-      contentCache.learningPatterns = JSON.parse(patternsData);
+      const parsed = JSON.parse(patternsData);
+      contentCache.learningPatterns = parsed.learning_patterns || parsed;
       console.log(`✓ Loaded ${contentCache.learningPatterns.length} learning patterns`);
     }
 
@@ -147,6 +148,14 @@ const buildPath = path.join(__dirname, '../../client/build');
 if (fs.existsSync(buildPath)) {
   app.use(express.static(buildPath));
 }
+
+// ============================================================================
+// ADMIN TESTING PAGE
+// ============================================================================
+
+app.get('/admin/test', (req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, '../frontend/admin-test.html'));
+});
 
 // ============================================================================
 // HEALTH CHECK ENDPOINT

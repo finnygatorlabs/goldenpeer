@@ -28,7 +28,7 @@ const contextEngine = new ContextAssemblyEngine(profileService, learningEngine);
  * POST /api/profiles
  * Create a new senior profile
  */
-router.post('/api/profiles', (req: Request, res: Response) => {
+router.post('/profiles', (req: Request, res: Response) => {
   try {
     const { seniorId, name, location, timezone } = req.body;
 
@@ -57,9 +57,9 @@ router.post('/api/profiles', (req: Request, res: Response) => {
  * GET /api/profiles/:seniorId
  * Get a senior profile
  */
-router.get('/api/profiles/:seniorId', (req: Request, res: Response) => {
+router.get('/profiles/:seniorId', (req: Request, res: Response) => {
   try {
-    const { seniorId } = req.params;
+    const seniorId = req.params.seniorId as string;
     const profile = profileService.getProfile(seniorId);
 
     if (!profile) {
@@ -76,9 +76,9 @@ router.get('/api/profiles/:seniorId', (req: Request, res: Response) => {
  * PUT /api/profiles/:seniorId
  * Update a senior profile
  */
-router.put('/api/profiles/:seniorId', (req: Request, res: Response) => {
+router.put('/profiles/:seniorId', (req: Request, res: Response) => {
   try {
-    const { seniorId } = req.params;
+    const seniorId = req.params.seniorId as string;
     const profile = profileService.getProfile(seniorId);
 
     if (!profile) {
@@ -116,7 +116,7 @@ router.put('/api/profiles/:seniorId', (req: Request, res: Response) => {
  * POST /api/conversations
  * Process a conversation and update profile
  */
-router.post('/api/conversations', (req: Request, res: Response) => {
+router.post('/conversations', (req: Request, res: Response) => {
   try {
     const {
       seniorId,
@@ -173,9 +173,9 @@ router.post('/api/conversations', (req: Request, res: Response) => {
  * GET /api/conversations/:seniorId
  * Get conversation history for a senior
  */
-router.get('/api/conversations/:seniorId', (req: Request, res: Response) => {
+router.get('/conversations/:seniorId', (req: Request, res: Response) => {
   try {
-    const { seniorId } = req.params;
+    const seniorId = req.params.seniorId as string;
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
 
     const history = learningEngine.getConversationHistory(seniorId, limit);
@@ -198,9 +198,9 @@ router.get('/api/conversations/:seniorId', (req: Request, res: Response) => {
  * GET /api/context/:seniorId
  * Get assembled context for LLM
  */
-router.get('/api/context/:seniorId', (req: Request, res: Response) => {
+router.get('/context/:seniorId', (req: Request, res: Response) => {
   try {
-    const { seniorId } = req.params;
+    const seniorId = req.params.seniorId as string;
     const profile = profileService.getProfile(seniorId);
 
     if (!profile) {
@@ -226,7 +226,7 @@ router.get('/api/context/:seniorId', (req: Request, res: Response) => {
  * POST /api/llm-prompt
  * Generate LLM prompt with context
  */
-router.post('/api/llm-prompt', (req: Request, res: Response) => {
+router.post('/llm-prompt', (req: Request, res: Response) => {
   try {
     const { seniorId, seniorInput } = req.body;
 
@@ -257,9 +257,9 @@ router.post('/api/llm-prompt', (req: Request, res: Response) => {
  * GET /api/next-question/:seniorId
  * Get the next question to ask
  */
-router.get('/api/next-question/:seniorId', (req: Request, res: Response) => {
+router.get('/next-question/:seniorId', (req: Request, res: Response) => {
   try {
-    const { seniorId } = req.params;
+    const seniorId = req.params.seniorId as string;
     const profile = profileService.getProfile(seniorId);
 
     if (!profile) {
@@ -288,9 +288,9 @@ router.get('/api/next-question/:seniorId', (req: Request, res: Response) => {
  * GET /api/insights/:seniorId
  * Get insights about a senior
  */
-router.get('/api/insights/:seniorId', (req: Request, res: Response) => {
+router.get('/insights/:seniorId', (req: Request, res: Response) => {
   try {
-    const { seniorId } = req.params;
+    const seniorId = req.params.seniorId as string;
     const profile = profileService.getProfile(seniorId);
 
     if (!profile) {
@@ -317,9 +317,9 @@ router.get('/api/insights/:seniorId', (req: Request, res: Response) => {
  * GET /api/interests/:seniorId
  * Get discovered interests for a senior
  */
-router.get('/api/interests/:seniorId', (req: Request, res: Response) => {
+router.get('/interests/:seniorId', (req: Request, res: Response) => {
   try {
-    const { seniorId } = req.params;
+    const seniorId = req.params.seniorId as string;
     const profile = profileService.getProfile(seniorId);
 
     if (!profile) {
@@ -342,9 +342,9 @@ router.get('/api/interests/:seniorId', (req: Request, res: Response) => {
  * GET /api/memory-anchors/:seniorId
  * Get memory anchors for a senior
  */
-router.get('/api/memory-anchors/:seniorId', (req: Request, res: Response) => {
+router.get('/memory-anchors/:seniorId', (req: Request, res: Response) => {
   try {
-    const { seniorId } = req.params;
+    const seniorId = req.params.seniorId as string;
     const profile = profileService.getProfile(seniorId);
 
     if (!profile) {
@@ -371,9 +371,9 @@ router.get('/api/memory-anchors/:seniorId', (req: Request, res: Response) => {
  * GET /api/learning-history/:seniorId
  * Get learning history for a senior
  */
-router.get('/api/learning-history/:seniorId', (req: Request, res: Response) => {
+router.get('/learning-history/:seniorId', (req: Request, res: Response) => {
   try {
-    const { seniorId } = req.params;
+    const seniorId = req.params.seniorId as string;
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
 
     const profile = profileService.getProfile(seniorId);
@@ -401,7 +401,7 @@ router.get('/api/learning-history/:seniorId', (req: Request, res: Response) => {
  * GET /api/health
  * Health check endpoint
  */
-router.get('/api/health', (req: Request, res: Response) => {
+router.get('/health', (req: Request, res: Response) => {
   res.json({
     status: 'healthy',
     timestamp: new Date(),

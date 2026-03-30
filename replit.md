@@ -47,6 +47,8 @@ The project is built as a pnpm monorepo, utilizing Node.js 24 and TypeScript 5.9
 - Content data: `data/life_story_questions.json` (600 questions across 25+ categories), `data/conversation_templates.json` (conversation template library), `data/learning_patterns.json` (pattern recognition definitions).
 - Backend services: `SeniorProfileService` (profile CRUD, memory anchors, interests), `AdaptiveLearningEngine` (conversation analysis, pattern extraction), `ContextAssemblyEngine` (LLM prompt assembly, question selection).
 - Dev script: `pnpm run dev:learning` runs the standalone adaptive learning server via ts-node.
+- Admin test page: `src/frontend/admin-test.html` served at `/admin/test` — 12 API tests + live chat interface.
+- Workflow: "Adaptive Learning Server" runs on port 3000.
 
 **Monorepo Structure**:
 - `artifacts/api-server`: Express API server.
