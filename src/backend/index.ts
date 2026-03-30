@@ -153,6 +153,10 @@ if (fs.existsSync(buildPath)) {
 // ADMIN TESTING PAGE
 // ============================================================================
 
+app.get('/', (req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, '../frontend/admin-test.html'));
+});
+
 app.get('/admin/test', (req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, '../frontend/admin-test.html'));
 });
