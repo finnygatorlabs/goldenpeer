@@ -1,9 +1,10 @@
 import { Router, IRouter } from "express";
 import Stripe from "stripe";
 import { db } from "@workspace/db";
-import { userTiersTable } from "@workspace/db";
+import { userTiersTable, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireAuth, AuthRequest } from "../lib/auth.js";
+import { sendPaymentSuccessEmail, sendPaymentFailedEmail, sendSubscriptionCancelledEmail } from "../lib/email.js";
 
 const router: IRouter = Router();
 
@@ -100,6 +101,16 @@ router.delete("/subscription", requireAuth, async (req: AuthRequest, res) => {
       } as any)
       .where(eq(userTiersTable.user_id, req.user!.userId))
       .returning();
+
+    try {
+      const [u] = await db.select().from(usersTable).where(eq(usersTable.id, req.user!.userId)).limit(1);
+      if (u?.email) {
+        await sendSubscriptionCancelledEmail(u.email, u.first_name || null);
+        req.log.info({ email: u.email }, "Cancellation email sent");
+      }
+    } catch (emailErr) {
+      req.log.error({ emailErr }, "Failed to send cancellation email");
+    }
 
     res.json({
       success: true,
@@ -303,6 +314,19 @@ router.post("/webhook", async (req, res) => {
         }
 
         req.log.info({ userId, subscriptionId, billingCycle }, "User upgraded to premium");
+
+        try {
+          const [u] = await db.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);
+          if (u?.email) {
+            const plan = billingCycle === "annual" ? "Premium Annual" : "Premium Monthly";
+            const amount = billingCycle === "annual" ? "$203.90" : "$19.99";
+            await sendPaymentSuccessEmail(u.email, u.first_name || null, plan, amount);
+            req.log.info({ email: u.email }, "Payment success email sent");
+          }
+        } catch (emailErr) {
+          req.log.error({ emailErr }, "Failed to send payment success email");
+        }
+
         break;
       }
 
@@ -376,6 +400,23 @@ router.post("/webhook", async (req, res) => {
               .where(eq(userTiersTable.stripe_subscription_id, subId));
 
             req.log.warn({ subId, userId: tier.user_id }, "Payment failed — subscription past due");
+
+            try {
+              const [u] = await db.select().from(usersTable).where(eq(usersTable.id, tier.user_id)).limit(1);
+              if (u?.email) {
+                const charge = invoice.charge;
+                let reason = "Payment could not be processed";
+                if (typeof charge === "object" && charge?.failure_message) {
+                  reason = charge.failure_message;
+                } else if (invoice.last_finalization_error?.message) {
+                  reason = invoice.last_finalization_error.message;
+                }
+                await sendPaymentFailedEmail(u.email, u.first_name || null, reason);
+                req.log.info({ email: u.email }, "Payment failed email sent");
+              }
+            } catch (emailErr) {
+              req.log.error({ emailErr }, "Failed to send payment failed email");
+            }
           }
         }
         break;

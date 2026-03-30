@@ -326,3 +326,149 @@ export async function sendScamAlertEmail(
 
   return data;
 }
+
+function billingEmailWrapper(title: string, headerBg: string, headerIcon: string, headerSubtitle: string, body: string) {
+  return `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>${title} – ${APP_NAME}</title></head>
+<body style="margin:0;padding:0;background:#F1F5F9;font-family:Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#F1F5F9;padding:40px 0;">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="background:#FFFFFF;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+        <tr>
+          <td style="background:${headerBg};padding:36px 40px;text-align:center;">
+            <div style="display:inline-block;background:rgba(255,255,255,0.2);border-radius:50%;width:64px;height:64px;line-height:64px;font-size:32px;margin-bottom:12px;">${headerIcon}</div>
+            <h1 style="color:#FFFFFF;margin:8px 0 0 0;font-size:26px;font-weight:700;">${APP_NAME}</h1>
+            <p style="color:rgba(255,255,255,0.85);margin:6px 0 0 0;font-size:14px;">${headerSubtitle}</p>
+          </td>
+        </tr>
+        <tr><td style="padding:40px;">${body}</td></tr>
+        <tr>
+          <td style="background:#F8FAFC;padding:20px 40px;text-align:center;">
+            <p style="color:#94A3B8;font-size:12px;margin:0;">&copy; 2026 ${APP_NAME} &middot; Protecting seniors from scams and tech confusion</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+}
+
+export async function sendPaymentSuccessEmail(email: string, firstName: string | null, plan: string, amount: string) {
+  const name = firstName || "there";
+  const body = `
+    <h2 style="color:#1E293B;font-size:22px;margin:0 0 12px 0;">Payment Confirmed! 🎉</h2>
+    <p style="color:#475569;font-size:16px;line-height:26px;margin:0 0 24px 0;">
+      Hi ${name}, your payment has been processed successfully. Here are the details:
+    </p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#F0FDF4;border-radius:12px;border:1px solid #BBF7D0;margin:0 0 24px 0;">
+      <tr><td style="padding:20px;">
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="padding:8px 0;border-bottom:1px solid #BBF7D0;">
+              <span style="color:#64748B;font-size:13px;">Plan</span><br/>
+              <span style="color:#1E293B;font-size:16px;font-weight:600;">${plan}</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:8px 0;border-bottom:1px solid #BBF7D0;">
+              <span style="color:#64748B;font-size:13px;">Amount Charged</span><br/>
+              <span style="color:#16A34A;font-size:22px;font-weight:700;">${amount}</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:8px 0;">
+              <span style="color:#64748B;font-size:13px;">Status</span><br/>
+              <span style="color:#16A34A;font-size:16px;font-weight:600;">✅ Active</span>
+            </td>
+          </tr>
+        </table>
+      </td></tr>
+    </table>
+    <p style="color:#475569;font-size:15px;line-height:24px;margin:0 0 8px 0;">
+      You now have full access to all premium features including scam detection, family alerts, and 24/7 voice assistance.
+    </p>
+    <p style="color:#94A3B8;font-size:13px;text-align:center;margin:16px 0 0 0;">
+      You can manage or cancel your subscription anytime from the app's Settings.
+    </p>`;
+
+  const { data, error } = await resend.emails.send({
+    from: FROM_EMAIL,
+    to: [email],
+    subject: `${APP_NAME} — Payment Confirmed ✅`,
+    html: billingEmailWrapper("Payment Confirmed", "linear-gradient(135deg,#16A34A,#22C55E)", "✅", "Payment Receipt", body),
+  });
+
+  if (error) throw new Error(`Payment success email failed: ${error.message}`);
+  return data;
+}
+
+export async function sendPaymentFailedEmail(email: string, firstName: string | null, reason: string) {
+  const name = firstName || "there";
+  const body = `
+    <h2 style="color:#1E293B;font-size:22px;margin:0 0 12px 0;">Payment Issue ⚠️</h2>
+    <p style="color:#475569;font-size:16px;line-height:26px;margin:0 0 24px 0;">
+      Hi ${name}, we weren't able to process your recent payment. Here's what happened:
+    </p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#FEF2F2;border-radius:12px;border:1px solid #FECACA;margin:0 0 24px 0;">
+      <tr><td style="padding:20px;">
+        <span style="color:#64748B;font-size:13px;">Reason</span><br/>
+        <span style="color:#DC2626;font-size:16px;font-weight:600;">${reason}</span>
+      </td></tr>
+    </table>
+    <p style="color:#475569;font-size:15px;line-height:24px;margin:0 0 20px 0;">
+      <strong>What you can do:</strong>
+    </p>
+    <ul style="color:#475569;font-size:15px;line-height:28px;margin:0 0 20px 0;padding-left:20px;">
+      <li>Check that your card details are correct and up to date</li>
+      <li>Make sure your card has sufficient funds</li>
+      <li>Try a different payment method</li>
+      <li>Contact your bank if the issue persists</li>
+    </ul>
+    <p style="color:#94A3B8;font-size:13px;text-align:center;margin:0;">
+      No charges were made. You can try again anytime from the app.
+    </p>`;
+
+  const { data, error } = await resend.emails.send({
+    from: FROM_EMAIL,
+    to: [email],
+    subject: `${APP_NAME} — Payment Issue ⚠️`,
+    html: billingEmailWrapper("Payment Issue", "linear-gradient(135deg,#DC2626,#EF4444)", "⚠️", "Payment Notification", body),
+  });
+
+  if (error) throw new Error(`Payment failed email failed: ${error.message}`);
+  return data;
+}
+
+export async function sendSubscriptionCancelledEmail(email: string, firstName: string | null) {
+  const name = firstName || "there";
+  const body = `
+    <h2 style="color:#1E293B;font-size:22px;margin:0 0 12px 0;">Subscription Cancelled</h2>
+    <p style="color:#475569;font-size:16px;line-height:26px;margin:0 0 24px 0;">
+      Hi ${name}, your ${APP_NAME} subscription has been cancelled as requested.
+    </p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#FFFBEB;border-radius:12px;border:1px solid #FDE68A;margin:0 0 24px 0;">
+      <tr><td style="padding:20px;">
+        <span style="color:#92400E;font-size:15px;font-weight:600;">📋 Important:</span>
+        <p style="color:#78350F;font-size:15px;line-height:24px;margin:8px 0 0 0;">
+          You'll continue to have full access to all premium features until the end of your current billing period. After that, your account will switch to the free plan.
+        </p>
+      </td></tr>
+    </table>
+    <p style="color:#475569;font-size:15px;line-height:24px;margin:0 0 20px 0;">
+      We're sorry to see you go. If you change your mind, you can resubscribe anytime from the app.
+    </p>
+    <p style="color:#94A3B8;font-size:13px;text-align:center;margin:0;">
+      If you have feedback about your experience, we'd love to hear from you.
+    </p>`;
+
+  const { data, error } = await resend.emails.send({
+    from: FROM_EMAIL,
+    to: [email],
+    subject: `${APP_NAME} — Subscription Cancelled`,
+    html: billingEmailWrapper("Subscription Cancelled", "linear-gradient(135deg,#92400E,#D97706)", "📋", "Account Update", body),
+  });
+
+  if (error) throw new Error(`Cancellation email failed: ${error.message}`);
+  return data;
+}
