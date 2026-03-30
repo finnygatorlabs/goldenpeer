@@ -66,7 +66,7 @@ class CompleteAPIsService {
   // API Base URLs
   private readonly API_URLS = {
     weather: 'https://api.openweathermap.org/data/2.5/weather',
-    news: 'https://newsdata.io/api/1/news',
+    news: 'https://newsdata.io/api/1/latest',
     wikipedia: 'https://en.wikipedia.org/w/api.php',
     time: 'https://time.now/developer/api',
     espn: 'http://site.api.espn.com/apis/site/v2',
@@ -193,16 +193,16 @@ class CompleteAPIsService {
 
     try {
       const startTime = Date.now();
-      const response = await axios.get(this.API_URLS.news, {
-        params: {
+      const params: Record<string, string> = {
           q: query,
-          country: country,
           apikey: this.newsApiKey,
           language: 'en',
-          sort: 'latest',
-          limit: 5,
-        },
-        timeout: 5000,
+        };
+      if (country) params.country = country;
+
+      const response = await axios.get(this.API_URLS.news, {
+        params,
+        timeout: 8000,
       });
 
       const responseTime = Date.now() - startTime;
