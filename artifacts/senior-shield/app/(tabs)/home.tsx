@@ -1293,8 +1293,6 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   premiumBanner: {
-    marginHorizontal: 20,
-    borderRadius: 14,
     overflow: "hidden",
     marginBottom: 4,
   },
@@ -1302,8 +1300,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
   },
   premiumBannerLeft: {
     flexDirection: "row",

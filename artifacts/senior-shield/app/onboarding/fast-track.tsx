@@ -18,7 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "@/context/AuthContext";
-import { familyApi } from "@/services/api";
+import { familyApi, userApi } from "@/services/api";
 
 const { width } = Dimensions.get("window");
 const GRADIENT: [string, string, string] = ["#06102E", "#0E2D6B", "#0B5FAA"];
@@ -124,6 +124,10 @@ export default function FastTrackOnboarding() {
       const baseUrl = process.env.EXPO_PUBLIC_DOMAIN
         ? `https://${process.env.EXPO_PUBLIC_DOMAIN}`
         : "http://localhost:8080";
+
+      if (selectedInterests.length > 0 && user?.token) {
+        await userApi.updatePreferences({ interests: selectedInterests }, user.token).catch(() => {});
+      }
 
       await fetch(`${baseUrl}/api/admin/learning-api/onboarding/complete`, {
         method: "POST",

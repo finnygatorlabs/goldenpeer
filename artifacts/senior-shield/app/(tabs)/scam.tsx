@@ -16,6 +16,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
@@ -117,6 +118,7 @@ const QUICK_TESTS = [
 ];
 
 export default function ScamScreen() {
+  const router = useRouter();
   const { theme } = useTheme();
   const { ts } = usePreferences();
   const insets = useSafeAreaInsets();
@@ -407,18 +409,24 @@ export default function ScamScreen() {
     >
 
       {!isPremium && scamUsage && !result && (
-        <View style={[styles.usageBanner, { backgroundColor: scamUsage.remaining > 0 ? '#EFF6FF' : '#FEF2F2' }]}>
+        <Pressable
+          onPress={() => router.push("/subscription")}
+          style={[styles.usageBanner, { backgroundColor: scamUsage.remaining > 0 ? '#EFF6FF' : '#FEF2F2' }]}
+        >
           <Ionicons
             name={scamUsage.remaining > 0 ? "information-circle" : "lock-closed"}
             size={18}
             color={scamUsage.remaining > 0 ? "#2563EB" : "#DC2626"}
           />
-          <Text style={[styles.usageBannerText, { color: scamUsage.remaining > 0 ? '#1E40AF' : '#991B1B' }]}>
+          <Text style={[styles.usageBannerText, { color: scamUsage.remaining > 0 ? '#1E40AF' : '#991B1B', flex: 1 }]}>
             {scamUsage.remaining > 0
               ? `${scamUsage.remaining} free scan${scamUsage.remaining === 1 ? '' : 's'} remaining`
               : 'No free scans left — upgrade to Premium'}
           </Text>
-        </View>
+          <View style={{ backgroundColor: scamUsage.remaining > 0 ? '#2563EB' : '#DC2626', borderRadius: 14, paddingHorizontal: 12, paddingVertical: 5 }}>
+            <Text style={{ color: '#FFFFFF', fontFamily: 'Inter_600SemiBold', fontSize: 12 }}>Upgrade</Text>
+          </View>
+        </Pressable>
       )}
 
       <View style={[styles.inputCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>

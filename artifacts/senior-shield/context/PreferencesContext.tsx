@@ -93,7 +93,7 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
           haptic_feedback: data.haptic_feedback !== false,
           captions_enabled: data.captions_enabled !== false,
           data_collection_enabled: data.data_collection_enabled !== false,
-          assistant_name: data.assistant_name || DEFAULT_NAMES[gender],
+          assistant_name: (data.assistant_name === "Ava" ? "Ida" : data.assistant_name === "Max" ? "Clay" : data.assistant_name) || DEFAULT_NAMES[gender],
           tts_voice: (data.tts_voice as TtsVoice) || (gender === "female" ? "nova" : "echo"),
           daily_quotes_enabled: data.daily_quotes_enabled !== false,
         });

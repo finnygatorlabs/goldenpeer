@@ -46,6 +46,7 @@ export const usersTable = pgTable("users", {
   device_platform: varchar("device_platform"),
   device_model: varchar("device_model"),
   device_os_version: varchar("device_os_version"),
+  interests: jsonb("interests").$type<string[]>(),
   onboarding_completed: boolean("onboarding_completed").default(false),
   onboarding_step: integer("onboarding_step").default(0),
   email_verified: boolean("email_verified").default(false),

@@ -105,7 +105,7 @@ router.put("/preferences", requireAuth, async (req: AuthRequest, res) => {
       "preferred_voice", "voice_speed", "voice_volume", "color_scheme",
       "high_contrast_enabled", "font_size", "haptic_feedback",
       "captions_enabled", "data_collection_enabled", "assistant_name", "tts_voice",
-      "daily_quotes_enabled"
+      "daily_quotes_enabled", "interests"
     ];
 
     const updates: Record<string, unknown> = { updated_at: new Date() };

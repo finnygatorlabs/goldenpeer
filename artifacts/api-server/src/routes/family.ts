@@ -1,6 +1,6 @@
 import { Router, IRouter } from "express";
 import { db } from "@workspace/db";
-import { familyRelationshipsTable, usersTable } from "@workspace/db";
+import { familyRelationshipsTable, usersTable, userTiersTable } from "@workspace/db";
 import { eq, or, and } from "drizzle-orm";
 import { requireAuth, AuthRequest } from "../lib/auth.js";
 
@@ -60,8 +60,8 @@ router.post("/add-member", requireAuth, async (req: AuthRequest, res) => {
       lastName = parts.length > 1 ? parts.slice(1).join(" ") : undefined;
     }
 
-    const [userRow] = await db.select().from(usersTable).where(eq(usersTable.id, req.user!.userId)).limit(1);
-    const isPremium = !!(userRow?.stripe_subscription_id || (userRow?.premium_end_date && new Date(userRow.premium_end_date) > new Date()));
+    const [tier] = await db.select().from(userTiersTable).where(eq(userTiersTable.user_id, req.user!.userId)).limit(1);
+    const isPremium = !!(tier && (tier.tier === "premium" || tier.tier === "premium_paid"));
     const maxMembers = isPremium ? PREMIUM_FAMILY_LIMIT : FREE_FAMILY_LIMIT;
 
     const existingMembers = await db
