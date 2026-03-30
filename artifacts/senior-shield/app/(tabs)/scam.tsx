@@ -24,6 +24,7 @@ import { useAuth } from "@/context/AuthContext";
 import { usePreferences } from "@/context/PreferencesContext";
 import PageHeader from "@/components/PageHeader";
 import PremiumGate from "@/components/PremiumGate";
+import ConfirmModal from "@/components/ConfirmModal";
 import { scamApi, familyApi, userApi, ApiError } from "@/services/api";
 
 interface AttachedFile {
@@ -131,6 +132,7 @@ export default function ScamScreen() {
   const [alertSending, setAlertSending] = useState(false);
   const [alertSent, setAlertSent] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
+  const [alertErrorModal, setAlertErrorModal] = useState<{ visible: boolean; message: string }>({ visible: false, message: "" });
   const [attachment, setAttachment] = useState<AttachedFile | null>(null);
   const [showPremiumGate, setShowPremiumGate] = useState(false);
   const [scamUsage, setScamUsage] = useState<{ count: number; limit: number; remaining: number; locked: boolean } | null>(null);
@@ -359,7 +361,7 @@ export default function ScamScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (err: any) {
       const msg = err?.data?.message || "Could not send alert. Make sure you have family members added in the Family tab.";
-      Alert.alert("Alert Failed", msg);
+      setAlertErrorModal({ visible: true, message: msg });
     } finally {
       setAlertSending(false);
     }
@@ -382,6 +384,17 @@ export default function ScamScreen() {
         usageCount={scamUsage?.count}
         usageLimit={scamUsage?.limit}
         description="You've used all your free scam scans. Upgrade to Premium for unlimited scam analysis and real-time protection."
+      />
+
+      <ConfirmModal
+        visible={alertErrorModal.visible}
+        title="Alert Failed"
+        message={alertErrorModal.message}
+        confirmLabel="OK"
+        cancelLabel=""
+        icon="alert-circle"
+        onConfirm={() => setAlertErrorModal({ visible: false, message: "" })}
+        onCancel={() => setAlertErrorModal({ visible: false, message: "" })}
       />
 
     <ScrollView

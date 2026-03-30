@@ -343,18 +343,23 @@ class CompleteAPIsService {
     try {
       const startTime = Date.now();
 
-      // Detect sport type from query
+      const q = query.toLowerCase();
       let endpoint = '';
-      if (query.toLowerCase().includes('nfl') || query.toLowerCase().includes('football')) {
+      if (q.includes('mens-college-basketball') || q.includes('ncaa basketball') || q.includes('march madness')) {
+        endpoint = `${this.API_URLS.espn}/sports/basketball/mens-college-basketball/scoreboard`;
+      } else if (q.includes('college-football') || q.includes('ncaa football') || q.includes('cfb')) {
+        endpoint = `${this.API_URLS.espn}/sports/football/college-football/scoreboard`;
+      } else if (q.includes('nfl') || q.includes('football')) {
         endpoint = `${this.API_URLS.espn}/sports/football/nfl/scoreboard`;
-      } else if (query.toLowerCase().includes('nba') || query.toLowerCase().includes('basketball')) {
+      } else if (q.includes('nba') || q.includes('basketball')) {
         endpoint = `${this.API_URLS.espn}/sports/basketball/nba/scoreboard`;
-      } else if (query.toLowerCase().includes('mlb') || query.toLowerCase().includes('baseball')) {
+      } else if (q.includes('mlb') || q.includes('baseball')) {
         endpoint = `${this.API_URLS.espn}/sports/baseball/mlb/scoreboard`;
-      } else if (query.toLowerCase().includes('nhl') || query.toLowerCase().includes('hockey')) {
+      } else if (q.includes('nhl') || q.includes('hockey')) {
         endpoint = `${this.API_URLS.espn}/sports/hockey/nhl/scoreboard`;
+      } else if (q.includes('soccer') || q.includes('mls')) {
+        endpoint = `${this.API_URLS.espn}/sports/soccer/usa.1/scoreboard`;
       } else {
-        // Default to NFL
         endpoint = `${this.API_URLS.espn}/sports/football/nfl/scoreboard`;
       }
 

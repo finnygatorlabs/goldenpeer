@@ -86,24 +86,26 @@ export default function ConfirmModal({
 
           {/* Buttons */}
           <View style={styles.buttonRow}>
-            <Pressable
-              onPress={onCancel}
-              style={({ pressed }) => [
-                styles.cancelBtn,
-                { borderColor: theme.border, backgroundColor: theme.surface },
-                pressed && styles.pressed,
-              ]}
-            >
-              <Text style={[styles.cancelText, { color: theme.text, fontSize: ts.base }]}>
-                {cancelLabel}
-              </Text>
-            </Pressable>
+            {cancelLabel ? (
+              <Pressable
+                onPress={onCancel}
+                style={({ pressed }) => [
+                  styles.cancelBtn,
+                  { borderColor: theme.border, backgroundColor: theme.surface },
+                  pressed && styles.pressed,
+                ]}
+              >
+                <Text style={[styles.cancelText, { color: theme.text, fontSize: ts.base }]}>
+                  {cancelLabel}
+                </Text>
+              </Pressable>
+            ) : null}
 
             <Pressable
               onPress={onConfirm}
               style={({ pressed }) => [
                 styles.confirmBtn,
-                { backgroundColor: destructive ? "#DC2626" : "#2563EB" },
+                { backgroundColor: destructive ? "#DC2626" : "#2563EB", flex: cancelLabel ? 1 : undefined, width: cancelLabel ? undefined : "100%" },
                 pressed && styles.pressed,
               ]}
             >

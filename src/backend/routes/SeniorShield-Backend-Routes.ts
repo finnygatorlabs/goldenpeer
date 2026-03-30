@@ -14,6 +14,7 @@ import {
   DiscoveredInterest
 } from '../services/SeniorShield-Backend-Implementation';
 import { FreeAPIsService } from '../services/SeniorShield-Free-APIs-Integration';
+import CompleteAPIsService from '../services/SeniorShield-Complete-APIs-Integration';
 
 const openai = new OpenAI({
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
@@ -21,6 +22,10 @@ const openai = new OpenAI({
 });
 
 const freeApis = new FreeAPIsService();
+const completeApis = new CompleteAPIsService(
+  process.env.WEATHER_API_KEY || '',
+  process.env.NEWS_API_KEY || ''
+);
 
 const router = Router();
 
@@ -431,28 +436,68 @@ router.post('/chat', async (req: Request, res: Response) => {
     const needsHistory = /today in history|on this day|what happened today|historical/i.test(lowerMsg);
     const needsQuote = /quote|inspirat|motivat|wisdom|saying/i.test(lowerMsg);
     const needsTrivia = /trivia|quiz|test my knowledge|brain teaser/i.test(lowerMsg);
-    const needsSports = /score|who won|game last|playoffs|championship|super bowl|world series|nba|nfl|mlb|standings/i.test(lowerMsg);
+    const needsSports = /score|who won|game last|game yesterday|game today|playoffs|championship|super bowl|world series|nba|nfl|mlb|nhl|standings|uconn|duke|march madness|ncaa|college basketball|college football|baseball|basketball|football|hockey|soccer/i.test(lowerMsg);
+    const needsBible = /bible|verse|scripture|psalm|proverb|genesis|exodus|matthew|john|romans|corinthians|revelation/i.test(lowerMsg);
+    const needsWikipedia = /who is|who was|what is|what are|tell me about|explain|define|history of|biography/i.test(lowerMsg) && !needsWeather && !needsNews && !needsSports;
 
     const fetches: Promise<void>[] = [];
 
     if (needsWeather) {
       const cityMatch = lowerMsg.match(/(?:weather|temperature|forecast)\s+(?:in|for|at)\s+([a-zA-Z\s]+)/i);
       const city = cityMatch ? cityMatch[1].trim() : (profile!.basic_info?.location?.split(',')[0] || 'New York');
-      fetches.push(freeApis.getWeather(city).then(w => {
-        if (w) realTimeContext += `\n[REAL-TIME WEATHER for ${w.location}]: Temperature: ${w.temperature}°F (feels like ${w.feelsLike}°F), ${w.description}, Humidity: ${w.humidity}%, Wind: ${w.windSpeed} mph.`;
+      fetches.push(completeApis.getWeather(city).then((w: any) => {
+        if (w && w.success) realTimeContext += `\n[REAL-TIME WEATHER for ${w.city}]: Temperature: ${w.temperature}°C (feels like ${w.feelsLike}°C), ${w.description}, Humidity: ${w.humidity}%, Wind: ${w.windSpeed} m/s, Cloudiness: ${w.cloudiness}%.`;
       }).catch(() => {}));
     }
 
-    if (needsNews || needsSports) {
-      const category = needsSports ? 'sports' : 'general';
-      fetches.push(freeApis.getTopNews(category, 'us', 5).then(articles => {
-        if (articles.length > 0 && articles[0].title !== 'News API not configured') {
-          realTimeContext += `\n[REAL-TIME ${needsSports ? 'SPORTS' : ''} NEWS HEADLINES as of ${new Date().toLocaleDateString()}]:\n` +
-            articles.map((a, i) => `${i + 1}. "${a.title}" - ${a.source} (${new Date(a.publishedAt).toLocaleDateString()})`).join('\n');
-        } else if (needsSports) {
-          realTimeContext += `\n[NOTE: Live sports scores are not available right now. Be honest and tell the user you don't have access to today's scores, but engage about their interest in sports.]`;
+    if (needsSports) {
+      const sportMatch = lowerMsg.match(/\b(nba|nfl|mlb|nhl|ncaa|college basketball|college football)\b/i);
+      let sportQuery = sportMatch ? sportMatch[1] : 'NBA';
+      if (/uconn|duke|march madness|ncaa|college basketball/i.test(lowerMsg)) sportQuery = 'mens-college-basketball';
+      if (/college football/i.test(lowerMsg)) sportQuery = 'college-football';
+      fetches.push(completeApis.getSportsInfo(sportQuery).then((s: any) => {
+        if (s && s.success && s.events && s.events.length > 0) {
+          realTimeContext += `\n[LIVE SPORTS DATA - ${sportQuery} as of ${new Date().toLocaleDateString()}]:\n` +
+            s.events.map((e: any, i: number) => `${i + 1}. ${e.homeTeam} vs ${e.awayTeam} - Score: ${e.homeScore}-${e.awayScore} (${e.status}) - ${e.date}`).join('\n');
         }
       }).catch(() => {}));
+    }
+
+    if (needsNews) {
+      const queryMatch = lowerMsg.match(/news\s+(?:about|on|regarding)\s+(.+)/i);
+      const newsQuery = queryMatch ? queryMatch[1].trim() : 'latest';
+      fetches.push(completeApis.getNews(newsQuery).then((n: any) => {
+        if (n && n.success && n.articles && n.articles.length > 0) {
+          realTimeContext += `\n[REAL-TIME NEWS HEADLINES as of ${new Date().toLocaleDateString()}]:\n` +
+            n.articles.map((a: any, i: number) => `${i + 1}. "${a.title}" - ${a.source} (${a.publishedAt})`).join('\n');
+        }
+      }).catch(() => {}));
+    }
+
+    if (needsBible) {
+      let bibleRef = '';
+      const verseMatch = lowerMsg.match(/(?:bible|verse|scripture)\s*(?:verse)?\s*(.+?)(?:\?|$)/i);
+      const directRefMatch = lowerMsg.match(/\b(genesis|exodus|leviticus|numbers|deuteronomy|joshua|judges|ruth|samuel|kings|chronicles|ezra|nehemiah|esther|job|psalm|psalms|proverbs|ecclesiastes|song of solomon|isaiah|jeremiah|lamentations|ezekiel|daniel|hosea|joel|amos|obadiah|jonah|micah|nahum|habakkuk|zephaniah|haggai|zechariah|malachi|matthew|mark|luke|john|acts|romans|corinthians|galatians|ephesians|philippians|colossians|thessalonians|timothy|titus|philemon|hebrews|james|peter|jude|revelation)\s*\d[\d:,-]*/i);
+      if (directRefMatch) {
+        bibleRef = directRefMatch[0].trim();
+      } else if (verseMatch) {
+        bibleRef = verseMatch[1].trim();
+      }
+      if (bibleRef) {
+        fetches.push(completeApis.getBibleVerse(bibleRef).then((b: any) => {
+          if (b && b.success) realTimeContext += `\n[BIBLE VERSE - ${b.reference}]: "${b.text.trim()}"`;
+        }).catch(() => {}));
+      }
+    }
+
+    if (needsWikipedia) {
+      const topicMatch = lowerMsg.match(/(?:who is|who was|what is|what are|tell me about|explain|define|history of|biography of?)\s+(.+?)(?:\?|$)/i);
+      if (topicMatch) {
+        const topic = topicMatch[1].trim();
+        fetches.push(completeApis.searchWikipedia(topic).then((w: any) => {
+          if (w && w.success && w.summary) realTimeContext += `\n[WIKIPEDIA - ${w.title}]: ${w.summary.substring(0, 800)}`;
+        }).catch(() => {}));
+      }
     }
 
     if (needsJoke) {

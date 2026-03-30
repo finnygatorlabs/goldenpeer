@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "@/context/AuthContext";
+import { familyApi } from "@/services/api";
 
 const { width } = Dimensions.get("window");
 const GRADIENT: [string, string, string] = ["#06102E", "#0E2D6B", "#0B5FAA"];
@@ -60,6 +61,7 @@ const RELATIONSHIPS = ["Son", "Daughter", "Grandchild", "Spouse", "Friend", "Car
 interface FamilyMember {
   name: string;
   relationship: string;
+  email: string;
 }
 
 export default function FastTrackOnboarding() {
@@ -72,6 +74,7 @@ export default function FastTrackOnboarding() {
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [memberName, setMemberName] = useState("");
+  const [memberEmail, setMemberEmail] = useState("");
   const [memberRelationship, setMemberRelationship] = useState("Son");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -99,10 +102,11 @@ export default function FastTrackOnboarding() {
   }
 
   function addFamilyMember() {
-    if (memberName.trim() && familyMembers.length < 3) {
+    if (memberName.trim() && memberEmail.trim() && familyMembers.length < 3) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      setFamilyMembers([...familyMembers, { name: memberName.trim(), relationship: memberRelationship }]);
+      setFamilyMembers([...familyMembers, { name: memberName.trim(), email: memberEmail.trim(), relationship: memberRelationship }]);
       setMemberName("");
+      setMemberEmail("");
       setMemberRelationship("Son");
     }
   }
@@ -131,6 +135,14 @@ export default function FastTrackOnboarding() {
           familyMembers,
         }),
       }).catch(() => {});
+
+      if (familyMembers.length > 0 && user?.token) {
+        await Promise.allSettled(
+          familyMembers.map((m) =>
+            familyApi.addMember(m.email, m.relationship.toLowerCase(), user.token, m.name)
+          )
+        );
+      }
     } catch {}
 
     router.replace("/onboarding/welcome-tour");
@@ -342,7 +354,7 @@ export default function FastTrackOnboarding() {
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.familyName}>{member.name}</Text>
-                      <Text style={styles.familyRel}>{member.relationship}</Text>
+                      <Text style={styles.familyRel}>{member.relationship} · {member.email}</Text>
                     </View>
                     <Pressable onPress={() => removeFamilyMember(index)} hitSlop={10}>
                       <Ionicons name="close-circle" size={22} color="rgba(255,255,255,0.4)" />
@@ -363,6 +375,19 @@ export default function FastTrackOnboarding() {
                     value={memberName}
                     onChangeText={setMemberName}
                     autoCapitalize="words"
+                  />
+                </View>
+
+                <View style={[styles.inputWrapper, { marginTop: 10 }]}>
+                  <Ionicons name="mail-outline" size={20} color="rgba(255,255,255,0.5)" />
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="Their email (for scam alerts)"
+                    placeholderTextColor="rgba(255,255,255,0.35)"
+                    value={memberEmail}
+                    onChangeText={setMemberEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
                   />
                 </View>
 
@@ -392,9 +417,9 @@ export default function FastTrackOnboarding() {
                 </View>
 
                 <Pressable
-                  style={[styles.addButton, !memberName.trim() && { opacity: 0.5 }]}
+                  style={[styles.addButton, (!memberName.trim() || !memberEmail.trim()) && { opacity: 0.5 }]}
                   onPress={addFamilyMember}
-                  disabled={!memberName.trim()}
+                  disabled={!memberName.trim() || !memberEmail.trim()}
                 >
                   <Ionicons name="add-circle" size={20} color="#34D399" />
                   <Text style={styles.addButtonText}>Add Family Member</Text>
