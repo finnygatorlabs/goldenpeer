@@ -256,16 +256,14 @@ export default function LoginScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.logoRow}>
+        <View style={styles.heroSection}>
           <Image
             source={require("../../assets/images/logo-shield.png")}
-            style={styles.logoImg}
+            style={styles.heroLogo}
             resizeMode="contain"
           />
-          <View>
-            <Text style={styles.welcomeTitle}>Welcome back</Text>
-            <Text style={styles.welcomeSub}>Sign in to SeniorShield</Text>
-          </View>
+          <Text style={styles.heroTitle}>Welcome Back</Text>
+          <Text style={styles.heroSubtitle}>Sign in to SeniorShield</Text>
         </View>
 
         {!showEmailForm ? (
@@ -410,11 +408,30 @@ const styles = StyleSheet.create({
   backButton: { width: 44, height: 44, justifyContent: "center" },
   headerTitle: { fontSize: 17, fontFamily: "Inter_600SemiBold", color: "#FFFFFF" },
   scroll: { flex: 1 },
-  content: { paddingHorizontal: 24, paddingTop: 12, gap: 18 },
-  logoRow: { flexDirection: "row", alignItems: "center", gap: 16, marginBottom: 8 },
-  logoImg: { width: 56, height: 56 },
-  welcomeTitle: { fontSize: 22, fontFamily: "Inter_700Bold", color: "#FFFFFF" },
-  welcomeSub: { fontSize: 14, fontFamily: "Inter_400Regular", marginTop: 2, color: "rgba(255,255,255,0.7)" },
+  content: { paddingHorizontal: 24, paddingTop: 0, gap: 18 },
+  heroSection: {
+    alignItems: "center" as const,
+    paddingTop: 32,
+    paddingBottom: 24,
+  },
+  heroLogo: {
+    width: 73,
+    height: 73,
+    marginBottom: 14,
+  },
+  heroTitle: {
+    fontSize: 26,
+    fontFamily: "Inter_700Bold",
+    color: "#FFFFFF",
+    textAlign: "center" as const,
+    marginBottom: 6,
+  },
+  heroSubtitle: {
+    fontSize: 16,
+    fontFamily: "Inter_400Regular",
+    color: "rgba(255,255,255,0.7)",
+    textAlign: "center" as const,
+  },
   socialSection: { gap: 14 },
   socialButton: {
     flexDirection: "row",
