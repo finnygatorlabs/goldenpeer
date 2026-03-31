@@ -37,7 +37,7 @@ const FEATURE_INFO: Record<string, { icon: string; benefits: string[] }> = {
   family_members: {
     icon: "people",
     benefits: [
-      "Add up to 3 family members",
+      "Add up to 5 family members",
       "Instant scam alert notifications",
       "Weekly safety summaries",
       "Family coordination tools",

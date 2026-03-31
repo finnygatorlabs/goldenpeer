@@ -102,7 +102,7 @@ export default function FastTrackOnboarding() {
   }
 
   function addFamilyMember() {
-    if (memberName.trim() && memberEmail.trim() && familyMembers.length < 5) {
+    if (memberName.trim() && memberEmail.trim() && familyMembers.length < 1) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       setFamilyMembers([...familyMembers, { name: memberName.trim(), email: memberEmail.trim(), relationship: memberRelationship }]);
       setMemberName("");
@@ -124,6 +124,10 @@ export default function FastTrackOnboarding() {
       const baseUrl = process.env.EXPO_PUBLIC_DOMAIN
         ? `https://${process.env.EXPO_PUBLIC_DOMAIN}`
         : "http://localhost:8080";
+
+      if (nickname.trim() && user?.token) {
+        await userApi.updateProfile({ first_name: nickname.trim() }, user.token).catch(() => {});
+      }
 
       if (selectedInterests.length > 0 && user?.token) {
         await userApi.updatePreferences({ interests: selectedInterests }, user.token).catch(() => {});
@@ -348,7 +352,7 @@ export default function FastTrackOnboarding() {
             <Text style={styles.stepLabel}>Step 3 of 3</Text>
             <Text style={styles.heading}>Tell us about{"\n"}your family</Text>
             <Text style={styles.subheading}>
-              This helps your AI companion have more personal conversations. You can add up to 3 members.
+              This helps your AI companion have more personal conversations. Additional members can be added later under the Family tab.
             </Text>
 
             {familyMembers.length > 0 && (
@@ -370,7 +374,7 @@ export default function FastTrackOnboarding() {
               </View>
             )}
 
-            {familyMembers.length < 5 && (
+            {familyMembers.length < 1 && (
               <View style={styles.addFamilySection}>
                 <View style={styles.inputWrapper}>
                   <Ionicons name="person-add-outline" size={20} color="rgba(255,255,255,0.5)" />
