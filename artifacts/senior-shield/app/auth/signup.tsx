@@ -244,22 +244,17 @@ export default function SignupScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.heroSection}>
-            <View style={styles.glowOrb1} />
-            <View style={styles.glowOrb2} />
-            <View style={styles.glowOrb3} />
+            <View style={styles.meshBlob1} />
+            <View style={styles.meshBlob2} />
+            <View style={styles.meshBlob3} />
 
-            <View style={styles.ring1} />
-            <View style={styles.ring2} />
-            <View style={styles.ring3} />
+            <View style={styles.glassCard}>
+              <View style={styles.glassShine} />
+            </View>
 
-            <View style={styles.dot1} />
-            <View style={styles.dot2} />
-            <View style={styles.dot3} />
-            <View style={styles.dot4} />
-            <View style={styles.dot5} />
-
-            <View style={styles.floatLine1} />
-            <View style={styles.floatLine2} />
+            <View style={styles.accentStreak1} />
+            <View style={styles.accentStreak2} />
+            <View style={styles.accentStreak3} />
 
             <Image source={shieldLogo} style={styles.heroLogo} resizeMode="contain" />
             <Text style={styles.heroTitle}>Welcome to SeniorShield</Text>
@@ -470,133 +465,93 @@ const styles = StyleSheet.create({
 
   heroSection: {
     alignItems: "center" as const,
-    paddingTop: 24,
-    paddingBottom: 36,
+    paddingTop: 32,
+    paddingBottom: 40,
     overflow: "hidden" as const,
   },
 
-  glowOrb1: {
+  meshBlob1: {
+    position: "absolute" as const,
+    width: 320,
+    height: 320,
+    borderRadius: 160,
+    top: -100,
+    right: -80,
+    backgroundColor: "rgba(37,99,235,0.08)",
+    transform: [{ scaleX: 1.3 }, { rotate: "-15deg" }],
+  },
+  meshBlob2: {
+    position: "absolute" as const,
+    width: 260,
+    height: 260,
+    borderRadius: 130,
+    top: -60,
+    left: -100,
+    backgroundColor: "rgba(249,115,22,0.06)",
+    transform: [{ scaleY: 1.4 }, { rotate: "20deg" }],
+  },
+  meshBlob3: {
     position: "absolute" as const,
     width: 200,
     height: 200,
     borderRadius: 100,
-    backgroundColor: "rgba(37,99,235,0.15)",
-    top: -40,
-    right: -50,
-  },
-  glowOrb2: {
-    position: "absolute" as const,
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    backgroundColor: "rgba(249,115,22,0.12)",
-    top: 20,
-    left: -40,
-  },
-  glowOrb3: {
-    position: "absolute" as const,
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: "rgba(52,211,153,0.08)",
-    bottom: 10,
-    right: 30,
+    bottom: -40,
+    left: width / 2 - 100,
+    backgroundColor: "rgba(52,211,153,0.04)",
+    transform: [{ scaleX: 1.6 }],
   },
 
-  ring1: {
+  glassCard: {
     position: "absolute" as const,
-    width: 180,
-    height: 180,
-    borderRadius: 90,
+    width: width * 0.55,
+    height: 140,
+    top: 20,
+    left: width * 0.22,
+    borderRadius: 24,
+    backgroundColor: "rgba(255,255,255,0.03)",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.06)",
-    top: -30,
-    left: width / 2 - 90,
+    overflow: "hidden" as const,
   },
-  ring2: {
+  glassShine: {
     position: "absolute" as const,
-    width: 280,
-    height: 280,
-    borderRadius: 140,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.04)",
-    top: -70,
-    left: width / 2 - 140,
-  },
-  ring3: {
-    position: "absolute" as const,
-    width: 380,
-    height: 380,
-    borderRadius: 190,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.025)",
-    top: -110,
-    left: width / 2 - 190,
+    width: "60%" as any,
+    height: "100%" as any,
+    top: 0,
+    left: -10,
+    backgroundColor: "rgba(255,255,255,0.02)",
+    transform: [{ skewX: "-12deg" }],
   },
 
-  dot1: {
+  accentStreak1: {
     position: "absolute" as const,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: "rgba(249,115,22,0.5)",
-    top: 30,
-    right: 60,
+    width: 120,
+    height: 2,
+    borderRadius: 1,
+    top: 40,
+    right: -20,
+    backgroundColor: "rgba(249,115,22,0.12)",
+    transform: [{ rotate: "-30deg" }],
   },
-  dot2: {
+  accentStreak2: {
     position: "absolute" as const,
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: "rgba(52,211,153,0.4)",
-    top: 70,
-    left: 40,
-  },
-  dot3: {
-    position: "absolute" as const,
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    backgroundColor: "rgba(37,99,235,0.35)",
-    top: 50,
-    right: 120,
-  },
-  dot4: {
-    position: "absolute" as const,
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: "rgba(255,255,255,0.2)",
+    width: 80,
+    height: 1.5,
+    borderRadius: 1,
     bottom: 60,
-    left: 70,
+    left: 10,
+    backgroundColor: "rgba(37,99,235,0.1)",
+    transform: [{ rotate: "20deg" }],
   },
-  dot5: {
-    position: "absolute" as const,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: "rgba(255,255,255,0.15)",
-    bottom: 40,
-    right: 90,
-  },
-
-  floatLine1: {
+  accentStreak3: {
     position: "absolute" as const,
     width: 60,
     height: 1,
-    backgroundColor: "rgba(255,255,255,0.06)",
-    top: 55,
-    left: 20,
-    transform: [{ rotate: "-25deg" }],
-  },
-  floatLine2: {
-    position: "absolute" as const,
-    width: 45,
-    height: 1,
-    backgroundColor: "rgba(255,255,255,0.05)",
-    bottom: 50,
-    right: 30,
-    transform: [{ rotate: "15deg" }],
+    borderRadius: 0.5,
+    top: 80,
+    left: 40,
+    backgroundColor: "rgba(52,211,153,0.08)",
+    transform: [{ rotate: "-8deg" }],
   },
 
   heroLogo: {
