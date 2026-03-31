@@ -422,6 +422,9 @@ export default function FastTrackOnboarding() {
                     onChangeText={setMemberEmail}
                     keyboardType="email-address"
                     autoCapitalize="none"
+                    autoComplete="off"
+                    textContentType="none"
+                    importantForAutofill="no"
                   />
                 </View>
 

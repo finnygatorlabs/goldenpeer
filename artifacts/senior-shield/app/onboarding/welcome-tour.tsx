@@ -129,12 +129,7 @@ export default function WelcomeTour() {
         {SLIDES.map((slide, index) => (
           <View key={index} style={[styles.slide, { width }]}>
             {index === 0 ? (
-              <View style={styles.logoContainer}>
-                <Image source={shieldLogo} style={styles.logoImage} resizeMode="contain" />
-                <View style={styles.checkmarkOverlay}>
-                  <Ionicons name="checkmark" size={48} color="#FFFFFF" />
-                </View>
-              </View>
+              <Image source={shieldLogo} style={styles.logoImage} resizeMode="contain" />
             ) : (
               <View style={[styles.iconCircle, { backgroundColor: `${slide.iconColor}20` }]}>
                 <View style={[styles.iconInner, { backgroundColor: `${slide.iconColor}30` }]}>
@@ -214,20 +209,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 32,
   },
-  logoContainer: {
-    width: 140,
-    height: 140,
-    marginBottom: 32,
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
-  },
   logoImage: {
     width: 140,
     height: 140,
-    position: "absolute" as const,
-  },
-  checkmarkOverlay: {
-    marginTop: 8,
+    marginBottom: 32,
   },
   iconCircle: {
     width: 140,
