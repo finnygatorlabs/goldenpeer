@@ -159,12 +159,18 @@ export default function FastTrackOnboarding() {
       }
     } catch {}
 
+    if (user?.token) {
+      await userApi.updateProfile({ onboarding_completed: true }, user.token).catch(() => {});
+    }
     updateUser({ onboarding_completed: true });
     router.replace("/(tabs)/home");
   }
 
   function handleSkip() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (user?.token) {
+      userApi.updateProfile({ onboarding_completed: true }, user.token).catch(() => {});
+    }
     updateUser({ onboarding_completed: true });
     router.replace("/(tabs)/home");
   }
