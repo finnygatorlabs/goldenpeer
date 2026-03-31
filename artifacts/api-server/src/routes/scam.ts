@@ -412,10 +412,16 @@ router.post("/alert-family", requireAuth, async (req: AuthRequest, res) => {
     }
 
     if (sent === 0 && failed > 0) {
-      const isApiKeyMissing = errors.some(e => /api.key|unauthorized|missing.*key|resend/i.test(e));
-      const message = isApiKeyMissing
-        ? "Email service is not configured yet. Your family members are saved and will receive alerts once email is set up."
-        : `Could not send alert to ${failed} family member${failed !== 1 ? "s" : ""}. Please try again in a moment.`;
+      const isDomainIssue = errors.some(e => /only send testing emails|verify a domain|domain.*not verified|not authorized/i.test(e));
+      const isApiKeyMissing = errors.some(e => /api.key|unauthorized|missing.*key/i.test(e));
+      let message: string;
+      if (isDomainIssue) {
+        message = "Email alerts require a verified sending domain. Your family members are saved and will receive alerts once the email domain is configured.";
+      } else if (isApiKeyMissing) {
+        message = "Email service is not configured yet. Your family members are saved and will receive alerts once email is set up.";
+      } else {
+        message = `Could not send alert to ${failed} family member${failed !== 1 ? "s" : ""}. Please try again in a moment.`;
+      }
       res.json({ success: false, sent: 0, total: relationships.length, message });
     } else {
       res.json({ success: true, sent, total: relationships.length, message: `Alert sent to ${sent} family member${sent !== 1 ? "s" : ""}.` });
