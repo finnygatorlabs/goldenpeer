@@ -55,6 +55,11 @@ router.put("/profile", requireAuth, async (req: AuthRequest, res) => {
       .where(eq(usersTable.id, req.user!.userId))
       .returning();
 
+    if (!updated) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
     res.json({
       id: updated.id,
       email: updated.email,

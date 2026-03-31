@@ -587,15 +587,20 @@ Always end responses with either a check-in question ("Does that make sense?", "
 
     const duration = Math.round((Date.now() - startTime) / 1000);
 
-    const [saved] = await db.insert(voiceAssistanceHistoryTable).values({
-      user_id: req.user!.userId,
-      request_text,
-      response_text,
-      task_category: category,
-      success,
-      error_message,
-      duration_seconds: duration,
-    }).returning();
+    let saved: any = null;
+    try {
+      [saved] = await db.insert(voiceAssistanceHistoryTable).values({
+        user_id: req.user!.userId,
+        request_text,
+        response_text,
+        task_category: category,
+        success,
+        error_message,
+        duration_seconds: duration,
+      }).returning();
+    } catch (historyErr) {
+      req.log.warn({ historyErr }, "Failed to save voice history (non-fatal)");
+    }
 
     res.json({
       request_text,
@@ -603,7 +608,7 @@ Always end responses with either a check-in question ("Does that make sense?", "
       task_category: category,
       success,
       error_message,
-      history_id: saved.id,
+      history_id: saved?.id ?? null,
     });
   } catch (err) {
     req.log.error({ err }, "Voice request error");

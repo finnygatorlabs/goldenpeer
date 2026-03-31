@@ -9,6 +9,7 @@ import {
   ScrollView,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  Image,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -17,6 +18,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "@/context/AuthContext";
 import { userApi } from "@/services/api";
+
+const shieldLogo = require("@/assets/seniorshield-logo.png");
 
 const { width, height } = Dimensions.get("window");
 const GRADIENT: [string, string, string] = ["#06102E", "#0E2D6B", "#0B5FAA"];
@@ -125,11 +128,15 @@ export default function WelcomeTour() {
       >
         {SLIDES.map((slide, index) => (
           <View key={index} style={[styles.slide, { width }]}>
-            <View style={[styles.iconCircle, { backgroundColor: `${slide.iconColor}20` }]}>
-              <View style={[styles.iconInner, { backgroundColor: `${slide.iconColor}30` }]}>
-                <Ionicons name={slide.icon} size={56} color={slide.iconColor} />
+            {index === 0 ? (
+              <Image source={shieldLogo} style={styles.logoImage} resizeMode="contain" />
+            ) : (
+              <View style={[styles.iconCircle, { backgroundColor: `${slide.iconColor}20` }]}>
+                <View style={[styles.iconInner, { backgroundColor: `${slide.iconColor}30` }]}>
+                  <Ionicons name={slide.icon} size={56} color={slide.iconColor} />
+                </View>
               </View>
-            </View>
+            )}
 
             <Text style={styles.slideTitle}>{slide.title}</Text>
             <Text style={styles.slideSubtitle}>{slide.subtitle}</Text>
@@ -201,6 +208,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 32,
+  },
+  logoImage: {
+    width: 140,
+    height: 140,
+    marginBottom: 32,
   },
   iconCircle: {
     width: 140,
