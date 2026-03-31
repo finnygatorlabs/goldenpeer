@@ -230,6 +230,14 @@ export default function SignupScreen() {
         <StatusBar barStyle="light-content" />
         <LinearGradient colors={GRADIENT} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
 
+        <View style={styles.bgMesh1} />
+        <View style={styles.bgMesh2} />
+        <View style={styles.bgMesh3} />
+        <View style={styles.bgMesh4} />
+        <View style={styles.bgStreak1} />
+        <View style={styles.bgStreak2} />
+        <View style={styles.bgStreak3} />
+
         <View style={[styles.header, { paddingTop: insets.top + 4 }]}>
           <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
             <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
@@ -244,18 +252,6 @@ export default function SignupScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.heroSection}>
-            <View style={styles.meshBlob1} />
-            <View style={styles.meshBlob2} />
-            <View style={styles.meshBlob3} />
-
-            <View style={styles.glassCard}>
-              <View style={styles.glassShine} />
-            </View>
-
-            <View style={styles.accentStreak1} />
-            <View style={styles.accentStreak2} />
-            <View style={styles.accentStreak3} />
-
             <Image source={shieldLogo} style={styles.heroLogo} resizeMode="contain" />
             <Text style={styles.heroTitle}>Welcome to SeniorShield</Text>
             <Text style={styles.heroSubtitle}>Please Sign In</Text>
@@ -463,95 +459,78 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   welcomeContent: { paddingHorizontal: 0, paddingTop: 0, gap: 0 },
 
+  bgMesh1: {
+    position: "absolute" as const,
+    width: 400,
+    height: 400,
+    borderRadius: 200,
+    top: -120,
+    right: -100,
+    backgroundColor: "rgba(37,99,235,0.07)",
+    transform: [{ scaleX: 1.4 }],
+  },
+  bgMesh2: {
+    position: "absolute" as const,
+    width: 350,
+    height: 350,
+    borderRadius: 175,
+    top: -80,
+    left: -140,
+    backgroundColor: "rgba(249,115,22,0.05)",
+    transform: [{ scaleY: 1.3 }, { rotate: "25deg" }],
+  },
+  bgMesh3: {
+    position: "absolute" as const,
+    width: 280,
+    height: 280,
+    borderRadius: 140,
+    top: 200,
+    right: -60,
+    backgroundColor: "rgba(52,211,153,0.04)",
+    transform: [{ scaleX: 1.5 }],
+  },
+  bgMesh4: {
+    position: "absolute" as const,
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    bottom: 100,
+    left: -80,
+    backgroundColor: "rgba(37,99,235,0.04)",
+    transform: [{ scaleY: 1.2 }],
+  },
+  bgStreak1: {
+    position: "absolute" as const,
+    width: width * 1.2,
+    height: 1,
+    top: 180,
+    left: -40,
+    backgroundColor: "rgba(255,255,255,0.04)",
+    transform: [{ rotate: "-8deg" }],
+  },
+  bgStreak2: {
+    position: "absolute" as const,
+    width: width * 0.8,
+    height: 1,
+    top: 320,
+    right: -20,
+    backgroundColor: "rgba(255,255,255,0.03)",
+    transform: [{ rotate: "5deg" }],
+  },
+  bgStreak3: {
+    position: "absolute" as const,
+    width: width * 0.6,
+    height: 1,
+    top: 100,
+    left: 60,
+    backgroundColor: "rgba(249,115,22,0.06)",
+    transform: [{ rotate: "-3deg" }],
+  },
+
   heroSection: {
     alignItems: "center" as const,
     paddingTop: 32,
     paddingBottom: 40,
-    overflow: "hidden" as const,
-  },
-
-  meshBlob1: {
-    position: "absolute" as const,
-    width: 320,
-    height: 320,
-    borderRadius: 160,
-    top: -100,
-    right: -80,
-    backgroundColor: "rgba(37,99,235,0.08)",
-    transform: [{ scaleX: 1.3 }, { rotate: "-15deg" }],
-  },
-  meshBlob2: {
-    position: "absolute" as const,
-    width: 260,
-    height: 260,
-    borderRadius: 130,
-    top: -60,
-    left: -100,
-    backgroundColor: "rgba(249,115,22,0.06)",
-    transform: [{ scaleY: 1.4 }, { rotate: "20deg" }],
-  },
-  meshBlob3: {
-    position: "absolute" as const,
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    bottom: -40,
-    left: width / 2 - 100,
-    backgroundColor: "rgba(52,211,153,0.04)",
-    transform: [{ scaleX: 1.6 }],
-  },
-
-  glassCard: {
-    position: "absolute" as const,
-    width: width * 0.55,
-    height: 140,
-    top: 20,
-    left: width * 0.22,
-    borderRadius: 24,
-    backgroundColor: "rgba(255,255,255,0.03)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
-    overflow: "hidden" as const,
-  },
-  glassShine: {
-    position: "absolute" as const,
-    width: "60%" as any,
-    height: "100%" as any,
-    top: 0,
-    left: -10,
-    backgroundColor: "rgba(255,255,255,0.02)",
-    transform: [{ skewX: "-12deg" }],
-  },
-
-  accentStreak1: {
-    position: "absolute" as const,
-    width: 120,
-    height: 2,
-    borderRadius: 1,
-    top: 40,
-    right: -20,
-    backgroundColor: "rgba(249,115,22,0.12)",
-    transform: [{ rotate: "-30deg" }],
-  },
-  accentStreak2: {
-    position: "absolute" as const,
-    width: 80,
-    height: 1.5,
-    borderRadius: 1,
-    bottom: 60,
-    left: 10,
-    backgroundColor: "rgba(37,99,235,0.1)",
-    transform: [{ rotate: "20deg" }],
-  },
-  accentStreak3: {
-    position: "absolute" as const,
-    width: 60,
-    height: 1,
-    borderRadius: 0.5,
-    top: 80,
-    left: 40,
-    backgroundColor: "rgba(52,211,153,0.08)",
-    transform: [{ rotate: "-8deg" }],
   },
 
   heroLogo: {
