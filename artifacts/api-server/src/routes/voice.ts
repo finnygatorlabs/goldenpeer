@@ -113,42 +113,93 @@ async function fetchRealTimeContext(userMessage: string, userLocation?: string):
     else if (/college football/i.test(lower)) endpoint = "https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard";
     else if (/soccer|mls/i.test(lower)) endpoint = "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard";
 
-    const wantsYesterday = /yesterday|last night|last game|last evening/i.test(lower);
+    const wantsPast = /yesterday|last night|last game|last evening|the other day|recently|saw a game|was a game|played|final score|who won/i.test(lower);
     const wantsSpecificDate = lower.match(/(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?/);
-    let dateParam = "";
-    if (wantsYesterday) {
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      dateParam = yesterday.toISOString().slice(0, 10).replace(/-/g, "");
-    } else if (wantsSpecificDate) {
+
+    if (wantsSpecificDate) {
       const month = wantsSpecificDate[1].padStart(2, "0");
       const day = wantsSpecificDate[2].padStart(2, "0");
       const year = wantsSpecificDate[3] || new Date().getFullYear().toString();
-      dateParam = `${year.length === 2 ? "20" + year : year}${month}${day}`;
-    }
-    const url = dateParam ? `${endpoint}?dates=${dateParam}` : endpoint;
-    const dateLabel = wantsYesterday ? "yesterday" : (dateParam ? dateParam : "today");
-    console.log(`[fetchRealTimeContext] Sports lookup: ${url} (${dateLabel})`);
-
-    fetches.push(
-      fetch(url, { signal: AbortSignal.timeout(5000) })
-        .then(r => r.json())
-        .then((data: any) => {
-          const events = (data.events || []).slice(0, 8);
-          if (events.length > 0) {
-            context += `\n[SPORTS SCORES for ${dateLabel} — ${new Date().toLocaleDateString()}]:\n` +
-              events.map((e: any, i: number) => {
-                const c = e.competitions?.[0];
+      const dateParam = `${year.length === 2 ? "20" + year : year}${month}${day}`;
+      const url = `${endpoint}?dates=${dateParam}`;
+      console.log(`[fetchRealTimeContext] Sports lookup (specific date): ${url}`);
+      fetches.push(
+        fetch(url, { signal: AbortSignal.timeout(5000) })
+          .then(r => r.json())
+          .then((data: any) => {
+            const events = (data.events || []).slice(0, 8);
+            if (events.length > 0) {
+              context += `\n[SPORTS SCORES for ${dateParam}]:\n` +
+                events.map((e: any, i: number) => {
+                  const c = e.competitions?.[0];
+                  const home = c?.competitors?.[0];
+                  const away = c?.competitors?.[1];
+                  return `${i + 1}. ${home?.team?.displayName || "?"} ${home?.score || 0} vs ${away?.team?.displayName || "?"} ${away?.score || 0} (${e.status?.type?.description || "Scheduled"})`;
+                }).join("\n");
+            }
+          })
+          .catch((err) => { console.error("[fetchRealTimeContext] Sports fetch error:", err.message); })
+      );
+    } else if (wantsPast) {
+      const dates: string[] = [];
+      for (let i = 1; i <= 3; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        dates.push(d.toISOString().slice(0, 10).replace(/-/g, ""));
+      }
+      console.log(`[fetchRealTimeContext] Sports lookup (recent games): checking dates ${dates.join(", ")}`);
+      fetches.push(
+        Promise.all(
+          dates.map(dateParam =>
+            fetch(`${endpoint}?dates=${dateParam}`, { signal: AbortSignal.timeout(5000) })
+              .then(r => r.json())
+              .then((data: any) => ({ date: dateParam, events: data.events || [] }))
+              .catch(() => ({ date: dateParam, events: [] }))
+          )
+        ).then(results => {
+          const allEvents: { date: string; event: any }[] = [];
+          for (const r of results) {
+            for (const e of r.events) {
+              allEvents.push({ date: r.date, event: e });
+            }
+          }
+          if (allEvents.length > 0) {
+            context += `\n[RECENT SPORTS SCORES (last 3 days)]:\n` +
+              allEvents.slice(0, 10).map((item, i) => {
+                const c = item.event.competitions?.[0];
                 const home = c?.competitors?.[0];
                 const away = c?.competitors?.[1];
-                return `${i + 1}. ${home?.team?.displayName || "?"} ${home?.score || 0} vs ${away?.team?.displayName || "?"} ${away?.score || 0} (${e.status?.type?.description || "Scheduled"})`;
+                const gameDate = `${item.date.slice(4,6)}/${item.date.slice(6,8)}`;
+                return `${i + 1}. (${gameDate}) ${home?.team?.displayName || "?"} ${home?.score || 0} vs ${away?.team?.displayName || "?"} ${away?.score || 0} (${item.event.status?.type?.description || "Scheduled"})`;
               }).join("\n");
           } else {
-            context += `\n[SPORTS] No games found for ${dateLabel}.`;
+            context += `\n[SPORTS] No recent games found in the last 3 days.`;
           }
         })
-        .catch((err) => { console.error("[fetchRealTimeContext] Sports fetch error:", err.message); })
-    );
+      );
+    } else {
+      const url = endpoint;
+      console.log(`[fetchRealTimeContext] Sports lookup (today): ${url}`);
+      fetches.push(
+        fetch(url, { signal: AbortSignal.timeout(5000) })
+          .then(r => r.json())
+          .then((data: any) => {
+            const events = (data.events || []).slice(0, 8);
+            if (events.length > 0) {
+              context += `\n[TODAY'S SPORTS SCORES — ${new Date().toLocaleDateString()}]:\n` +
+                events.map((e: any, i: number) => {
+                  const c = e.competitions?.[0];
+                  const home = c?.competitors?.[0];
+                  const away = c?.competitors?.[1];
+                  return `${i + 1}. ${home?.team?.displayName || "?"} ${home?.score || 0} vs ${away?.team?.displayName || "?"} ${away?.score || 0} (${e.status?.type?.description || "Scheduled"})`;
+                }).join("\n");
+            } else {
+              context += `\n[SPORTS] No games scheduled for today.`;
+            }
+          })
+          .catch((err) => { console.error("[fetchRealTimeContext] Sports fetch error:", err.message); })
+      );
+    }
   }
 
   if (needsNews && NEWS_API_KEY) {
