@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useNavigation } from "expo-router";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import * as Haptics from "expo-haptics";
 import { useTheme } from "@/hooks/useTheme";
@@ -69,10 +70,20 @@ export default function FamilyScreen() {
     }
   }
 
+  const navigation = useNavigation();
+
   useEffect(() => {
     fetchMembers();
     fetchUsage();
   }, [user?.token]);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("focus", () => {
+      fetchMembers();
+      fetchUsage();
+    });
+    return unsubscribe;
+  }, [navigation, user?.token]);
 
   const FREE_FAMILY_LIMIT = 1;
   const effectiveLimit = isPremium ? MAX_FAMILY_MEMBERS : FREE_FAMILY_LIMIT;

@@ -675,8 +675,8 @@ export function analyzeScamText(text: string): FullAnalysis {
     recommendation = "Do NOT respond, click links, or share any information. This is very likely a scam.";
   } else {
     const details = layers.flatMap(l => l.findings).slice(0, 5).join(". ");
-    explanation = `CRITICAL WARNING: This message is almost certainly a scam. ${details}.${categoryLabel}${vulnerabilityLabel} Do NOT interact with this message in any way. Do not click links, call numbers, send money, or share any information. Delete this message immediately. Your family has been notified.`;
-    recommendation = "This is almost certainly a scam. Delete this message immediately. Your family has been notified.";
+    explanation = `CRITICAL WARNING: This message is almost certainly a scam. ${details}.${categoryLabel}${vulnerabilityLabel} Do NOT interact with this message in any way. Do not click links, call numbers, send money, or share any information. Delete this message immediately. We recommend you notify your family using the alert button below.`;
+    recommendation = "This is almost certainly a scam. Delete this message immediately. We recommend you notify your family — an alert option is at the bottom of this page.";
   }
 
   return {
