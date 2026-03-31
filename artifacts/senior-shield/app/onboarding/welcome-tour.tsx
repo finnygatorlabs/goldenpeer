@@ -28,7 +28,7 @@ const SLIDES = [
   {
     icon: "shield-checkmark" as const,
     iconColor: "#34D399",
-    title: "Welcome to\nSeniorShield!",
+    title: "Thank You for Sharing\na Bit About Yourself!",
     subtitle: "Let's take a quick look at what your app can do. This will only take a moment.",
     highlight: "Swipe or tap Next to continue",
   },
