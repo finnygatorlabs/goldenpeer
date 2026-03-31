@@ -49,7 +49,7 @@ function RootLayoutNav() {
       if (!user) {
         router.replace("/auth/welcome");
       } else if (!user.onboarding_completed) {
-        router.replace("/onboarding/fast-track");
+        router.replace("/onboarding/welcome-tour");
       } else {
         router.replace("/(tabs)/home");
       }
@@ -59,7 +59,7 @@ function RootLayoutNav() {
     if (!user) {
       router.replace("/auth/welcome");
     } else if (!user.onboarding_completed) {
-      router.replace("/onboarding/fast-track");
+      router.replace("/onboarding/welcome-tour");
     } else {
       router.replace("/(tabs)/home");
     }

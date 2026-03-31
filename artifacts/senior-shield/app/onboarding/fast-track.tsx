@@ -66,7 +66,7 @@ interface FamilyMember {
 
 export default function FastTrackOnboarding() {
   const insets = useSafeAreaInsets();
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const scrollRef = useRef<ScrollView>(null);
 
   const [currentStep, setCurrentStep] = useState(0);
@@ -149,12 +149,14 @@ export default function FastTrackOnboarding() {
       }
     } catch {}
 
-    router.replace("/onboarding/welcome-tour");
+    updateUser({ onboarding_completed: true });
+    router.replace("/(tabs)/home");
   }
 
   function handleSkip() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.replace("/onboarding/welcome-tour");
+    updateUser({ onboarding_completed: true });
+    router.replace("/(tabs)/home");
   }
 
   if (isSubmitting) {

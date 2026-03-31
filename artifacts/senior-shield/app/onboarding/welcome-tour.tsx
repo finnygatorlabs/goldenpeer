@@ -91,8 +91,7 @@ export default function WelcomeTour() {
 
   function finish() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    updateUser({ onboarding_completed: true });
-    router.replace("/(tabs)/home");
+    router.replace("/onboarding/fast-track");
   }
 
   const isLast = currentSlide === SLIDES.length - 1;
