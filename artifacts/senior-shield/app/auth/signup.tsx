@@ -65,7 +65,6 @@ function DecoLine({ width: w, top, left, rotate, opacity }: { width: number; top
 const USER_TYPES = [
   { value: "senior", label: "Senior (65+)", icon: "person" as const, description: "I want tech help & scam protection" },
   { value: "adult_child", label: "Family Member", icon: "people" as const, description: "I want to monitor a loved one" },
-  { value: "staff", label: "Senior Center Staff", icon: "business" as const, description: "I manage a senior care program" },
 ];
 
 function InlineError({ message, onDismiss }: { message: string; onDismiss: () => void }) {

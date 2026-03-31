@@ -375,6 +375,8 @@ router.post("/alert-family", requireAuth, async (req: AuthRequest, res) => {
       : "Be cautious with this message. Do not share personal or financial information.";
 
     let sent = 0;
+    let failed = 0;
+    const errors: string[] = [];
     for (const rel of relationships) {
       try {
         const [member] = await db.select().from(usersTable)
@@ -391,8 +393,14 @@ router.post("/alert-family", requireAuth, async (req: AuthRequest, res) => {
             recommendation,
           );
           sent++;
+        } else {
+          failed++;
+          errors.push("Family member has no email address on file");
         }
-      } catch (emailErr) {
+      } catch (emailErr: any) {
+        failed++;
+        const errMsg = emailErr?.message || "Unknown email error";
+        errors.push(errMsg);
         req.log.error({ err: emailErr, memberId: rel.adult_child_id }, "Failed to send scam alert email");
       }
     }
@@ -403,7 +411,15 @@ router.post("/alert-family", requireAuth, async (req: AuthRequest, res) => {
         .where(eq(scamAnalysisTable.id, scam_analysis_id));
     }
 
-    res.json({ success: true, sent, total: relationships.length, message: `Alert sent to ${sent} family member${sent !== 1 ? "s" : ""}.` });
+    if (sent === 0 && failed > 0) {
+      const isApiKeyMissing = errors.some(e => /api.key|unauthorized|missing.*key|resend/i.test(e));
+      const message = isApiKeyMissing
+        ? "Email service is not configured yet. Your family members are saved and will receive alerts once email is set up."
+        : `Could not send alert to ${failed} family member${failed !== 1 ? "s" : ""}. Please try again in a moment.`;
+      res.json({ success: false, sent: 0, total: relationships.length, message });
+    } else {
+      res.json({ success: true, sent, total: relationships.length, message: `Alert sent to ${sent} family member${sent !== 1 ? "s" : ""}.` });
+    }
   } catch (err) {
     req.log.error({ err }, "Scam alert-family error");
     res.status(500).json({ error: "Internal Server Error" });
