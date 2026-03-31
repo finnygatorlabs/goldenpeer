@@ -151,10 +151,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   function updateUser(updates: Partial<User>) {
-    if (!user) return;
-    const updated = { ...user, ...updates };
-    setUser(updated);
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    setUser((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev, ...updates };
+      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      return updated;
+    });
   }
 
   async function refreshUser() {

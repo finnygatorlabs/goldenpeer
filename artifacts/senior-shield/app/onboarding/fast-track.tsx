@@ -130,7 +130,9 @@ export default function FastTrackOnboarding() {
         const profileUpdate: any = { first_name: firstName.trim() };
         if (lastName.trim()) profileUpdate.last_name = lastName.trim();
         await userApi.updateProfile(profileUpdate, user.token).catch(() => {});
-        updateUser({ first_name: firstName.trim() });
+        const nameUpdates: any = { first_name: firstName.trim() };
+        if (lastName.trim()) nameUpdates.last_name = lastName.trim();
+        updateUser(nameUpdates);
       }
 
       if (selectedInterests.length > 0 && user?.token) {
@@ -232,7 +234,7 @@ export default function FastTrackOnboarding() {
             </View>
             <Text style={styles.heading}>Let's get to{"\n"}know you!</Text>
             <Text style={styles.subheading}>
-              Take 2-3 minutes to tell us a bit about yourself so your AI companion can have more personal, meaningful conversations with you.
+              Take a few moments to tell us a bit about yourself so your AI companion can have more personal, meaningful conversations with you.
             </Text>
             <View style={styles.benefitCard}>
               <Ionicons name="chatbubbles" size={20} color="#60A5FA" />
