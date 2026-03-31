@@ -70,7 +70,8 @@ export default function FastTrackOnboarding() {
   const scrollRef = useRef<ScrollView>(null);
 
   const [currentStep, setCurrentStep] = useState(0);
-  const [nickname, setNickname] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [memberName, setMemberName] = useState("");
@@ -125,9 +126,11 @@ export default function FastTrackOnboarding() {
         ? `https://${process.env.EXPO_PUBLIC_DOMAIN}`
         : "http://localhost:8080";
 
-      if (nickname.trim() && user?.token) {
-        await userApi.updateProfile({ first_name: nickname.trim() }, user.token).catch(() => {});
-        updateUser({ first_name: nickname.trim() });
+      if (firstName.trim() && user?.token) {
+        const profileUpdate: any = { first_name: firstName.trim() };
+        if (lastName.trim()) profileUpdate.last_name = lastName.trim();
+        await userApi.updateProfile(profileUpdate, user.token).catch(() => {});
+        updateUser({ first_name: firstName.trim() });
       }
 
       if (selectedInterests.length > 0 && user?.token) {
@@ -139,7 +142,7 @@ export default function FastTrackOnboarding() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: user?.id || "anonymous",
-          name: nickname.trim() || user?.name || "Friend",
+          name: firstName.trim() || user?.name || "Friend",
           interests: selectedInterests,
           familyMembers,
         }),
@@ -261,10 +264,22 @@ export default function FastTrackOnboarding() {
               <Ionicons name="person-outline" size={22} color="rgba(255,255,255,0.5)" />
               <TextInput
                 style={styles.textInput}
-                placeholder="Your name or nickname"
+                placeholder="First name"
                 placeholderTextColor="rgba(255,255,255,0.35)"
-                value={nickname}
-                onChangeText={setNickname}
+                value={firstName}
+                onChangeText={setFirstName}
+                autoCapitalize="words"
+                returnKeyType="next"
+              />
+            </View>
+            <View style={[styles.inputWrapper, { marginTop: 12 }]}>
+              <Ionicons name="person-outline" size={22} color="rgba(255,255,255,0.5)" />
+              <TextInput
+                style={styles.textInput}
+                placeholder="Last name"
+                placeholderTextColor="rgba(255,255,255,0.35)"
+                value={lastName}
+                onChangeText={setLastName}
                 autoCapitalize="words"
                 returnKeyType="next"
               />
@@ -278,7 +293,7 @@ export default function FastTrackOnboarding() {
               <Pressable
                 style={({ pressed }) => [styles.primaryButton, { flex: 1 }, pressed && styles.pressed]}
                 onPress={() => goToStep(2)}
-                disabled={!nickname.trim()}
+                disabled={!firstName.trim()}
               >
                 <Text style={styles.primaryButtonText}>Next</Text>
                 <Ionicons name="arrow-forward" size={20} color="#0E2D6B" />
