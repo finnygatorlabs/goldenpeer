@@ -51,9 +51,10 @@ async function fetchRealTimeContext(userMessage: string, userLocation?: string):
   const needsSports = /score|who won|game last|game yesterday|game today|next game|upcoming game|playoffs|championship|super bowl|world series|nba|nfl|mlb|nhl|standings|uconn|duke|march madness|ncaa|college basketball|college football|baseball|basketball|football|hockey|soccer|hornets|hawks|lakers|celtics|warriors|cavaliers|knicks|nets|heat|bulls|mavericks|spurs|suns|clippers|nuggets|timberwolves|grizzlies|pelicans|thunder|blazers|kings|pacers|bucks|pistons|wizards|rockets|magic|raptors|76ers|sixers|falcons|panthers|saints|buccaneers|cowboys|eagles|giants|commanders|49ers|seahawks|rams|cardinals|bears|lions|packers|vikings|steelers|ravens|bengals|browns|chiefs|chargers|raiders|broncos|dolphins|patriots|jets|bills|texans|titans|jaguars|colts|braves|mets|yankees|dodgers|astros|phillies|padres|cubs|red sox|white sox|marlins|nationals|pirates|reds|brewers|cardinals|diamondbacks|rockies|twins|royals|rangers|blue jays|rays|orioles|guardians|tigers|mariners|angels|athletics|hurricanes|bruins|penguins|capitals|maple leafs|canadiens|rangers|islanders|panthers|lightning|predators|blues|blackhawks|avalanche|stars|wild|jets|flames|oilers|canucks|kraken|coyotes|senators|red wings|sabres|flyers|devils|blue jackets/i.test(lower);
   const needsNews = /news|headline|what.s happening|current event|latest/i.test(lower);
   const needsBible = /bible|verse|scripture|psalm|proverb|genesis|exodus|matthew|john|romans|corinthians|revelation/i.test(lower);
-  const needsWikipedia = /who is|who was|what is|what are|tell me about|explain|define|history of|biography/i.test(lower) && !needsWeather && !needsNews && !needsSports;
+  const needsTime = /what time|current time|time in |time is it in|time zone|timezone|clock in|right now in/i.test(lower);
+  const needsWikipedia = /who is|who was|what is|what are|tell me about|explain|define|history of|biography/i.test(lower) && !needsWeather && !needsNews && !needsSports && !needsTime;
 
-  console.log(`[fetchRealTimeContext] Query: "${userMessage.substring(0, 100)}" | weather=${needsWeather} sports=${needsSports} news=${needsNews} bible=${needsBible} wiki=${needsWikipedia} | WEATHER_KEY=${WEATHER_API_KEY ? "set" : "EMPTY"} NEWS_KEY=${NEWS_API_KEY ? "set" : "EMPTY"}`);
+  console.log(`[fetchRealTimeContext] Query: "${userMessage.substring(0, 100)}" | weather=${needsWeather} sports=${needsSports} news=${needsNews} bible=${needsBible} time=${needsTime} wiki=${needsWikipedia} | WEATHER_KEY=${WEATHER_API_KEY ? "set" : "EMPTY"} NEWS_KEY=${NEWS_API_KEY ? "set" : "EMPTY"}`);
 
   if (needsWeather && WEATHER_API_KEY) {
     const cityPatterns = [
@@ -406,6 +407,107 @@ async function fetchRealTimeContext(userMessage: string, userLocation?: string):
             context += `\n[BIBLE] The Bible verse service is temporarily unavailable. Tell the user you're having trouble looking that up right now and to try again in a moment.`;
           })
       );
+    }
+  }
+
+  if (needsTime) {
+    const CITY_TO_TZ: Record<string, string> = {
+      "london": "Europe/London", "paris": "Europe/Paris", "berlin": "Europe/Berlin",
+      "rome": "Europe/Rome", "madrid": "Europe/Madrid", "amsterdam": "Europe/Amsterdam",
+      "brussels": "Europe/Brussels", "vienna": "Europe/Vienna", "zurich": "Europe/Zurich",
+      "lisbon": "Europe/Lisbon", "dublin": "Europe/Dublin", "oslo": "Europe/Oslo",
+      "stockholm": "Europe/Stockholm", "copenhagen": "Europe/Copenhagen", "helsinki": "Europe/Helsinki",
+      "athens": "Europe/Athens", "istanbul": "Europe/Istanbul", "moscow": "Europe/Moscow",
+      "warsaw": "Europe/Warsaw", "prague": "Europe/Prague", "budapest": "Europe/Budapest",
+      "bucharest": "Europe/Bucharest", "edinburgh": "Europe/London", "manchester": "Europe/London",
+      "tokyo": "Asia/Tokyo", "beijing": "Asia/Shanghai", "shanghai": "Asia/Shanghai",
+      "hong kong": "Asia/Hong_Kong", "singapore": "Asia/Singapore", "seoul": "Asia/Seoul",
+      "taipei": "Asia/Taipei", "bangkok": "Asia/Bangkok", "mumbai": "Asia/Kolkata",
+      "delhi": "Asia/Kolkata", "new delhi": "Asia/Kolkata", "kolkata": "Asia/Kolkata",
+      "chennai": "Asia/Kolkata", "bangalore": "Asia/Kolkata", "karachi": "Asia/Karachi",
+      "dubai": "Asia/Dubai", "abu dhabi": "Asia/Dubai", "riyadh": "Asia/Riyadh",
+      "tel aviv": "Asia/Jerusalem", "jerusalem": "Asia/Jerusalem", "doha": "Asia/Qatar",
+      "kuala lumpur": "Asia/Kuala_Lumpur", "jakarta": "Asia/Jakarta", "manila": "Asia/Manila",
+      "hanoi": "Asia/Ho_Chi_Minh", "ho chi minh": "Asia/Ho_Chi_Minh",
+      "sydney": "Australia/Sydney", "melbourne": "Australia/Melbourne", "brisbane": "Australia/Brisbane",
+      "perth": "Australia/Perth", "auckland": "Pacific/Auckland", "wellington": "Pacific/Auckland",
+      "fiji": "Pacific/Fiji", "honolulu": "Pacific/Honolulu", "hawaii": "Pacific/Honolulu",
+      "anchorage": "America/Anchorage", "alaska": "America/Anchorage",
+      "los angeles": "America/Los_Angeles", "san francisco": "America/Los_Angeles",
+      "seattle": "America/Los_Angeles", "portland": "America/Los_Angeles", "las vegas": "America/Los_Angeles",
+      "denver": "America/Denver", "phoenix": "America/Phoenix", "salt lake city": "America/Denver",
+      "chicago": "America/Chicago", "dallas": "America/Chicago", "houston": "America/Chicago",
+      "austin": "America/Chicago", "san antonio": "America/Chicago", "minneapolis": "America/Chicago",
+      "new orleans": "America/Chicago", "nashville": "America/Chicago", "memphis": "America/Chicago",
+      "new york": "America/New_York", "boston": "America/New_York", "philadelphia": "America/New_York",
+      "washington": "America/New_York", "atlanta": "America/New_York", "miami": "America/New_York",
+      "charlotte": "America/New_York", "detroit": "America/New_York", "pittsburgh": "America/New_York",
+      "toronto": "America/Toronto", "montreal": "America/Toronto", "vancouver": "America/Vancouver",
+      "calgary": "America/Edmonton", "edmonton": "America/Edmonton",
+      "mexico city": "America/Mexico_City", "cancun": "America/Cancun",
+      "sao paulo": "America/Sao_Paulo", "rio de janeiro": "America/Sao_Paulo",
+      "buenos aires": "America/Argentina/Buenos_Aires", "lima": "America/Lima",
+      "bogota": "America/Bogota", "santiago": "America/Santiago",
+      "cairo": "Africa/Cairo", "johannesburg": "Africa/Johannesburg", "lagos": "Africa/Lagos",
+      "nairobi": "Africa/Nairobi", "casablanca": "Africa/Casablanca", "accra": "Africa/Accra",
+      "england": "Europe/London", "uk": "Europe/London", "united kingdom": "Europe/London",
+      "france": "Europe/Paris", "germany": "Europe/Berlin", "italy": "Europe/Rome",
+      "spain": "Europe/Madrid", "japan": "Asia/Tokyo", "china": "Asia/Shanghai",
+      "india": "Asia/Kolkata", "australia": "Australia/Sydney", "brazil": "America/Sao_Paulo",
+      "mexico": "America/Mexico_City", "canada": "America/Toronto", "south korea": "Asia/Seoul",
+      "korea": "Asia/Seoul", "nigeria": "Africa/Lagos", "south africa": "Africa/Johannesburg",
+      "kenya": "Africa/Nairobi", "egypt": "Africa/Cairo", "morocco": "Africa/Casablanca",
+      "thailand": "Asia/Bangkok", "vietnam": "Asia/Ho_Chi_Minh", "philippines": "Asia/Manila",
+      "indonesia": "Asia/Jakarta", "malaysia": "Asia/Kuala_Lumpur", "pakistan": "Asia/Karachi",
+      "saudi arabia": "Asia/Riyadh", "uae": "Asia/Dubai", "qatar": "Asia/Qatar",
+      "israel": "Asia/Jerusalem", "turkey": "Europe/Istanbul", "russia": "Europe/Moscow",
+      "poland": "Europe/Warsaw", "greece": "Europe/Athens", "portugal": "Europe/Lisbon",
+      "ireland": "Europe/Dublin", "scotland": "Europe/London", "wales": "Europe/London",
+      "norway": "Europe/Oslo", "sweden": "Europe/Stockholm", "denmark": "Europe/Copenhagen",
+      "finland": "Europe/Helsinki", "netherlands": "Europe/Amsterdam", "belgium": "Europe/Brussels",
+      "switzerland": "Europe/Zurich", "austria": "Europe/Vienna",
+      "new zealand": "Pacific/Auckland", "argentina": "America/Argentina/Buenos_Aires",
+      "colombia": "America/Bogota", "peru": "America/Lima", "chile": "America/Santiago",
+    };
+
+    const timeLocMatch = lower.match(/(?:time|clock|right now)\s+(?:in|at|for)\s+([a-z][a-z\s,.\-']{1,40}?)(?:\s*[\?.]|$)/i)
+      || lower.match(/(?:in|at|for)\s+([a-z][a-z\s,.\-']{1,40}?)\s+(?:right now|time|what time)/i);
+    const timeCity = timeLocMatch ? timeLocMatch[1].trim().toLowerCase().replace(/[?.!,]+$/, "").trim() : "";
+
+    if (timeCity) {
+      const tz = CITY_TO_TZ[timeCity];
+      if (tz) {
+        console.log(`[fetchRealTimeContext] World time lookup: "${timeCity}" → ${tz}`);
+        fetches.push(
+          fetchWithRetry(`https://worldtimeapi.org/api/timezone/${tz}`, {}, 2, 6000)
+            .then(r => r.json())
+            .then((data: any) => {
+              if (data?.datetime) {
+                const dt = new Date(data.datetime);
+                const formatted = dt.toLocaleTimeString("en-US", {
+                  hour: "numeric", minute: "2-digit", hour12: true,
+                  timeZone: tz,
+                });
+                const dateFormatted = dt.toLocaleDateString("en-US", {
+                  weekday: "long", month: "long", day: "numeric",
+                  timeZone: tz,
+                });
+                context += `\n[WORLD TIME for ${timeCity.charAt(0).toUpperCase() + timeCity.slice(1)} (${data.timezone})]:\nCurrent time: ${formatted}\nDate: ${dateFormatted}\nTimezone: ${data.abbreviation || tz} (UTC offset: ${data.utc_offset || "unknown"})${data.dst ? "\nDaylight Saving Time is currently active." : ""}`;
+              }
+            })
+            .catch((err) => {
+              console.error("[fetchRealTimeContext] World time fetch error:", err.message);
+              context += `\n[WORLD TIME] The world time service is temporarily unavailable. Tell the user you're having trouble looking up the time right now and to try again in a moment.`;
+            })
+        );
+      } else {
+        context += `\n[WORLD TIME] Could not find timezone for "${timeCity}". Ask the user to try a major city name, like "What time is it in London?" or "What time is it in Tokyo?"`;
+      }
+    } else {
+      const now = new Date();
+      const formatted = now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+      const dateFormatted = now.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+      context += `\n[CURRENT TIME (server time)]: ${formatted}, ${dateFormatted}. If the user asked about a specific location, ask them to say something like "What time is it in London?" or "What time is it in Tokyo?"`;
     }
   }
 
