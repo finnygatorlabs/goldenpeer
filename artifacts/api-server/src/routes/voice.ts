@@ -53,15 +53,17 @@ async function fetchRealTimeContext(userMessage: string, userLocation?: string):
   const needsBible = /bible|verse|scripture|psalm|proverb|genesis|exodus|matthew|john|romans|corinthians|revelation/i.test(lower);
   const needsTime = /what time|current time|time in |time is it in|time zone|timezone|clock in|right now in/i.test(lower);
   const needsDictionaryCheck = /define\s+\w|meaning of|what does .+ mean|dictionary|spell|scrabble|word definition/i.test(lower);
-  const needsWikipedia = /who is|who was|what is|what are|tell me about|explain|define|history of|biography/i.test(lower) && !needsWeather && !needsNews && !needsSports && !needsTime && !needsDictionaryCheck && !needsAirQuality;
+  const needsAirQuality = /air quality|aqi|pollution|pollen|smog|air index/i.test(lower);
+  const needsMusic = /who sang|who sings|who recorded|discography|genre of .+ music|music by|songs? by|album by/i.test(lower)
+    || (/(?:music|song|album|artist|band|singer|musician|genre|concert)\b/i.test(lower) && !/what is music|history of music|tell me about music$/i.test(lower));
+  const needsWikipedia = /who is|who was|what is|what are|tell me about|explain|define|history of|biography/i.test(lower) && !needsWeather && !needsNews && !needsSports && !needsTime && !needsDictionaryCheck && !needsAirQuality && !needsMusic;
   const needsTrivia = /trivia|quiz|fun fact|random fact|did you know|test my knowledge|brain teaser/i.test(lower);
   const needsJoke = /joke|funny|make me laugh|humor|tell me something funny/i.test(lower);
   const needsDictionary = /define\s+\w|meaning of|what does .+ mean|dictionary|spell|scrabble|word definition/i.test(lower);
   const needsBooks = /book|novel|author|reading list|recommend.+read|library|what should i read/i.test(lower) && !needsWikipedia;
   const needsFood = /nutrition|calories|ingredient|food fact|is .+ healthy|what.s in|nutrient|diet info|food label/i.test(lower);
-  const needsAirQuality = /air quality|aqi|pollution|pollen|smog|air index/i.test(lower);
 
-  console.log(`[fetchRealTimeContext] Query: "${userMessage.substring(0, 100)}" | weather=${needsWeather} sports=${needsSports} news=${needsNews} bible=${needsBible} time=${needsTime} wiki=${needsWikipedia} trivia=${needsTrivia} joke=${needsJoke} dict=${needsDictionary} books=${needsBooks} food=${needsFood} aqi=${needsAirQuality} | WEATHER_KEY=${WEATHER_API_KEY ? "set" : "EMPTY"} NEWS_KEY=${NEWS_API_KEY ? "set" : "EMPTY"}`);
+  console.log(`[fetchRealTimeContext] Query: "${userMessage.substring(0, 100)}" | weather=${needsWeather} sports=${needsSports} news=${needsNews} bible=${needsBible} time=${needsTime} wiki=${needsWikipedia} trivia=${needsTrivia} joke=${needsJoke} dict=${needsDictionary} books=${needsBooks} food=${needsFood} aqi=${needsAirQuality} music=${needsMusic} | WEATHER_KEY=${WEATHER_API_KEY ? "set" : "EMPTY"} NEWS_KEY=${NEWS_API_KEY ? "set" : "EMPTY"}`);
 
   if (needsWeather && WEATHER_API_KEY) {
     const cityPatterns = [
@@ -681,6 +683,63 @@ async function fetchRealTimeContext(userMessage: string, userLocation?: string):
     }
   }
 
+  if (needsMusic) {
+    const musicMatch = lower.match(/(?:who sang|who sings|who recorded|music by|songs? by|album by)\s+(.+?)(?:\?|$)/i)
+      || lower.match(/(?:tell me about)\s+(?:the (?:band|artist|singer|musician)\s+)?(.+?)(?:\?|$)/i)
+      || lower.match(/(?:band|artist|singer|musician)\s+(?:called|named|titled)\s+(.+?)(?:\?|$)/i)
+      || lower.match(/(?:song|album)\s+(?:called|named|titled)\s+(.+?)(?:\?|$)/i)
+      || lower.match(/(?:genre|discography|concert)\s+(?:of|for|by)\s+(.+?)(?:\?|$)/i);
+    const musicQuery = musicMatch ? musicMatch[1].trim().replace(/\s+(please|thanks|thank you)$/i, "") : "";
+    if (musicQuery) {
+      fetches.push(
+        fetchWithRetry(`https://musicbrainz.org/ws/2/artist/?query=${encodeURIComponent(musicQuery)}&fmt=json&limit=3`, {
+          headers: { "User-Agent": "SeniorShield/1.0 (admin@finnygator.com)" },
+        }, 1, 6000)
+          .then(r => r.json())
+          .then((data: any) => {
+            const artists = (data?.artists || []).slice(0, 3);
+            if (artists.length > 0) {
+              const artistInfo = artists.map((a: any, i: number) => {
+                const name = sanitizeExternalText(a.name || "");
+                const type = sanitizeExternalText(a.type || "Artist");
+                const area = a.area?.name || "";
+                const born = a["life-span"]?.begin || "";
+                const ended = a["life-span"]?.ended ? ` (passed: ${a["life-span"].end || "unknown"})` : "";
+                const tags = (a.tags || []).slice(0, 4).map((t: any) => sanitizeExternalText(t.name)).join(", ");
+                const disambiguation = a.disambiguation ? ` (${sanitizeExternalText(a.disambiguation)})` : "";
+                return `${i + 1}. ${name}${disambiguation} — ${type}${area ? ` from ${sanitizeExternalText(area)}` : ""}${born ? `, born ${born}${ended}` : ""}${tags ? `. Genres: ${tags}` : ""}`;
+              }).join("\n");
+              context += `\n[MUSIC - Artist Search for "${sanitizeExternalText(musicQuery)}"]:\n${artistInfo}\nPresent this information warmly. If the user has Music as an interest, connect to their love of music.`;
+            } else {
+              return fetchWithRetry(`https://musicbrainz.org/ws/2/release/?query=${encodeURIComponent(musicQuery)}&fmt=json&limit=3`, {
+                headers: { "User-Agent": "SeniorShield/1.0 (admin@finnygator.com)" },
+              }, 1, 6000)
+                .then(r => r.json())
+                .then((rData: any) => {
+                  const releases = (rData?.releases || []).slice(0, 3);
+                  if (releases.length > 0) {
+                    const releaseInfo = releases.map((r: any, i: number) => {
+                      const title = sanitizeExternalText(r.title || "");
+                      const artist = r["artist-credit"]?.[0]?.name || "Unknown";
+                      const date = r.date || "Unknown date";
+                      return `${i + 1}. "${title}" by ${sanitizeExternalText(artist)} (${date})`;
+                    }).join("\n");
+                    context += `\n[MUSIC - Album/Song Search for "${sanitizeExternalText(musicQuery)}"]:\n${releaseInfo}`;
+                  } else {
+                    context += `\n[MUSIC] No results found for "${musicQuery}". Ask the user for more details, like the artist name or song title.`;
+                  }
+                });
+            }
+          })
+          .catch(() => {
+            context += `\n[MUSIC] The music database is temporarily unavailable. Try again in a moment.`;
+          })
+      );
+    } else {
+      context += `\n[MUSIC] Ask the user what artist, song, or album they would like to know about. For example: "What musician or song are you interested in?"`;
+    }
+  }
+
   if (needsAirQuality) {
     const aqiCityPatterns = [
       /(?:air quality|aqi|pollution|pollen|smog|air index)\s+(?:in|for|at|near)\s+([A-Za-z][A-Za-z\s,.\-']{1,40}?)(?:\s*[\?.]|$)/i,
@@ -1037,7 +1096,7 @@ ACCOUNTS: Users can sign up with email and password or with Google. There are th
 NAVIGATION: The app has 5 tabs at the bottom of the screen: Home (house icon), Scam Check (shield icon), Family (people icon), History (time/clock icon), and Settings (gear icon). The user taps these tabs to switch between sections. The tab bar is dark navy blue.
 
 YOUR CAPABILITIES — you can help the user with all of these:
-You can look up the weather and air quality for any city. You can check sports scores and schedules. You can read today's news headlines. You can tell the user what time it is anywhere in the world. You can look up Bible verses. You can look up who someone is or what something is. You can tell jokes and make the user laugh. You can run trivia quizzes and brain teasers. You can define words and help with Scrabble. You can search for books and give reading recommendations. You can look up nutrition information for foods. You can check air quality and pollution levels. If the user asks for any of these, you have access to live data to answer them. Be proactive about mentioning these capabilities when relevant to the conversation.
+You can look up the weather and air quality for any city. You can check sports scores and schedules. You can read today's news headlines. You can tell the user what time it is anywhere in the world. You can look up Bible verses. You can look up who someone is or what something is. You can tell jokes and make the user laugh. You can run trivia quizzes and brain teasers. You can define words and help with Scrabble. You can search for books and give reading recommendations. You can look up nutrition information for foods. You can check air quality and pollution levels. You can look up musicians, bands, albums, and songs from a music database. If the user asks for any of these, you have access to live data to answer them. Be proactive about mentioning these capabilities when relevant to the conversation.
 
 IMPORTANT SUPPORT INFORMATION:
 For any technical issues with the app, the user should contact support at admin@finnygator.com.
