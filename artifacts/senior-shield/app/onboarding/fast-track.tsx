@@ -410,6 +410,9 @@ export default function FastTrackOnboarding() {
                     value={memberName}
                     onChangeText={setMemberName}
                     autoCapitalize="words"
+                    textContentType="none"
+                    autoComplete="off"
+                    importantForAutofill="no"
                   />
                 </View>
 
@@ -417,18 +420,19 @@ export default function FastTrackOnboarding() {
                   <Ionicons name="mail-outline" size={20} color="rgba(255,255,255,0.5)" />
                   <TextInput
                     style={styles.textInput}
-                    placeholder="Family member's email"
+                    placeholder="Their email address"
                     placeholderTextColor="rgba(255,255,255,0.35)"
                     value={memberEmail}
                     onChangeText={setMemberEmail}
-                    keyboardType="email-address"
+                    keyboardType="default"
                     autoCapitalize="none"
                     autoComplete="off"
                     autoCorrect={false}
-                    textContentType="oneTimeCode"
+                    textContentType="none"
                     importantForAutofill="no"
                     spellCheck={false}
                     dataDetectorTypes="none"
+                    secureTextEntry={false}
                   />
                 </View>
 

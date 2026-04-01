@@ -91,19 +91,19 @@ export default function WelcomeScreen() {
         ))}
       </View>
 
+      <View style={{ position: "absolute", top: insets.top + 8, right: 20, zIndex: 20 }}>
+        <View style={styles.protectedBadge}>
+          <Ionicons name="shield-checkmark" size={11} color="#34D399" />
+          <Text style={styles.protectedText}>Protected</Text>
+        </View>
+      </View>
+
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={[styles.content, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 16 }]}
+        contentContainerStyle={[styles.content, { paddingTop: insets.top + 36, paddingBottom: insets.bottom + 16 }]}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.logoSection}>
-          <View style={styles.badgeRow}>
-            <View style={styles.protectedBadge}>
-              <Ionicons name="shield-checkmark" size={11} color="#34D399" />
-              <Text style={styles.protectedText}>Protected</Text>
-            </View>
-          </View>
-
           <Image
             source={require("../../assets/images/logo-shield.png")}
             style={styles.logo}

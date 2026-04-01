@@ -56,7 +56,12 @@ const CHRONIC_CONDITIONS = [
   { label: "High blood pressure", icon: "pulse" as const },
   { label: "Respiratory/asthma", icon: "cloud" as const },
   { label: "Mobility issues", icon: "walk" as const },
-  { label: "Other", icon: "ellipsis-horizontal" as const },
+  { label: "Chronic pain", icon: "bandage" as const },
+  { label: "Kidney disease", icon: "fitness" as const },
+  { label: "Cancer", icon: "medkit" as const },
+  { label: "Memory concerns", icon: "bulb" as const },
+  { label: "Depression/Anxiety", icon: "sad" as const },
+  { label: "Osteoporosis", icon: "body" as const },
   { label: "Prefer not to say", icon: "remove-circle-outline" as const },
 ];
 
@@ -86,7 +91,7 @@ export default function HealthAwarenessOnboarding() {
   const [chronicConditions, setChronicConditions] = useState<string[]>([]);
   const [mobilityLevel, setMobilityLevel] = useState("");
   const [hearingVision, setHearingVision] = useState<string[]>([]);
-  const [additionalNotes, setAdditionalNotes] = useState<string[]>(["", "", "", "", "", ""]);
+  const [additionalNotes, setAdditionalNotes] = useState<string[]>(["", "", ""]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   function goToStep(step: number) {
@@ -320,6 +325,29 @@ export default function HealthAwarenessOnboarding() {
                 </Pressable>
               ))}
             </View>
+            <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 13, fontFamily: "Inter_500Medium", marginTop: 16, marginBottom: 8 }}>
+              Other conditions not listed? (optional)
+            </Text>
+            {additionalNotes.map((note, idx) => (
+              <View key={idx} style={[styles.inputWrapper, { marginTop: idx === 0 ? 0 : 6 }]}>
+                <Ionicons name="add-circle-outline" size={16} color="rgba(255,255,255,0.35)" />
+                <TextInput
+                  style={[styles.textInput, { fontSize: 14, paddingVertical: 8 }]}
+                  placeholder={
+                    idx === 0 ? "e.g. Parkinson's disease" :
+                    idx === 1 ? "e.g. Thyroid condition" :
+                    "e.g. Other condition"
+                  }
+                  placeholderTextColor="rgba(255,255,255,0.25)"
+                  value={note}
+                  onChangeText={(text) => {
+                    const updated = [...additionalNotes];
+                    updated[idx] = text;
+                    setAdditionalNotes(updated);
+                  }}
+                />
+              </View>
+            ))}
           </ScrollView>
           <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 24 }]}>
             <View style={styles.bottomRow}>
@@ -413,32 +441,6 @@ export default function HealthAwarenessOnboarding() {
                 </Pressable>
               ))}
             </View>
-            <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 13, fontFamily: "Inter_500Medium", marginTop: 16, marginBottom: 8 }}>
-              Anything else we should know? (optional)
-            </Text>
-            {additionalNotes.map((note, idx) => (
-              <View key={idx} style={[styles.inputWrapper, { marginTop: idx === 0 ? 0 : 8 }]}>
-                <Ionicons name="add-circle-outline" size={18} color="rgba(255,255,255,0.35)" />
-                <TextInput
-                  style={styles.textInput}
-                  placeholder={
-                    idx === 0 ? "e.g. I use a walker" :
-                    idx === 1 ? "e.g. Allergic to penicillin" :
-                    idx === 2 ? "e.g. I have a caregiver" :
-                    idx === 3 ? "e.g. Prefer morning reminders" :
-                    idx === 4 ? "e.g. Recently had surgery" :
-                    "e.g. Other notes"
-                  }
-                  placeholderTextColor="rgba(255,255,255,0.25)"
-                  value={note}
-                  onChangeText={(text) => {
-                    const updated = [...additionalNotes];
-                    updated[idx] = text;
-                    setAdditionalNotes(updated);
-                  }}
-                />
-              </View>
-            ))}
           </ScrollView>
           <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 24 }]}>
             <View style={styles.bottomRow}>
