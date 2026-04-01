@@ -477,27 +477,42 @@ async function fetchRealTimeContext(userMessage: string, userLocation?: string):
     if (timeCity) {
       const tz = CITY_TO_TZ[timeCity];
       if (tz) {
+        const cityLabel = timeCity.charAt(0).toUpperCase() + timeCity.slice(1);
         console.log(`[fetchRealTimeContext] World time lookup: "${timeCity}" → ${tz}`);
+
+        function formatTimeFromTZ(timezone: string): string {
+          const now = new Date();
+          const formatted = now.toLocaleTimeString("en-US", {
+            hour: "numeric", minute: "2-digit", hour12: true, timeZone: timezone,
+          });
+          const dateFormatted = now.toLocaleDateString("en-US", {
+            weekday: "long", month: "long", day: "numeric", timeZone: timezone,
+          });
+          const abbr = now.toLocaleTimeString("en-US", { timeZoneName: "short", timeZone: timezone }).split(" ").pop() || timezone;
+          return `\n[WORLD TIME for ${cityLabel} (${timezone})]:\nCurrent time: ${formatted}\nDate: ${dateFormatted}\nTimezone: ${abbr}`;
+        }
+
         fetches.push(
-          fetchWithRetry(`https://worldtimeapi.org/api/timezone/${tz}`, {}, 2, 6000)
+          fetchWithRetry(`https://timeapi.io/api/time/current/zone?timeZone=${encodeURIComponent(tz)}`, {}, 1, 5000)
             .then(r => r.json())
             .then((data: any) => {
-              if (data?.datetime) {
-                const dt = new Date(data.datetime);
+              if (data?.dateTime) {
+                const dt = new Date(data.dateTime);
                 const formatted = dt.toLocaleTimeString("en-US", {
-                  hour: "numeric", minute: "2-digit", hour12: true,
-                  timeZone: tz,
+                  hour: "numeric", minute: "2-digit", hour12: true, timeZone: tz,
                 });
                 const dateFormatted = dt.toLocaleDateString("en-US", {
-                  weekday: "long", month: "long", day: "numeric",
-                  timeZone: tz,
+                  weekday: "long", month: "long", day: "numeric", timeZone: tz,
                 });
-                context += `\n[WORLD TIME for ${timeCity.charAt(0).toUpperCase() + timeCity.slice(1)} (${data.timezone})]:\nCurrent time: ${formatted}\nDate: ${dateFormatted}\nTimezone: ${data.abbreviation || tz} (UTC offset: ${data.utc_offset || "unknown"})${data.dst ? "\nDaylight Saving Time is currently active." : ""}`;
+                const abbr = dt.toLocaleTimeString("en-US", { timeZoneName: "short", timeZone: tz }).split(" ").pop() || tz;
+                context += `\n[WORLD TIME for ${cityLabel} (${data.timeZone})]:\nCurrent time: ${formatted}\nDate: ${dateFormatted}\nTimezone: ${abbr}`;
+              } else {
+                context += formatTimeFromTZ(tz);
               }
             })
-            .catch((err) => {
-              console.error("[fetchRealTimeContext] World time fetch error:", err.message);
-              context += `\n[WORLD TIME] The world time service is temporarily unavailable. Tell the user you're having trouble looking up the time right now and to try again in a moment.`;
+            .catch(() => {
+              console.warn("[fetchRealTimeContext] TimeAPI.io failed, using JS Date fallback for", tz);
+              context += formatTimeFromTZ(tz);
             })
         );
       } else {
