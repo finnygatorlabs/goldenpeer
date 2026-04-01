@@ -27,6 +27,7 @@ router.get("/profile", requireAuth, async (req: AuthRequest, res) => {
       onboarding_step: user.onboarding_step,
       hearing_aid_connected: user.hearing_aid_connected,
       hearing_aid_model: user.hearing_aid_model,
+      interests: user.interests || [],
       created_at: user.created_at,
     });
   } catch (err) {

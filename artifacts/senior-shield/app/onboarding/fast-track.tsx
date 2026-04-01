@@ -417,15 +417,18 @@ export default function FastTrackOnboarding() {
                   <Ionicons name="mail-outline" size={20} color="rgba(255,255,255,0.5)" />
                   <TextInput
                     style={styles.textInput}
-                    placeholder="Their email (for scam alerts)"
+                    placeholder="Family member's email"
                     placeholderTextColor="rgba(255,255,255,0.35)"
                     value={memberEmail}
                     onChangeText={setMemberEmail}
                     keyboardType="email-address"
                     autoCapitalize="none"
                     autoComplete="off"
-                    textContentType="none"
+                    autoCorrect={false}
+                    textContentType="oneTimeCode"
                     importantForAutofill="no"
+                    spellCheck={false}
+                    dataDetectorTypes="none"
                   />
                 </View>
 

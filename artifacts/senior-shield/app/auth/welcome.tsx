@@ -93,7 +93,7 @@ export default function WelcomeScreen() {
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={[styles.content, { paddingTop: insets.top + 48, paddingBottom: insets.bottom + 28 }]}
+        contentContainerStyle={[styles.content, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 16 }]}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.logoSection}>
@@ -173,10 +173,10 @@ const styles = StyleSheet.create({
   },
   logoSection: {
     alignItems: "center",
-    marginTop: 8,
+    marginTop: 0,
   },
   badgeRow: {
-    marginBottom: 12,
+    marginBottom: 8,
   },
   protectedBadge: {
     flexDirection: "row",
@@ -195,16 +195,16 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   logo: {
-    width: 80,
-    height: 80,
-    marginBottom: 16,
+    width: 70,
+    height: 70,
+    marginBottom: 12,
   },
   appName: {
-    fontSize: 36,
+    fontSize: 34,
     fontFamily: "Inter_700Bold",
     color: "#FFFFFF",
     letterSpacing: -0.5,
-    marginBottom: 10,
+    marginBottom: 6,
   },
   tagline: {
     fontSize: 14,
@@ -214,8 +214,8 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   features: {
-    gap: 14,
-    marginVertical: 24,
+    gap: 10,
+    marginVertical: 16,
   },
   featureRow: {
     flexDirection: "row",

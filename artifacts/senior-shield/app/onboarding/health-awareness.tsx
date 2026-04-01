@@ -86,7 +86,7 @@ export default function HealthAwarenessOnboarding() {
   const [chronicConditions, setChronicConditions] = useState<string[]>([]);
   const [mobilityLevel, setMobilityLevel] = useState("");
   const [hearingVision, setHearingVision] = useState<string[]>([]);
-  const [additionalNotes, setAdditionalNotes] = useState("");
+  const [additionalNotes, setAdditionalNotes] = useState<string[]>(["", "", "", "", "", ""]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   function goToStep(step: number) {
@@ -137,7 +137,7 @@ export default function HealthAwarenessOnboarding() {
           chronic_conditions: chronicConditions,
           mobility_level: mobilityLevel || null,
           hearing_vision: hearingVision,
-          additional_notes: additionalNotes.trim() || null,
+          additional_notes: additionalNotes.filter(n => n.trim()).join("; ") || null,
         }, user.token).catch(() => {});
 
         await userApi.updateProfile({ onboarding_step: 2 }, user.token).catch(() => {});
@@ -413,17 +413,32 @@ export default function HealthAwarenessOnboarding() {
                 </Pressable>
               ))}
             </View>
-            <View style={[styles.inputWrapper, { marginTop: 16 }]}>
-              <Ionicons name="create-outline" size={22} color="rgba(255,255,255,0.5)" />
-              <TextInput
-                style={styles.textInput}
-                placeholder="Anything else we should know? (optional)"
-                placeholderTextColor="rgba(255,255,255,0.35)"
-                value={additionalNotes}
-                onChangeText={setAdditionalNotes}
-                multiline
-              />
-            </View>
+            <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 13, fontFamily: "Inter_500Medium", marginTop: 16, marginBottom: 8 }}>
+              Anything else we should know? (optional)
+            </Text>
+            {additionalNotes.map((note, idx) => (
+              <View key={idx} style={[styles.inputWrapper, { marginTop: idx === 0 ? 0 : 8 }]}>
+                <Ionicons name="add-circle-outline" size={18} color="rgba(255,255,255,0.35)" />
+                <TextInput
+                  style={styles.textInput}
+                  placeholder={
+                    idx === 0 ? "e.g. I use a walker" :
+                    idx === 1 ? "e.g. Allergic to penicillin" :
+                    idx === 2 ? "e.g. I have a caregiver" :
+                    idx === 3 ? "e.g. Prefer morning reminders" :
+                    idx === 4 ? "e.g. Recently had surgery" :
+                    "e.g. Other notes"
+                  }
+                  placeholderTextColor="rgba(255,255,255,0.25)"
+                  value={note}
+                  onChangeText={(text) => {
+                    const updated = [...additionalNotes];
+                    updated[idx] = text;
+                    setAdditionalNotes(updated);
+                  }}
+                />
+              </View>
+            ))}
           </ScrollView>
           <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 24 }]}>
             <View style={styles.bottomRow}>

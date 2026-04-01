@@ -92,6 +92,9 @@ export default function SettingsScreen() {
   const [previewingVoice, setPreviewingVoice] = useState<TtsVoice | null>(null);
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [profileData, setProfileData] = useState<any>(null);
+  const [editingInterests, setEditingInterests] = useState(false);
+  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+  const [savingInterests, setSavingInterests] = useState(false);
   const [deviceInfo, setDeviceInfo] = useState({ platform: "", model: "", osVersion: "" });
   const [editingName, setEditingName] = useState(false);
   const [firstNameEdit, setFirstNameEdit] = useState(user?.first_name || "");
@@ -107,6 +110,7 @@ export default function SettingsScreen() {
       try {
         const data = await userApi.getProfile(user.token);
         setProfileData(data);
+        if (data?.interests) setSelectedInterests(data.interests);
       } catch {}
     })();
   }, [user?.token]);
@@ -572,6 +576,110 @@ export default function SettingsScreen() {
           theme={theme}
           ts={ts}
         />
+      </View>
+
+      {/* INTERESTS */}
+      <View style={[styles.section, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+        <Text style={[styles.sectionTitle, { color: theme.textSecondary, fontSize: ts.tiny }]}>MY INTERESTS</Text>
+        {!editingInterests ? (
+          <>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, padding: 12 }}>
+              {selectedInterests.length > 0 ? selectedInterests.map(interest => (
+                <View key={interest} style={{ backgroundColor: "#2563EB", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, flexDirection: "row", alignItems: "center", gap: 4 }}>
+                  <Text style={{ color: "#FFFFFF", fontSize: ts.sm, fontFamily: "Inter_500Medium" }}>{interest}</Text>
+                </View>
+              )) : (
+                <Text style={{ color: theme.textSecondary, fontSize: ts.sm, fontFamily: "Inter_400Regular" }}>No interests selected yet</Text>
+              )}
+            </View>
+            <Pressable
+              onPress={() => setEditingInterests(true)}
+              style={{ flexDirection: "row", alignItems: "center", gap: 6, padding: 12, paddingTop: 0 }}
+            >
+              <Ionicons name="pencil" size={16} color="#2563EB" />
+              <Text style={{ color: "#2563EB", fontSize: ts.sm, fontFamily: "Inter_600SemiBold" }}>Edit Interests</Text>
+            </Pressable>
+          </>
+        ) : (
+          <View style={{ padding: 12 }}>
+            <Text style={{ color: theme.textSecondary, fontSize: ts.xs, fontFamily: "Inter_400Regular", marginBottom: 10 }}>Pick up to 5 interests so the AI can personalize conversations</Text>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+              {[
+                { label: "Gardening", icon: "leaf" },
+                { label: "Sports", icon: "football" },
+                { label: "Reading", icon: "book" },
+                { label: "Cooking", icon: "restaurant" },
+                { label: "Travel", icon: "airplane" },
+                { label: "Movies", icon: "film" },
+                { label: "Music", icon: "musical-notes" },
+                { label: "Family", icon: "people" },
+                { label: "History", icon: "time" },
+                { label: "Faith", icon: "heart" },
+                { label: "Crafts", icon: "color-palette" },
+                { label: "News", icon: "newspaper" },
+                { label: "Games & Trivia", icon: "extension-puzzle" },
+              ].map(item => {
+                const isSelected = selectedInterests.includes(item.label);
+                return (
+                  <Pressable
+                    key={item.label}
+                    onPress={() => {
+                      hapticTap();
+                      if (isSelected) {
+                        setSelectedInterests(selectedInterests.filter(i => i !== item.label));
+                      } else if (selectedInterests.length < 5) {
+                        setSelectedInterests([...selectedInterests, item.label]);
+                      }
+                    }}
+                    style={{
+                      flexDirection: "row", alignItems: "center", gap: 6,
+                      paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
+                      backgroundColor: isSelected ? "#2563EB" : "rgba(0,0,0,0.05)",
+                      borderWidth: 1, borderColor: isSelected ? "#2563EB" : theme.cardBorder,
+                    }}
+                  >
+                    <Ionicons name={item.icon as any} size={16} color={isSelected ? "#FFFFFF" : theme.textSecondary} />
+                    <Text style={{ color: isSelected ? "#FFFFFF" : theme.text, fontSize: ts.sm, fontFamily: "Inter_500Medium" }}>{item.label}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <Text style={{ color: theme.textSecondary, fontSize: ts.xs, fontFamily: "Inter_400Regular", marginTop: 8, textAlign: "center" }}>
+              {selectedInterests.length}/5 selected
+            </Text>
+            <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
+              <Pressable
+                onPress={() => {
+                  setSelectedInterests(profileData?.interests || selectedInterests);
+                  setEditingInterests(false);
+                }}
+                style={{ flex: 1, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: theme.cardBorder, alignItems: "center" }}
+              >
+                <Text style={{ color: theme.text, fontSize: ts.sm, fontFamily: "Inter_500Medium" }}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                onPress={async () => {
+                  try {
+                    setSavingInterests(true);
+                    await userApi.updatePreferences({ interests: selectedInterests }, user?.token);
+                    setProfileData({ ...profileData, interests: selectedInterests });
+                    setEditingInterests(false);
+                  } catch {} finally {
+                    setSavingInterests(false);
+                  }
+                }}
+                disabled={savingInterests}
+                style={{ flex: 1, paddingVertical: 10, borderRadius: 10, backgroundColor: "#2563EB", alignItems: "center", opacity: savingInterests ? 0.6 : 1 }}
+              >
+                {savingInterests ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={{ color: "#FFFFFF", fontSize: ts.sm, fontFamily: "Inter_600SemiBold" }}>Save</Text>
+                )}
+              </Pressable>
+            </View>
+          </View>
+        )}
       </View>
 
       {/* APPEARANCE */}
