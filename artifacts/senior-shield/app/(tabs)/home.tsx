@@ -728,21 +728,80 @@ export default function HomeScreen() {
   // ── Greeting fires after audio is unlocked ──
   const greetingRef = useRef(false);
   useEffect(() => {
-    if (greetingRef.current || !audioReady || !assistantName) return;
+    if (greetingRef.current || !audioReady || !assistantName || !user?.token) return;
     greetingRef.current = true;
-    const greeting = `Hi ${user?.first_name || "there"}! I'm ${assistantName}. Tap the orb and start talking — I'm here to help!`;
-    setMessages([{ id: "0", text: greeting, isUser: false }]);
-    setHistory([{ role: "assistant", content: greeting }]);
-    setTimeout(() => speakText(greeting, true), 600);
-  }, [audioReady, assistantName]);
+
+    const defaultGreeting = () => {
+      const greeting = `Hi ${user?.first_name || "there"}! I'm ${assistantName}. Tap the orb and start talking — I'm here to help!`;
+      setMessages([{ id: "0", text: greeting, isUser: false }]);
+      setHistory([{ role: "assistant", content: greeting }]);
+      setTimeout(() => speakText(greeting, true), 600);
+    };
+
+    remindersApi.getAll(user.token).then((data: any) => {
+      const due = findDueReminder(data?.reminders || []);
+      if (due) {
+        fireReminder(due);
+      } else {
+        defaultGreeting();
+      }
+    }).catch(() => defaultGreeting());
+  }, [audioReady, assistantName, user?.token]);
 
   // Desktop / native: unlock immediately
   useEffect(() => {
-    if (!greeted && audioReady && assistantName) setGreeted(true);
-  }, [assistantName, audioReady]);
+    if (!greeted && audioReady && assistantName && user?.token) setGreeted(true);
+  }, [assistantName, audioReady, user?.token]);
 
   // ── Auto-awake: check for due reminders every 60s ──
-  const lastFiredReminderRef = useRef<string>("");
+  const firedReminderIdsRef = useRef<Set<string>>(new Set());
+
+  function findDueReminder(reminders: any[]): any | null {
+    const now = new Date();
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    const dayOfWeek = now.getDay();
+    const dateKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
+
+    for (const r of reminders) {
+      if (!r.is_active || !r.scheduled_time) continue;
+      const [hh, mm] = r.scheduled_time.split(":").map(Number);
+      if (isNaN(hh) || isNaN(mm)) continue;
+      const schedMinutes = hh * 60 + mm;
+      const diff = nowMinutes - schedMinutes;
+      if (diff < 0 || diff > 5) continue;
+
+      const freq = r.frequency || "daily";
+      if (freq === "weekly") {
+        const days = r.days_of_week?.split(",").map(Number) || [];
+        if (!days.includes(dayOfWeek)) continue;
+      }
+
+      const fireKey = `${r.id}_${dateKey}`;
+      if (firedReminderIdsRef.current.has(fireKey)) continue;
+
+      return r;
+    }
+    return null;
+  }
+
+  function fireReminder(r: any) {
+    const now = new Date();
+    const dateKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
+    const fireKey = `${r.id}_${dateKey}`;
+    if (firedReminderIdsRef.current.has(fireKey)) return;
+    firedReminderIdsRef.current.add(fireKey);
+
+    const name = userRef.current?.first_name || "there";
+    const awakeMsg = (r.prompt || "").replace("{name}", name);
+
+    setHasInteracted(true);
+    setMessages((prev) => [...prev, { id: Date.now().toString(), text: awakeMsg, isUser: false }]);
+    setHistory((prev) => [...prev, { role: "assistant", content: awakeMsg }]);
+    conversationActiveRef.current = true;
+    shouldListenAfterSpeak.current = true;
+    setTimeout(() => speakTextRef.current(awakeMsg, true), 500);
+    touchInactivity();
+  }
 
   useEffect(() => {
     if (!user?.token || !audioReady) return;
@@ -750,40 +809,9 @@ export default function HomeScreen() {
     function checkDueReminders() {
       if (isSpeakingRef.current || isListeningRef.current || isSendingRef.current) return;
 
-      const now = new Date();
-      const currentHH = now.getHours().toString().padStart(2, "0");
-      const currentMM = now.getMinutes().toString().padStart(2, "0");
-      const currentTimeKey = `${currentHH}:${currentMM}`;
-
-      if (currentTimeKey === lastFiredReminderRef.current) return;
-
       remindersApi.getAll(user?.token).then((data: any) => {
-        const reminders = data?.reminders || [];
-        const dayOfWeek = now.getDay();
-
-        for (const r of reminders) {
-          if (!r.is_active || !r.scheduled_time) continue;
-          if (r.scheduled_time !== currentTimeKey) continue;
-
-          const freq = r.frequency || "daily";
-          if (freq === "weekly") {
-            const days = r.days_of_week?.split(",").map(Number) || [];
-            if (!days.includes(dayOfWeek)) continue;
-          }
-
-          lastFiredReminderRef.current = currentTimeKey;
-          const name = userRef.current?.first_name || "there";
-          const awakeMsg = (r.prompt || "").replace("{name}", name);
-
-          setHasInteracted(true);
-          setMessages((prev) => [...prev, { id: Date.now().toString(), text: awakeMsg, isUser: false }]);
-          setHistory((prev) => [...prev, { role: "assistant", content: awakeMsg }]);
-          conversationActiveRef.current = true;
-          shouldListenAfterSpeak.current = true;
-          setTimeout(() => speakTextRef.current(awakeMsg, true), 500);
-          touchInactivity();
-          break;
-        }
+        const due = findDueReminder(data?.reminders || []);
+        if (due) fireReminder(due);
       }).catch(() => {});
     }
 
