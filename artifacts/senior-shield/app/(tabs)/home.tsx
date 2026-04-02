@@ -26,7 +26,7 @@ import PageHeader from "@/components/PageHeader";
 import MicPermissionModal from "@/components/MicPermissionModal";
 import { useRouter } from "expo-router";
 import { voiceApi, conversationApi, userApi, API_BASE } from "@/services/api";
-import { getDailyQuote } from "@/constants/dailyQuotes";
+import { getDailyQuoteAndFact } from "@/constants/dailyQuotes";
 
 // Remove markdown formatting before sending text to TTS so the voice
 // never reads aloud characters like **, *, #, -, _, ~, backticks, etc.
@@ -212,7 +212,8 @@ export default function HomeScreen() {
     })();
   }, [user?.token]);
 
-  const dailyQuote = useMemo(() => getDailyQuote(), []);
+  const { quote: dailyQuote, fact: dailyFact } = useMemo(() => getDailyQuoteAndFact(), []);
+  const [showingFact, setShowingFact] = useState(false);
   const quoteSlideAnim = useRef(new Animated.Value(0)).current;
   const quoteOpacityAnim = useRef(new Animated.Value(1)).current;
   const [quoteDismissed, setQuoteDismissed] = useState(false);
@@ -232,8 +233,28 @@ export default function HomeScreen() {
         duration: 400,
         useNativeDriver: true,
       }),
-    ]).start(() => setQuoteDismissed(true));
-  }, [quoteDismissed, screenWidth]);
+    ]).start(() => {
+      if (!showingFact) {
+        setShowingFact(true);
+        quoteSlideAnim.setValue(-screenWidth);
+        quoteOpacityAnim.setValue(0);
+        Animated.parallel([
+          Animated.timing(quoteSlideAnim, {
+            toValue: 0,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+          Animated.timing(quoteOpacityAnim, {
+            toValue: 1,
+            duration: 400,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      } else {
+        setQuoteDismissed(true);
+      }
+    });
+  }, [quoteDismissed, showingFact, screenWidth]);
 
   const INACTIVITY_TIMEOUT = 90_000;
   const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -588,6 +609,7 @@ export default function HomeScreen() {
     sessionIdRef.current = null;
     setHasInteracted(false);
     setQuoteDismissed(false);
+    setShowingFact(false);
     quoteSlideAnim.setValue(0);
     quoteOpacityAnim.setValue(1);
     const g = `Hi ${userRef.current?.first_name || "there"}! I'm ${assistantName}. Tap the orb and start talking — I'm here to help!`;
@@ -1093,21 +1115,25 @@ export default function HomeScreen() {
             },
           ]}
         >
-          <View style={[styles.quoteAccentBox, { borderLeftColor: dailyQuote.author === "Fact of the Day" ? "rgba(251,191,36,0.6)" : "rgba(96,165,250,0.6)" }]}>
-            {dailyQuote.author === "Fact of the Day" && (
-              <Text style={[styles.quoteAuthor, { color: "rgba(251,191,36,0.9)", fontSize: ts.sm, marginBottom: 4, fontWeight: "700" }]}>
-                Fact of the Day
+          {!showingFact ? (
+            <View style={[styles.quoteAccentBox, { borderLeftColor: "rgba(96,165,250,0.6)" }]}>
+              <Text numberOfLines={3} style={[styles.quoteText, { color: theme.text, fontSize: ts.lg }]}>
+                {dailyQuote.text}
               </Text>
-            )}
-            <Text numberOfLines={3} style={[styles.quoteText, { color: theme.text, fontSize: ts.lg }]}>
-              {dailyQuote.text}
-            </Text>
-            {dailyQuote.author !== "Fact of the Day" && (
               <Text style={[styles.quoteAuthor, { color: theme.textSecondary, fontSize: ts.sm }]}>
                 — {dailyQuote.author}
               </Text>
-            )}
-          </View>
+            </View>
+          ) : (
+            <View style={[styles.quoteAccentBox, { borderLeftColor: "rgba(251,191,36,0.6)" }]}>
+              <Text style={[styles.quoteAuthor, { color: "rgba(251,191,36,0.9)", fontSize: ts.sm, marginBottom: 4, fontWeight: "700" }]}>
+                Fact of the Day
+              </Text>
+              <Text numberOfLines={3} style={[styles.quoteText, { color: theme.text, fontSize: ts.lg }]}>
+                {dailyFact.text}
+              </Text>
+            </View>
+          )}
         </Animated.View>
       )}
 

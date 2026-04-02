@@ -249,11 +249,21 @@ export function getDailyQuote(): DailyQuote {
     (now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
   );
   const idx = dayOfYear - 1;
-  if (idx % 2 === 0) {
-    return DAILY_QUOTES[Math.floor(idx / 2) % DAILY_QUOTES.length];
-  } else {
-    return DAILY_FACTS[Math.floor(idx / 2) % DAILY_FACTS.length];
-  }
+  return DAILY_QUOTES[idx % DAILY_QUOTES.length];
+}
+
+export function getDailyFact(): DailyQuote {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 0);
+  const dayOfYear = Math.floor(
+    (now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+  );
+  const idx = dayOfYear - 1;
+  return DAILY_FACTS[idx % DAILY_FACTS.length];
+}
+
+export function getDailyQuoteAndFact(): { quote: DailyQuote; fact: DailyQuote } {
+  return { quote: getDailyQuote(), fact: getDailyFact() };
 }
 
 export default DAILY_QUOTES;
