@@ -60,7 +60,7 @@ const PRESET_REMINDERS = [
   {
     key: "gratitude",
     label: "Gratitude Moment",
-    prompt: "Hi {name}, it's time for your gratitude moment! Take a minute to think about something good that happened today or someone you're thankful for.",
+    prompt: "Hi {name}, it's time for your gratitude moment! What's something good that happened today?",
     icon: "sunny-outline",
   },
 ];

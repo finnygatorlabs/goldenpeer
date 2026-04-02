@@ -54,7 +54,7 @@ const FALLBACK_PRESETS: Preset[] = [
   { key: "meals", label: "Meal Reminder", prompt: "{name}, have you eaten today? A good meal will help keep your energy up.", icon: "restaurant-outline" },
   { key: "appointments", label: "Appointment Check", prompt: "{name}, do you have any appointments today? Let me help you stay on track.", icon: "calendar-outline" },
   { key: "prayer_meditation", label: "Prayer or Meditation", prompt: "Hi {name}, want to set aside some time to pray or meditate today?", icon: "leaf-outline" },
-  { key: "gratitude", label: "Gratitude Moment", prompt: "Hi {name}, it's time for your gratitude moment! Take a minute to think about something good that happened today or someone you're thankful for.", icon: "sunny-outline" },
+  { key: "gratitude", label: "Gratitude Moment", prompt: "Hi {name}, it's time for your gratitude moment! What's something good that happened today?", icon: "sunny-outline" },
 ];
 
 const HOURS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
