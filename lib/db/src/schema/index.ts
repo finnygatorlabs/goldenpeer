@@ -10,6 +10,7 @@ import {
   text,
   jsonb,
   unique,
+  index,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
@@ -47,6 +48,7 @@ export const usersTable = pgTable("users", {
   device_model: varchar("device_model"),
   device_os_version: varchar("device_os_version"),
   interests: jsonb("interests").$type<string[]>(),
+  timezone: varchar("timezone", { length: 50 }).default("America/New_York"),
   onboarding_completed: boolean("onboarding_completed").default(false),
   onboarding_step: integer("onboarding_step").default(0),
   email_verified: boolean("email_verified").default(false),
@@ -98,6 +100,8 @@ export const familyRelationshipsTable = pgTable(
     weekly_summary: boolean("weekly_summary").default(true),
     email_alerts: boolean("email_alerts").default(true),
     sms_alerts: boolean("sms_alerts").default(false),
+    notification_preference: varchar("notification_preference", { length: 50 }).default("all"),
+    is_primary: boolean("is_primary").default(false),
     created_at: timestamp("created_at").defaultNow(),
     updated_at: timestamp("updated_at").defaultNow(),
   },
@@ -432,6 +436,9 @@ export const dailyRemindersTable = pgTable("daily_reminders", {
   label: varchar("label").notNull(),
   prompt: text("prompt").notNull(),
   icon: varchar("icon").default("notifications-outline"),
+  scheduled_time: varchar("scheduled_time", { length: 5 }),
+  frequency: varchar("frequency", { length: 20 }).default("daily"),
+  days_of_week: varchar("days_of_week", { length: 50 }),
   is_active: boolean("is_active").default(true),
   is_custom: boolean("is_custom").default(false),
   sort_order: integer("sort_order").default(0),
@@ -485,3 +492,28 @@ export const userHealthProfilesTable = pgTable("user_health_profiles", {
 });
 
 export type UserHealthProfile = typeof userHealthProfilesTable.$inferSelect;
+
+export const reminderHistoryTable = pgTable(
+  "reminder_history",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    reminder_id: uuid("reminder_id").references(() => dailyRemindersTable.id, { onDelete: "cascade" }).notNull(),
+    user_id: uuid("user_id").references(() => usersTable.id, { onDelete: "cascade" }).notNull(),
+    scheduled_time: timestamp("scheduled_time").notNull(),
+    sent_time: timestamp("sent_time"),
+    status: varchar("status", { length: 20 }).notNull().default("pending"),
+    snoozed_until: timestamp("snoozed_until"),
+    completed_at: timestamp("completed_at"),
+    family_notified: boolean("family_notified").default(false),
+    created_at: timestamp("created_at").defaultNow(),
+    updated_at: timestamp("updated_at").defaultNow(),
+  },
+  (t) => [
+    index("idx_reminder_history_reminder_id").on(t.reminder_id),
+    index("idx_reminder_history_user_id").on(t.user_id),
+    index("idx_reminder_history_status").on(t.status),
+    index("idx_reminder_history_scheduled_time").on(t.scheduled_time),
+  ]
+);
+
+export type ReminderHistory = typeof reminderHistoryTable.$inferSelect;
