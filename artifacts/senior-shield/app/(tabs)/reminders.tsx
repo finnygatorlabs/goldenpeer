@@ -49,14 +49,14 @@ const FALLBACK_PRESETS: Preset[] = [
   { key: "medication", label: "Medication Reminder", prompt: "Good morning {name}, have you taken your medication today?", icon: "medkit-outline" },
   { key: "family_call", label: "Family Check-in", prompt: "Hi {name}, have you called your family today? It would make their day to hear from you.", icon: "call-outline" },
   { key: "morning_walk", label: "Morning Walk", prompt: "{name}, did you take your morning walk today? A short walk can do wonders for your health.", icon: "walk-outline" },
-  { key: "wellness_check", label: "Wellness Check", prompt: "{name}, on a scale of 1 to 10, how are you feeling this morning?", icon: "heart-outline" },
+  { key: "wellness_check", label: "Wellness Check", prompt: "{name}, I almost missed your reminder! Time to check your blood pressure, insulin, blood glucose, weight, and any other vitals. How are you feeling today?", icon: "heart-outline" },
   { key: "hydration", label: "Hydration Reminder", prompt: "{name}, have you had enough water today? Staying hydrated is so important.", icon: "water-outline" },
   { key: "meals", label: "Meal Reminder", prompt: "{name}, have you eaten today? A good meal will help keep your energy up.", icon: "restaurant-outline" },
   { key: "appointments", label: "Appointment Check", prompt: "{name}, do you have any appointments today? Let me help you stay on track.", icon: "calendar-outline" },
   { key: "gratitude", label: "Gratitude Moment", prompt: "{name}, what's one thing you're grateful for today?", icon: "sunny-outline" },
 ];
 
-const HOURS = Array.from({ length: 24 }, (_, i) => i);
+const HOURS = [6, 7, 8, 9, 10];
 const MINUTES = [0, 15, 30, 45];
 const DAYS = [
   { id: 0, short: "Sun", label: "Sunday" },
@@ -74,10 +74,18 @@ function formatTime12(hh: number, mm: number): string {
   return `${h}:${mm.toString().padStart(2, "0")} ${ampm}`;
 }
 
-function parseScheduledTime(t?: string | null): { hour: number; minute: number } {
-  if (!t || !/^\d{2}:\d{2}$/.test(t)) return { hour: 8, minute: 0 };
-  const [h, m] = t.split(":").map(Number);
-  return { hour: h, minute: m };
+function parseScheduledTime(t?: string | null): { hour: number; minute: number; ampm: "AM" | "PM" } {
+  if (!t || !/^\d{2}:\d{2}$/.test(t)) return { hour: 8, minute: 0, ampm: "AM" };
+  const [h24, m] = t.split(":").map(Number);
+  const ampm: "AM" | "PM" = h24 >= 12 ? "PM" : "AM";
+  let h12 = h24 % 12 || 12;
+  if (!HOURS.includes(h12)) h12 = 8;
+  return { hour: h12, minute: m, ampm };
+}
+
+function to24Hour(displayHour: number, ampm: "AM" | "PM"): number {
+  if (ampm === "AM") return displayHour === 12 ? 0 : displayHour;
+  return displayHour === 12 ? 12 : displayHour + 12;
 }
 
 function parseDaysOfWeek(d?: string | null): number[] {
@@ -117,6 +125,7 @@ export default function RemindersScreen() {
 
   const [schedHour, setSchedHour] = useState(8);
   const [schedMinute, setSchedMinute] = useState(0);
+  const [schedAmPm, setSchedAmPm] = useState<"AM" | "PM">("AM");
   const [schedFrequency, setSchedFrequency] = useState<"daily" | "weekly" | "once">("daily");
   const [schedDays, setSchedDays] = useState<number[]>([1, 2, 3, 4, 5]);
   const [showTimePicker, setShowTimePicker] = useState(false);
@@ -180,7 +189,7 @@ export default function RemindersScreen() {
           label: preset.label,
           prompt: preset.prompt,
           icon: preset.icon,
-          scheduled_time: `${schedHour.toString().padStart(2, "0")}:${schedMinute.toString().padStart(2, "0")}`,
+          scheduled_time: `${to24Hour(schedHour, schedAmPm).toString().padStart(2, "0")}:${schedMinute.toString().padStart(2, "0")}`,
           frequency: schedFrequency,
           days_of_week: schedFrequency === "weekly" ? schedDays.join(",") : undefined,
         },
@@ -251,9 +260,10 @@ export default function RemindersScreen() {
   }
 
   function openScheduleModal(reminder: Reminder) {
-    const { hour, minute } = parseScheduledTime(reminder.scheduled_time);
+    const { hour, minute, ampm } = parseScheduledTime(reminder.scheduled_time);
     setSchedHour(hour);
     setSchedMinute(minute);
+    setSchedAmPm(ampm);
     setSchedFrequency((reminder.frequency as any) || "daily");
     setSchedDays(parseDaysOfWeek(reminder.days_of_week));
     setScheduleReminder(reminder);
@@ -269,7 +279,7 @@ export default function RemindersScreen() {
     }
     try {
       setSavingSchedule(true);
-      const timeStr = `${schedHour.toString().padStart(2, "0")}:${schedMinute.toString().padStart(2, "0")}`;
+      const timeStr = `${to24Hour(schedHour, schedAmPm).toString().padStart(2, "0")}:${schedMinute.toString().padStart(2, "0")}`;
       const res = await remindersApi.updateSchedule(
         scheduleReminder.id,
         {
@@ -296,6 +306,7 @@ export default function RemindersScreen() {
   function resetScheduleFields() {
     setSchedHour(8);
     setSchedMinute(0);
+    setSchedAmPm("AM");
     setSchedFrequency("daily");
     setSchedDays([1, 2, 3, 4, 5]);
   }
@@ -318,7 +329,7 @@ export default function RemindersScreen() {
     try {
       setSaving(true);
       const key = `custom_${Date.now()}`;
-      const timeStr = `${schedHour.toString().padStart(2, "0")}:${schedMinute.toString().padStart(2, "0")}`;
+      const timeStr = `${to24Hour(schedHour, schedAmPm).toString().padStart(2, "0")}:${schedMinute.toString().padStart(2, "0")}`;
       const res = await remindersApi.add(
         {
           reminder_key: key,
@@ -368,15 +379,32 @@ export default function RemindersScreen() {
         >
           <Ionicons name="time-outline" size={22} color={accent} />
           <Text style={[styles.timePickerText, { color: theme.text, fontSize: ts.lg }]}>
-            {formatTime12(schedHour, schedMinute)}
+            {schedHour}:{schedMinute.toString().padStart(2, "0")} {schedAmPm}
           </Text>
           <Ionicons name={showTimePicker ? "chevron-up" : "chevron-down"} size={20} color={theme.textSecondary} />
         </Pressable>
 
         {showTimePicker && (
           <View style={[styles.timeGrid, { backgroundColor: theme.inputBackground, borderColor: theme.cardBorder }]}>
-            <Text style={[styles.timeGridLabel, { color: theme.textSecondary, fontSize: ts.xs }]}>Hour</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.timeScroll}>
+            <Text style={[styles.timeGridLabel, { color: theme.textSecondary, fontSize: ts.xs }]}>AM / PM</Text>
+            <View style={styles.minuteRow}>
+              {(["AM", "PM"] as const).map((ap) => (
+                <Pressable
+                  key={ap}
+                  onPress={() => setSchedAmPm(ap)}
+                  style={[
+                    styles.timePill,
+                    { backgroundColor: schedAmPm === ap ? accent : "transparent", borderColor: schedAmPm === ap ? accent : theme.cardBorder, minWidth: 64 },
+                  ]}
+                >
+                  <Text style={[styles.timePillText, { color: schedAmPm === ap ? "#FFF" : theme.text, fontSize: ts.sm }]}>
+                    {ap}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+            <Text style={[styles.timeGridLabel, { color: theme.textSecondary, fontSize: ts.xs, marginTop: 8 }]}>Hour</Text>
+            <View style={styles.minuteRow}>
               {HOURS.map((h) => (
                 <Pressable
                   key={h}
@@ -387,11 +415,11 @@ export default function RemindersScreen() {
                   ]}
                 >
                   <Text style={[styles.timePillText, { color: schedHour === h ? "#FFF" : theme.text, fontSize: ts.sm }]}>
-                    {h % 12 || 12}{h < 12 ? "a" : "p"}
+                    {h}
                   </Text>
                 </Pressable>
               ))}
-            </ScrollView>
+            </View>
             <Text style={[styles.timeGridLabel, { color: theme.textSecondary, fontSize: ts.xs, marginTop: 8 }]}>Minute</Text>
             <View style={styles.minuteRow}>
               {MINUTES.map((m) => (
@@ -516,13 +544,13 @@ export default function RemindersScreen() {
           onPress={() => setShowHowItWorks(!showHowItWorks)}
           style={[styles.howItWorksToggle, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}
         >
-          <View style={[styles.howItWorksIcon, { backgroundColor: accent + "15" }]}>
-            <Ionicons name="information-circle" size={20} color={accent} />
+          <View style={[styles.howItWorksIcon, { backgroundColor: "#34D39915" }]}>
+            <Ionicons name="information-circle" size={20} color="#34D399" />
           </View>
-          <Text style={[styles.howItWorksToggleText, { color: accent, fontSize: ts.sm }]}>
+          <Text style={[styles.howItWorksToggleText, { color: "#34D399", fontSize: ts.sm }]}>
             How do reminders work?
           </Text>
-          <Ionicons name={showHowItWorks ? "chevron-up" : "chevron-down"} size={18} color={accent} />
+          <Ionicons name={showHowItWorks ? "chevron-up" : "chevron-down"} size={18} color="#34D399" />
         </Pressable>
 
         {showHowItWorks && (
@@ -577,7 +605,7 @@ export default function RemindersScreen() {
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: theme.text, fontSize: ts.base }]}>My Reminders</Text>
             {myReminders.map((reminder) => {
-              const { hour, minute } = parseScheduledTime(reminder.scheduled_time);
+              const { hour, minute, ampm } = parseScheduledTime(reminder.scheduled_time);
               const hasSchedule = !!reminder.scheduled_time;
               return (
                 <View
@@ -620,7 +648,7 @@ export default function RemindersScreen() {
                     >
                       <Ionicons name="time-outline" size={14} color={accent} />
                       <Text style={[styles.scheduleBtnText, { color: accent, fontSize: ts.xs }]}>
-                        {hasSchedule ? formatTime12(hour, minute) : "Set Time"}
+                        {hasSchedule ? `${hour}:${minute.toString().padStart(2, "0")} ${ampm}` : "Set Time"}
                       </Text>
                     </Pressable>
                     {hasSchedule && (

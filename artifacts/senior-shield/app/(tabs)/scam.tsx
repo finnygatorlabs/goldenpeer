@@ -434,7 +434,7 @@ export default function ScamScreen() {
           <Ionicons name="clipboard-outline" size={20} color={theme.textSecondary} />
           <Text style={[styles.inputLabel, { color: theme.textSecondary, fontSize: ts.sm }]}>Enter message here</Text>
           <Pressable onPress={() => setShowHelpModal(true)} hitSlop={12} style={styles.infoButton}>
-            <Ionicons name="information-circle-outline" size={22} color={theme.textSecondary} />
+            <Ionicons name="information-circle-outline" size={22} color="#34D399" />
           </Pressable>
         </View>
         <TextInput
@@ -711,7 +711,7 @@ export default function ScamScreen() {
         <Pressable style={styles.modalOverlay} onPress={() => setShowHelpModal(false)}>
           <View style={[styles.helpModal, { backgroundColor: theme.card }]}>
             <View style={styles.helpHeader}>
-              <Ionicons name="information-circle" size={28} color="#2563EB" />
+              <Ionicons name="information-circle" size={28} color="#34D399" />
               <Text style={[styles.helpTitle, { color: theme.text, fontSize: ts.md }]}>How to Check a Message</Text>
             </View>
 
