@@ -49,14 +49,14 @@ const FALLBACK_PRESETS: Preset[] = [
   { key: "medication", label: "Medication Reminder", prompt: "Good morning {name}, have you taken your medication today?", icon: "medkit-outline" },
   { key: "family_call", label: "Family Check-in", prompt: "Hi {name}, have you called your family today? It would make their day to hear from you.", icon: "call-outline" },
   { key: "morning_walk", label: "Morning Walk", prompt: "{name}, did you take your morning walk today? A short walk can do wonders for your health.", icon: "walk-outline" },
-  { key: "wellness_check", label: "Wellness Check", prompt: "{name}, I almost missed your reminder! Time to check your blood pressure, insulin, blood glucose, weight, and any other vitals. How are you feeling today?", icon: "heart-outline" },
+  { key: "wellness_check", label: "Wellness Check", prompt: "Hi {name}, do you need to check any of the following: Blood Pressure, Insulin, Blood Glucose, Your Weight, or Other today?", icon: "heart-outline" },
   { key: "hydration", label: "Hydration Reminder", prompt: "{name}, have you had enough water today? Staying hydrated is so important.", icon: "water-outline" },
   { key: "meals", label: "Meal Reminder", prompt: "{name}, have you eaten today? A good meal will help keep your energy up.", icon: "restaurant-outline" },
   { key: "appointments", label: "Appointment Check", prompt: "{name}, do you have any appointments today? Let me help you stay on track.", icon: "calendar-outline" },
   { key: "gratitude", label: "Gratitude Moment", prompt: "{name}, what's one thing you're grateful for today?", icon: "sunny-outline" },
 ];
 
-const HOURS = [6, 7, 8, 9, 10];
+const HOURS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 const MINUTES = [0, 15, 30, 45];
 const DAYS = [
   { id: 0, short: "Sun", label: "Sunday" },
