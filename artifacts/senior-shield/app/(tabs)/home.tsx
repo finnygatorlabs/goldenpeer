@@ -25,7 +25,7 @@ import FluidOrb from "@/components/FluidOrb";
 import PageHeader from "@/components/PageHeader";
 import MicPermissionModal from "@/components/MicPermissionModal";
 import { useRouter } from "expo-router";
-import { voiceApi, conversationApi, userApi, API_BASE } from "@/services/api";
+import { voiceApi, conversationApi, userApi, remindersApi, API_BASE } from "@/services/api";
 import { getDailyQuote } from "@/constants/dailyQuotes";
 
 // Remove markdown formatting before sending text to TTS so the voice
@@ -740,6 +740,57 @@ export default function HomeScreen() {
   useEffect(() => {
     if (!greeted && audioReady && assistantName) setGreeted(true);
   }, [assistantName, audioReady]);
+
+  // ── Auto-awake: check for due reminders every 60s ──
+  const lastFiredReminderRef = useRef<string>("");
+
+  useEffect(() => {
+    if (!user?.token || !audioReady) return;
+
+    function checkDueReminders() {
+      if (isSpeakingRef.current || isListeningRef.current || isSendingRef.current) return;
+
+      const now = new Date();
+      const currentHH = now.getHours().toString().padStart(2, "0");
+      const currentMM = now.getMinutes().toString().padStart(2, "0");
+      const currentTimeKey = `${currentHH}:${currentMM}`;
+
+      if (currentTimeKey === lastFiredReminderRef.current) return;
+
+      remindersApi.getAll(user?.token).then((data: any) => {
+        const reminders = data?.reminders || [];
+        const dayOfWeek = now.getDay();
+
+        for (const r of reminders) {
+          if (!r.is_active || !r.scheduled_time) continue;
+          if (r.scheduled_time !== currentTimeKey) continue;
+
+          const freq = r.frequency || "daily";
+          if (freq === "weekly") {
+            const days = r.days_of_week?.split(",").map(Number) || [];
+            if (!days.includes(dayOfWeek)) continue;
+          }
+
+          lastFiredReminderRef.current = currentTimeKey;
+          const name = userRef.current?.first_name || "there";
+          const awakeMsg = (r.prompt || "").replace("{name}", name);
+
+          setHasInteracted(true);
+          setMessages((prev) => [...prev, { id: Date.now().toString(), text: awakeMsg, isUser: false }]);
+          setHistory((prev) => [...prev, { role: "assistant", content: awakeMsg }]);
+          conversationActiveRef.current = true;
+          shouldListenAfterSpeak.current = true;
+          setTimeout(() => speakTextRef.current(awakeMsg, true), 500);
+          touchInactivity();
+          break;
+        }
+      }).catch(() => {});
+    }
+
+    checkDueReminders();
+    const interval = setInterval(checkDueReminders, 60_000);
+    return () => clearInterval(interval);
+  }, [user?.token, audioReady, touchInactivity]);
 
   // ── Unlock audio on first user tap ──
   // On web, the AudioContext is pre-created in handleOrbPress (during the tap gesture).
