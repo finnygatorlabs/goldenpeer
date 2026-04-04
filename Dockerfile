@@ -23,16 +23,25 @@ FROM node:24-alpine
 
 WORKDIR /app
 
-# Install pnpm for runtime (needed for potential runtime dependencies)
+# Install pnpm for runtime
 RUN npm install -g pnpm
 
-# Copy only necessary files from builder
+# Copy built application
 COPY --from=builder /app/artifacts/api-server/dist ./dist
-COPY --from=builder /app/artifacts/api-server/package.json ./package.json
-COPY --from=builder /app/pnpm-lock.yaml ./pnpm-lock.yaml
 
-# Install production dependencies only
-RUN pnpm install --prod --no-frozen-lockfile
+# Copy entire api-server directory (including package.json) to preserve structure
+COPY --from=builder /app/artifacts/api-server ./
+
+# Copy workspace root files needed for dependency resolution
+COPY --from=builder /app/pnpm-workspace.yaml ./
+COPY --from=builder /app/pnpm-lock.yaml ./
+COPY --from=builder /app/package.json ./
+
+# Copy lib dependencies (needed by api-server)
+COPY --from=builder /app/lib ./lib
+
+# Install production dependencies using the workspace lockfile
+RUN pnpm install --prod --frozen-lockfile
 
 # Expose port (Railway will set PORT env var)
 EXPOSE 3000
