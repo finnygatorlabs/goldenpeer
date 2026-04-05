@@ -505,6 +505,60 @@ function updateManifests(manifests, timestamp, baseUrl, assetsByHash) {
   console.log("Manifests updated");
 }
 
+async function buildWebExport(domain) {
+  const webDistDir = path.join(projectRoot, "static-build", "web");
+
+  return new Promise((resolve, reject) => {
+    const env = {
+      ...process.env,
+      EXPO_PUBLIC_DOMAIN: domain,
+      NODE_ENV: "production",
+    };
+
+    const exportProcess = spawn(
+      "pnpm",
+      ["exec", "expo", "export", "--platform", "web", "--output-dir", webDistDir],
+      {
+        stdio: ["ignore", "pipe", "pipe"],
+        cwd: projectRoot,
+        env,
+      },
+    );
+
+    let stderr = "";
+
+    if (exportProcess.stdout) {
+      exportProcess.stdout.on("data", (data) => {
+        const output = data.toString().trim();
+        if (output) console.log(`[Web Export] ${output}`);
+      });
+    }
+    if (exportProcess.stderr) {
+      exportProcess.stderr.on("data", (data) => {
+        const output = data.toString().trim();
+        if (output) {
+          console.error(`[Web Export] ${output}`);
+          stderr += output + "\n";
+        }
+      });
+    }
+
+    exportProcess.on("close", (code) => {
+      if (code === 0) {
+        console.log("Web export complete");
+        resolve();
+      } else {
+        console.error(`Web export failed with code ${code}`);
+        reject(new Error(`Web export failed: ${stderr}`));
+      }
+    });
+
+    exportProcess.on("error", (err) => {
+      reject(new Error(`Web export process error: ${err.message}`));
+    });
+  });
+}
+
 async function main() {
   console.log("Building static Expo Go deployment...");
 
@@ -553,14 +607,18 @@ async function main() {
     updateBundleUrls(timestamp, baseUrl);
   }
 
-  console.log("Updating manifests and creating landing page...");
+  console.log("Updating manifests...");
   updateManifests(manifests, timestamp, baseUrl, assetsByHash);
-
-  console.log("Build complete! Deploy to:", baseUrl);
 
   if (metroProcess) {
     metroProcess.kill();
+    metroProcess = null;
   }
+
+  console.log("Building web export...");
+  await buildWebExport(domain);
+
+  console.log("Build complete! Deploy to:", baseUrl);
   process.exit(0);
 }
 
