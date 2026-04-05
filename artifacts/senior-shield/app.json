@@ -15,12 +15,10 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.seniorshield.app",
-      "googleServicesFile": "./GoogleService-Info.plist"
+      "bundleIdentifier": "com.seniorshield.app"
     },
     "android": {
-      "package": "com.seniorshield.app",
-      "googleServicesFile": "./google-services.json"
+      "package": "com.seniorshield.app"
     },
     "web": {
       "favicon": "./assets/images/icon.png"
