@@ -26,3 +26,6 @@ deploymentTarget = "cloudrun"
 
 [userenv.shared]
 JWT_SECRET = "E4JCfs5nOkOXL9b9WKXuUab3ChXYEbm3EcFuW18nV4CB3VBIOLisZlQ_TUyOx_wp"
+EXPO_PUBLIC_GOOGLE_CLIENT_ID = "1015174744161-aod0e8nofl3ur0b76uaj1c8uvtidn0rr.apps.googleusercontent.com"
+EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID = "1015174744161-make5srl1ookt5f1cnamodgobhu0jcpt.apps.googleusercontent.com"
+EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID = "1015174744161-u2mnmn87q0hkthe96fms5fq3qs11427s.apps.googleusercontent.com"
