@@ -8,5 +8,8 @@
     "startCommand": "pnpm --filter @workspace/api-server start",
     "restartPolicyMaxRetries": 5,
     "restartPolicyWindowMs": 60000
+  },
+  "metadata": {
+    "updated": "2026-04-04T22:20:00Z"
   }
 }
