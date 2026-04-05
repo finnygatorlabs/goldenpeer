@@ -8,29 +8,31 @@ let pool: pg.Pool | null = null;
 let db: ReturnType<typeof drizzle> | null = null;
 
 function ensureInitialized() {
-  if (!process.env.DATABASE_URL) {
-    throw new Error(
-      "DATABASE_URL must be set. Did you forget to provision a database?",
-    );
-  }
   if (!pool) {
-    pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    const databaseUrl = process.env.DATABASE_URL;
+    if (!databaseUrl) {
+      throw new Error(
+        "DATABASE_URL must be set. Did you forget to provision a database?",
+      );
+    }
+    pool = new Pool({ connectionString: databaseUrl });
     db = drizzle(pool, { schema });
   }
+  return { pool, db };
 }
 
-// Use a Proxy to lazily initialize on first access
-export const pool = new Proxy({} as pg.Pool, {
+// Lazy getters - only initialize when actually used
+Object.defineProperty(module.exports, 'pool', {
   get() {
-    ensureInitialized();
-    return pool;
+    const { pool: p } = ensureInitialized();
+    return p;
   },
 });
 
-export const db = new Proxy({} as ReturnType<typeof drizzle>, {
-  get(target, prop) {
-    ensureInitialized();
-    return (db as any)?.[prop];
+Object.defineProperty(module.exports, 'db', {
+  get() {
+    const { db: d } = ensureInitialized();
+    return d;
   },
 });
 
