@@ -18,3 +18,11 @@ externalPort = 3000
 
 [agent]
 expertMode = true
+
+[deployment]
+deploymentTarget = "cloudrun"
+
+[userenv]
+
+[userenv.shared]
+JWT_SECRET = "E4JCfs5nOkOXL9b9WKXuUab3ChXYEbm3EcFuW18nV4CB3VBIOLisZlQ_TUyOx_wp"
