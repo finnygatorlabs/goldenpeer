@@ -137,7 +137,7 @@ export default function LoginScreen() {
   function handleGoogleSignIn() {
     setError("");
     if (!isGoogleConfigured) {
-      setSuccess("Google sign-in will be available once the app is published. Please use Email for now.");
+      setSuccess("Google sign-in is coming soon. Please use Email to sign in.");
       return;
     }
     if (Platform.OS === "web") {
