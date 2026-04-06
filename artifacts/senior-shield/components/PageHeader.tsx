@@ -51,7 +51,7 @@ export default function PageHeader({ showTagline = false, greeting, screenTitle 
   const { ts } = usePreferences();
   const insets = useSafeAreaInsets();
 
-  const topPad = insets.top + (Platform.OS === "web" ? 52 : 0);
+  const topPad = insets.top + (Platform.OS === "web" ? 12 : 0);
 
   return (
     <LinearGradient

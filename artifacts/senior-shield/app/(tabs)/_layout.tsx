@@ -88,7 +88,7 @@ export default function TabLayout() {
         headerShown: false,
         tabBarStyle: {
           position: "absolute",
-          backgroundColor: isIOS ? "transparent" : TAB_BG,
+          backgroundColor: Platform.OS === "web" ? TAB_BG : (isIOS ? "transparent" : TAB_BG),
           borderTopWidth: 0,
           elevation: 0,
           paddingBottom: insets.bottom > 0 ? insets.bottom : 8,

@@ -19,6 +19,43 @@ const TEMPLATE_PATH = path.resolve(__dirname, "templates", "landing-page.html");
 const basePath = (process.env.BASE_PATH || "/").replace(/\/+$/, "");
 const hasWebBuild = fs.existsSync(WEB_ROOT) && fs.existsSync(path.join(WEB_ROOT, "index.html"));
 
+let webIndexHtml = "";
+if (hasWebBuild) {
+  webIndexHtml = fs.readFileSync(path.join(WEB_ROOT, "index.html"), "utf-8");
+  webIndexHtml = webIndexHtml.replace(
+    /<meta name="viewport"[^>]*>/,
+    '<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, shrink-to-fit=no" />'
+  );
+  const extraMeta = [
+    '<meta name="apple-mobile-web-app-capable" content="yes" />',
+    '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />',
+    '<meta name="mobile-web-app-capable" content="yes" />',
+    '<meta name="theme-color" content="#0A1628" />',
+    '<meta name="apple-mobile-web-app-title" content="SeniorShield" />',
+    '<link rel="apple-touch-icon" href="/logo-shield.png" />',
+  ].join("\n    ");
+  webIndexHtml = webIndexHtml.replace("</head>", `    ${extraMeta}\n  </head>`);
+  const extraCss = `
+      body {
+        margin: 0;
+        padding: 0;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+        background-color: #0A1628;
+        -webkit-text-size-adjust: 100%;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-overflow-scrolling: touch;
+      }
+      input, textarea, select { font-size: 16px !important; }
+  `;
+  webIndexHtml = webIndexHtml.replace("</style>", `${extraCss}    </style>`);
+}
+
 const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
   ".js": "application/javascript; charset=utf-8",
@@ -93,8 +130,17 @@ function serveWebFile(urlPath, res) {
     return;
   }
 
-  if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
-    filePath = path.join(WEB_ROOT, "index.html");
+  const isSPA = !fs.existsSync(filePath) || fs.statSync(filePath).isDirectory();
+  if (isSPA) {
+    res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+    res.end(webIndexHtml);
+    return;
+  }
+
+  if (filePath === path.join(WEB_ROOT, "index.html")) {
+    res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+    res.end(webIndexHtml);
+    return;
   }
 
   const ext = path.extname(filePath).toLowerCase();
