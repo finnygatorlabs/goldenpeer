@@ -11,6 +11,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { useFocusEffect } from "expo-router";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
 import { usePreferences } from "@/context/PreferencesContext";
@@ -223,6 +224,12 @@ export default function HistoryScreen() {
   useEffect(() => {
     fetchSessions();
   }, [fetchSessions]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchSessions(true);
+    }, [fetchSessions])
+  );
 
   async function deleteSession(id: string) {
     if (!user?.token) return;

@@ -945,13 +945,15 @@ export default function HomeScreen() {
       setHistory(newHistory);
 
       const saveToken = userRef.current?.token;
-      if (!sessionIdRef.current) {
-        conversationApi.create(newHistory, saveToken)
-          .then(d => { if (d?.id) sessionIdRef.current = d.id; })
-          .catch(() => {});
-      } else {
-        conversationApi.update(sessionIdRef.current, newHistory, saveToken)
-          .catch(() => {});
+      try {
+        if (!sessionIdRef.current) {
+          const d = await conversationApi.create(newHistory, saveToken);
+          if (d?.id) sessionIdRef.current = d.id;
+        } else {
+          await conversationApi.update(sessionIdRef.current, newHistory, saveToken);
+        }
+      } catch (saveErr) {
+        console.warn("Conversation save failed:", saveErr);
       }
 
       // Gapless TTS on web: pre-fetch all sentence chunks in parallel and schedule
@@ -1038,7 +1040,7 @@ export default function HomeScreen() {
     ? `${assistantName} is speaking`
     : !audioReady
     ? "Tap to start"
-    : "Tap to speak";
+    : "Tap & speak";
 
 
   const orbBottomPad = tabBarHeight + insets.bottom + 8;
@@ -1245,8 +1247,12 @@ export default function HomeScreen() {
               style={[
                 styles.statusLabel,
                 {
-                  color: isListening ? "#0891B2" : isSpeaking ? "#2563EB" : theme.textSecondary,
-                  fontSize: ts.sm,
+                  color: isListening ? "#0891B2" : isSpeaking ? "#2563EB" : "#E2E8F0",
+                  fontSize: ts.base,
+                  fontWeight: "600",
+                  textShadowColor: "rgba(0,0,0,0.5)",
+                  textShadowOffset: { width: 0, height: 1 },
+                  textShadowRadius: 3,
                 },
               ]}
               numberOfLines={1}

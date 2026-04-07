@@ -15,6 +15,76 @@ import { Ionicons } from "@expo/vector-icons";
 const FULL_SIZE = 176;
 const COMPACT_SIZE = 100;
 
+function SoundWaveBars({ isSpeaking }: { isSpeaking: boolean }) {
+  const barCount = 5;
+  const bars = Array.from({ length: barCount }, (_, i) => i);
+
+  return (
+    <View style={soundWaveStyles.container}>
+      {bars.map((i) => (
+        <SoundWaveBar key={i} index={i} isSpeaking={isSpeaking} />
+      ))}
+    </View>
+  );
+}
+
+function SoundWaveBar({ index, isSpeaking }: { index: number; isSpeaking: boolean }) {
+  const height = useSharedValue(8);
+  const barOpacity = useSharedValue(0);
+
+  useEffect(() => {
+    cancelAnimation(height);
+    cancelAnimation(barOpacity);
+
+    if (isSpeaking) {
+      barOpacity.value = withTiming(0.85, { duration: 200 });
+      const minH = 6 + index * 2;
+      const maxH = 18 + (index % 3) * 12;
+      const dur = 280 + (index % 3) * 120;
+      height.value = withDelay(
+        index * 80,
+        withRepeat(
+          withSequence(
+            withTiming(maxH, { duration: dur, easing: Easing.inOut(Easing.ease) }),
+            withTiming(minH, { duration: dur, easing: Easing.inOut(Easing.ease) })
+          ),
+          -1,
+          true
+        )
+      );
+    } else {
+      barOpacity.value = withTiming(0, { duration: 300 });
+      height.value = withTiming(8, { duration: 300 });
+    }
+  }, [isSpeaking]);
+
+  const animStyle = useAnimatedStyle(() => ({
+    height: height.value,
+    opacity: barOpacity.value,
+  }));
+
+  return (
+    <Reanimated.View style={[soundWaveStyles.bar, animStyle]} />
+  );
+}
+
+const soundWaveStyles = StyleSheet.create({
+  container: {
+    position: "absolute",
+    bottom: 12,
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "center",
+    gap: 3,
+    zIndex: 10,
+  },
+  bar: {
+    width: 3,
+    borderRadius: 2,
+    backgroundColor: "#93C5FD",
+  },
+});
+
 function PulseRing({ color, delay = 0, borderWidth = 2 }: { color: string; delay?: number; borderWidth?: number }) {
   const scale = useSharedValue(0.5);
   const opacity = useSharedValue(0.9);
@@ -213,6 +283,8 @@ export default function FluidOrb({ onPress, isListening, isSpeaking, audioReady,
         <Reanimated.View style={[styles.iconWrap, iconStyle, { opacity: iconOpacity }]}>
           <Ionicons name={icon} size={iconSize} color="#FFFFFF" />
         </Reanimated.View>
+
+        <SoundWaveBars isSpeaking={isSpeaking} />
       </Reanimated.View>
 
       {isIdle && (
@@ -263,9 +335,9 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
   },
   compactLabel: {
-    color: "#94A3B8",
-    fontSize: 13,
-    fontFamily: "Inter_400Regular",
+    color: "#E2E8F0",
+    fontSize: 15,
+    fontFamily: "Inter_600SemiBold",
     textAlign: "center",
     marginTop: 6,
     letterSpacing: 0.3,
