@@ -26,6 +26,7 @@ The project is structured as a pnpm monorepo using Node.js 24 and TypeScript 5.9
 - Authentication: Uses JWT tokens with `AsyncStorage`, `AuthContext`, and supports social sign-in (Google, Apple). Global session expiry detection is implemented.
 - Google Auth: Uses `expo-auth-session/providers/google` with fallback IDs to prevent crashes when native client IDs aren't configured. Platform-specific: `EXPO_PUBLIC_GOOGLE_CLIENT_ID` (web), `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` (iOS), `EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID` (Android). Button gracefully disables with user-facing message when IDs are missing.
 - Platform Safety: All `window.*`, `document.*`, and `localStorage` usage is guarded by `Platform.OS === "web"` checks. Native-only features (Haptics, Linking) are guarded by `Platform.OS !== "web"`. `Alert.alert` is used on native; web uses inline error/info components.
+- Audio Waveform Visualizer (`components/AudioWaveform.tsx`): Web-only canvas-based waveform below the voice orb. Uses Web Audio API `AnalyserNode` connected to the TTS audio pipeline for real-time frequency visualization. Three layered sine waves (purple, blue, light purple) with smoothed amplitude and gradient fill. RAF loop auto-stops when idle to save CPU. The analyser is created once with the AudioContext and connected to destination; TTS source nodes connect through the analyser for frequency data.
 - Centralized API service (`services/api.ts`) with a custom event system for cross-cutting concerns.
 
 **Backend API (api-server)**:
