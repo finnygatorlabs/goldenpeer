@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { Pressable, StyleSheet, View, Platform, Text } from "react-native";
+import CircularWaveRing from "./CircularWaveRing";
 import Reanimated, {
   Easing,
   cancelAnimation,
@@ -122,9 +123,10 @@ interface FluidOrbProps {
   isSpeaking: boolean;
   audioReady: boolean;
   isIdle?: boolean;
+  analyser?: AnalyserNode | null;
 }
 
-export default function FluidOrb({ onPress, isListening, isSpeaking, audioReady, isIdle = false }: FluidOrbProps) {
+export default function FluidOrb({ onPress, isListening, isSpeaking, audioReady, isIdle = false, analyser = null }: FluidOrbProps) {
   const iconScale = useSharedValue(1);
   const glowOpacity = useSharedValue(0);
   const orbSize = useSharedValue(isIdle ? COMPACT_SIZE : FULL_SIZE);
@@ -191,6 +193,17 @@ export default function FluidOrb({ onPress, isListening, isSpeaking, audioReady,
       onPress={onPress}
       style={({ pressed }) => [{ opacity: pressed ? 0.9 : 1 }]}
     >
+      <View style={{ alignItems: "center", justifyContent: "center" }}>
+      {Platform.OS === "web" && (isListening || isSpeaking) && (
+        <View style={{ position: "absolute", width: FULL_SIZE + 32, height: FULL_SIZE + 32, left: -(FULL_SIZE + 32 - (isIdle ? COMPACT_SIZE : FULL_SIZE)) / 2, top: -(FULL_SIZE + 32 - (isIdle ? COMPACT_SIZE : FULL_SIZE)) / 2 }}>
+          <CircularWaveRing
+            size={FULL_SIZE + 32}
+            isListening={isListening}
+            isSpeaking={isSpeaking}
+            analyser={analyser}
+          />
+        </View>
+      )}
       <Reanimated.View style={[styles.wrapper, wrapperStyle]}>
         <OrbVideo size={isIdle ? COMPACT_SIZE : FULL_SIZE} />
 
@@ -214,6 +227,7 @@ export default function FluidOrb({ onPress, isListening, isSpeaking, audioReady,
           <Ionicons name={icon} size={iconSize} color="#FFFFFF" />
         </Reanimated.View>
       </Reanimated.View>
+      </View>
 
       {isIdle && (
         <Text style={styles.compactLabel}>Tap to speak</Text>

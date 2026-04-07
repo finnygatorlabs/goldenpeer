@@ -155,7 +155,7 @@ function getWebSpeech(): any {
 
 // ── Main screen ────────────────────────────────────────────────────────────
 export default function HomeScreen() {
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
   const { user } = useAuth();
@@ -282,6 +282,7 @@ export default function HomeScreen() {
   const startListeningRef = useRef<() => void>(() => {});
   // Web Audio API — more reliable than HTML Audio in iframes (no autoplay policy issues)
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
   const audioSrcNodeRef = useRef<AudioBufferSourceNode | null>(null);
   // AbortController for the in-flight TTS fetch — cancel it when a new TTS call starts
   const abortTTSRef = useRef<AbortController | null>(null);
@@ -358,7 +359,11 @@ export default function HomeScreen() {
 
           const srcNode = ctx.createBufferSource();
           srcNode.buffer = audioBuffer;
-          srcNode.connect(ctx.destination);
+          if (analyserRef.current) {
+            srcNode.connect(analyserRef.current);
+          } else {
+            srcNode.connect(ctx.destination);
+          }
           audioSrcNodeRef.current = srcNode;
 
           srcNode.onended = () => {
@@ -495,7 +500,11 @@ export default function HomeScreen() {
       for (const buf of buffers) {
         const src = ctx.createBufferSource();
         src.buffer = buf;
-        src.connect(ctx.destination);
+        if (analyserRef.current) {
+          src.connect(analyserRef.current);
+        } else {
+          src.connect(ctx.destination);
+        }
         src.start(startTime);
         startTime += buf.duration;
         nodes.push(src);
@@ -830,6 +839,11 @@ export default function HomeScreen() {
       try {
         const ctx = new (window as any).AudioContext();
         audioCtxRef.current = ctx;
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 256;
+        analyser.smoothingTimeConstant = 0.7;
+        analyser.connect(ctx.destination);
+        analyserRef.current = analyser;
         const silentBuf = ctx.createBuffer(1, 1, 22050);
         const silentSrc = ctx.createBufferSource();
         silentSrc.buffer = silentBuf;
@@ -991,6 +1005,11 @@ export default function HomeScreen() {
       try {
         const ctx = new (window as any).AudioContext();
         audioCtxRef.current = ctx;
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 256;
+        analyser.smoothingTimeConstant = 0.7;
+        analyser.connect(ctx.destination);
+        analyserRef.current = analyser;
         const buf = ctx.createBuffer(1, 1, 22050);
         const src = ctx.createBufferSource();
         src.buffer = buf;
@@ -1247,12 +1266,16 @@ export default function HomeScreen() {
               style={[
                 styles.statusLabel,
                 {
-                  color: isListening ? "#0891B2" : isSpeaking ? "#2563EB" : "#E2E8F0",
-                  fontSize: ts.base,
-                  fontWeight: "600",
-                  textShadowColor: "rgba(0,0,0,0.5)",
+                  color: isListening
+                    ? (isDark ? "#67E8F9" : "#0E7490")
+                    : isSpeaking
+                    ? (isDark ? "#93C5FD" : "#1D4ED8")
+                    : (isDark ? "#E2E8F0" : "#334155"),
+                  fontSize: ts.lg,
+                  fontWeight: "700",
+                  textShadowColor: isDark ? "rgba(0,0,0,0.7)" : "rgba(0,0,0,0.15)",
                   textShadowOffset: { width: 0, height: 1 },
-                  textShadowRadius: 3,
+                  textShadowRadius: 4,
                 },
               ]}
               numberOfLines={1}
@@ -1293,6 +1316,7 @@ export default function HomeScreen() {
             isSpeaking={isSpeaking}
             audioReady={audioReady}
             isIdle={isOrbCompact}
+            analyser={analyserRef.current}
           />
 
           {/* "Type instead" — subtle pill button */}
