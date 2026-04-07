@@ -22,7 +22,6 @@ import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
 import { usePreferences } from "@/context/PreferencesContext";
 import FluidOrb from "@/components/FluidOrb";
-import AudioWaveform from "@/components/AudioWaveform";
 import PageHeader from "@/components/PageHeader";
 import MicPermissionModal from "@/components/MicPermissionModal";
 import { useRouter } from "expo-router";
@@ -283,7 +282,6 @@ export default function HomeScreen() {
   const startListeningRef = useRef<() => void>(() => {});
   // Web Audio API — more reliable than HTML Audio in iframes (no autoplay policy issues)
   const audioCtxRef = useRef<AudioContext | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
   const audioSrcNodeRef = useRef<AudioBufferSourceNode | null>(null);
   // AbortController for the in-flight TTS fetch — cancel it when a new TTS call starts
   const abortTTSRef = useRef<AbortController | null>(null);
@@ -360,11 +358,7 @@ export default function HomeScreen() {
 
           const srcNode = ctx.createBufferSource();
           srcNode.buffer = audioBuffer;
-          if (analyserRef.current) {
-            srcNode.connect(analyserRef.current);
-          } else {
-            srcNode.connect(ctx.destination);
-          }
+          srcNode.connect(ctx.destination);
           audioSrcNodeRef.current = srcNode;
 
           srcNode.onended = () => {
@@ -501,11 +495,7 @@ export default function HomeScreen() {
       for (const buf of buffers) {
         const src = ctx.createBufferSource();
         src.buffer = buf;
-        if (analyserRef.current) {
-          src.connect(analyserRef.current);
-        } else {
-          src.connect(ctx.destination);
-        }
+        src.connect(ctx.destination);
         src.start(startTime);
         startTime += buf.duration;
         nodes.push(src);
@@ -840,11 +830,6 @@ export default function HomeScreen() {
       try {
         const ctx = new (window as any).AudioContext();
         audioCtxRef.current = ctx;
-        const analyser = ctx.createAnalyser();
-        analyser.fftSize = 256;
-        analyser.smoothingTimeConstant = 0.7;
-        analyser.connect(ctx.destination);
-        analyserRef.current = analyser;
         const silentBuf = ctx.createBuffer(1, 1, 22050);
         const silentSrc = ctx.createBufferSource();
         silentSrc.buffer = silentBuf;
@@ -1006,11 +991,6 @@ export default function HomeScreen() {
       try {
         const ctx = new (window as any).AudioContext();
         audioCtxRef.current = ctx;
-        const analyser = ctx.createAnalyser();
-        analyser.fftSize = 256;
-        analyser.smoothingTimeConstant = 0.7;
-        analyser.connect(ctx.destination);
-        analyserRef.current = analyser;
         const buf = ctx.createBuffer(1, 1, 22050);
         const src = ctx.createBufferSource();
         src.buffer = buf;
@@ -1314,18 +1294,6 @@ export default function HomeScreen() {
             audioReady={audioReady}
             isIdle={isOrbCompact}
           />
-
-          {Platform.OS === "web" && (
-            <View style={{ alignItems: "center", marginTop: 4, height: 44 }}>
-              <AudioWaveform
-                analyser={analyserRef.current}
-                isSpeaking={isSpeaking}
-                isListening={isListening}
-                width={260}
-                height={44}
-              />
-            </View>
-          )}
 
           {/* "Type instead" — subtle pill button */}
           <Pressable
