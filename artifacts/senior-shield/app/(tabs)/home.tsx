@@ -50,17 +50,43 @@ function stripMarkdown(text: string): string {
 // First chunk plays immediately (fast); remaining chunks are queued and
 // pre-fetched while the first is still playing — dramatically cuts perceived delay.
 function splitIntoChunks(text: string): string[] {
-  // Split at sentence-ending punctuation, keeping each chunk ≤ 220 chars
-  const parts = text.match(/[^.!?]+[.!?]+(?:\s|$)|[^.!?]+$/g) || [text];
+  // Split at sentence boundaries: period/!/? followed by whitespace or end,
+  // but NOT when the punctuation is inside quotes (e.g. scripture verses).
+  // We use a two-pass approach: first protect quoted content, then split.
+  const sentences: string[] = [];
+  let current = "";
+  let inQuote = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+
+    if (ch === '"' || ch === '\u201C' || ch === '\u201D') {
+      inQuote = !inQuote;
+      current += ch;
+      continue;
+    }
+
+    current += ch;
+
+    if (!inQuote && (ch === '.' || ch === '!' || ch === '?')) {
+      const next = text[i + 1];
+      if (!next || next === ' ' || next === '\n') {
+        sentences.push(current.trim());
+        current = "";
+      }
+    }
+  }
+  if (current.trim()) sentences.push(current.trim());
+
   const chunks: string[] = [];
   let buf = "";
-  for (const s of parts) {
-    const candidate = (buf + s).trim();
-    if (candidate.length > 220 && buf) {
+  for (const s of sentences) {
+    const candidate = buf ? (buf + " " + s) : s;
+    if (candidate.length > 300 && buf) {
       chunks.push(buf.trim());
       buf = s;
     } else {
-      buf = (buf + s);
+      buf = candidate;
     }
   }
   if (buf.trim()) chunks.push(buf.trim());
