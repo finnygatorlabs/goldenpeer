@@ -669,13 +669,13 @@ export default function HomeScreen() {
         }
         setInterimText(confirmed + current);
 
-        // Reset the 3-second silence timer on every new word detected.
-        // Only after 3 consecutive seconds of no speech do we stop and send.
+        // Reset the silence timer on every new word detected.
+        // Only after 1.5 consecutive seconds of no speech do we stop and send.
         if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
         silenceTimerRef.current = setTimeout(() => {
           silenceTimerRef.current = null;
           recognitionRef.current?.stop(); // triggers onend → sendMessage
-        }, 3000);
+        }, 1500);
       };
 
       r.onend = () => {
@@ -1269,26 +1269,36 @@ export default function HomeScreen() {
               </Text>
             </View>
           ) : (
-            <Text
-              style={[
-                styles.statusLabel,
-                {
-                  color: isListening
-                    ? (isDark ? "#67E8F9" : "#0E7490")
-                    : isSpeaking
-                    ? (isDark ? "#93C5FD" : "#1D4ED8")
-                    : (isDark ? "#E2E8F0" : "#334155"),
-                  fontSize: ts.lg,
-                  fontWeight: "700",
-                  textShadowColor: isDark ? "rgba(0,0,0,0.7)" : "rgba(0,0,0,0.15)",
-                  textShadowOffset: { width: 0, height: 1 },
-                  textShadowRadius: 4,
-                },
-              ]}
-              numberOfLines={1}
-            >
-              {statusLabel}
-            </Text>
+            <View style={{
+              backgroundColor: isDark ? "rgba(15,23,42,0.85)" : "rgba(255,255,255,0.9)",
+              paddingHorizontal: 14,
+              paddingVertical: 5,
+              borderRadius: 16,
+              borderWidth: 1,
+              borderColor: isListening
+                ? (isDark ? "rgba(103,232,249,0.4)" : "rgba(14,116,144,0.3)")
+                : isSpeaking
+                ? (isDark ? "rgba(147,197,253,0.4)" : "rgba(29,78,216,0.3)")
+                : (isDark ? "rgba(226,232,240,0.15)" : "rgba(51,65,85,0.15)"),
+            }}>
+              <Text
+                style={[
+                  styles.statusLabel,
+                  {
+                    color: isListening
+                      ? (isDark ? "#67E8F9" : "#0E7490")
+                      : isSpeaking
+                      ? (isDark ? "#93C5FD" : "#1D4ED8")
+                      : (isDark ? "#CBD5E1" : "#475569"),
+                    fontSize: ts.sm,
+                    fontWeight: "600",
+                  },
+                ]}
+                numberOfLines={1}
+              >
+                {statusLabel}
+              </Text>
+            </View>
           )}
         </View>
       )}
