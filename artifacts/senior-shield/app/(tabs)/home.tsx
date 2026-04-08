@@ -282,7 +282,6 @@ export default function HomeScreen() {
   const startListeningRef = useRef<() => void>(() => {});
   // Web Audio API — more reliable than HTML Audio in iframes (no autoplay policy issues)
   const audioCtxRef = useRef<AudioContext | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
   const audioSrcNodeRef = useRef<AudioBufferSourceNode | null>(null);
   // AbortController for the in-flight TTS fetch — cancel it when a new TTS call starts
   const abortTTSRef = useRef<AbortController | null>(null);
@@ -359,11 +358,7 @@ export default function HomeScreen() {
 
           const srcNode = ctx.createBufferSource();
           srcNode.buffer = audioBuffer;
-          if (analyserRef.current) {
-            srcNode.connect(analyserRef.current);
-          } else {
-            srcNode.connect(ctx.destination);
-          }
+          srcNode.connect(ctx.destination);
           audioSrcNodeRef.current = srcNode;
 
           srcNode.onended = () => {
@@ -500,11 +495,7 @@ export default function HomeScreen() {
       for (const buf of buffers) {
         const src = ctx.createBufferSource();
         src.buffer = buf;
-        if (analyserRef.current) {
-          src.connect(analyserRef.current);
-        } else {
-          src.connect(ctx.destination);
-        }
+        src.connect(ctx.destination);
         src.start(startTime);
         startTime += buf.duration;
         nodes.push(src);
@@ -839,11 +830,6 @@ export default function HomeScreen() {
       try {
         const ctx = new (window as any).AudioContext();
         audioCtxRef.current = ctx;
-        const analyser = ctx.createAnalyser();
-        analyser.fftSize = 256;
-        analyser.smoothingTimeConstant = 0.7;
-        analyser.connect(ctx.destination);
-        analyserRef.current = analyser;
         const silentBuf = ctx.createBuffer(1, 1, 22050);
         const silentSrc = ctx.createBufferSource();
         silentSrc.buffer = silentBuf;
@@ -1005,11 +991,6 @@ export default function HomeScreen() {
       try {
         const ctx = new (window as any).AudioContext();
         audioCtxRef.current = ctx;
-        const analyser = ctx.createAnalyser();
-        analyser.fftSize = 256;
-        analyser.smoothingTimeConstant = 0.7;
-        analyser.connect(ctx.destination);
-        analyserRef.current = analyser;
         const buf = ctx.createBuffer(1, 1, 22050);
         const src = ctx.createBufferSource();
         src.buffer = buf;
@@ -1316,7 +1297,6 @@ export default function HomeScreen() {
             isSpeaking={isSpeaking}
             audioReady={audioReady}
             isIdle={isOrbCompact}
-            analyser={analyserRef.current}
           />
 
           {/* "Type instead" — subtle pill button */}
