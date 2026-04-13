@@ -22,6 +22,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
 import { usePreferences } from "@/context/PreferencesContext";
 import FluidOrb from "@/components/FluidOrb";
+import DayNightBackground from "@/components/DayNightBackground";
 import PageHeader from "@/components/PageHeader";
 import MicPermissionModal from "@/components/MicPermissionModal";
 import { useRouter } from "expo-router";
@@ -1300,16 +1301,16 @@ export default function HomeScreen() {
             styles.orbFooter,
             {
               bottom: 0,
-              backgroundColor: theme.background,
               paddingTop: 16,
-              // pad content above the tab bar + safe area so nothing overlaps
               paddingBottom: orbBottomPad,
             },
           ]}
         >
+          <DayNightBackground isDark={isDark} />
+
           {/* Gradient fade — messages dissolve into the orb panel */}
           <LinearGradient
-            colors={["transparent", theme.background]}
+            colors={["transparent", isDark ? "#0B1A2B" : "#E0F6FF"]}
             style={[styles.orbFade, { pointerEvents: "none" }]}
           />
 
