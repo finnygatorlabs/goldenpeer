@@ -9,7 +9,7 @@ import { Ionicons, Feather } from "@expo/vector-icons";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack, router } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import { Platform } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
@@ -96,22 +96,15 @@ export default function RootLayout() {
     ...Feather.font,
   });
 
-  const [fontTimedOut, setFontTimedOut] = useState(false);
+  const isWeb = Platform.OS === "web";
 
   useEffect(() => {
-    if (Platform.OS === "web") {
-      const timer = setTimeout(() => setFontTimedOut(true), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (fontsLoaded || fontError || fontTimedOut) {
+    if (fontsLoaded || fontError || isWeb) {
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded, fontError, fontTimedOut]);
+  }, [fontsLoaded, fontError, isWeb]);
 
-  if (!fontsLoaded && !fontError && !fontTimedOut) return null;
+  if (!isWeb && !fontsLoaded && !fontError) return null;
 
   return (
     <SafeAreaProvider>

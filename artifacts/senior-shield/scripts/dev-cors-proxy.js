@@ -35,16 +35,18 @@ const expo = spawn(
 );
 expo.on("exit", (code) => process.exit(code ?? 1));
 
-const CORS_HEADERS = {
+const EXTRA_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS, POST",
   "Access-Control-Allow-Headers": "*",
   "Access-Control-Expose-Headers": "*",
+  "X-Frame-Options": "ALLOWALL",
+  "Content-Security-Policy": "default-src * 'unsafe-inline' 'unsafe-eval' data: blob: ws: wss:; img-src * data: blob:; font-src * data:; connect-src * ws: wss:; script-src * 'unsafe-inline' 'unsafe-eval' blob:; style-src * 'unsafe-inline';",
 };
 
 const proxy = http.createServer((req, res) => {
   if (req.method === "OPTIONS") {
-    res.writeHead(204, CORS_HEADERS);
+    res.writeHead(204, EXTRA_HEADERS);
     res.end();
     return;
   }
@@ -52,13 +54,15 @@ const proxy = http.createServer((req, res) => {
   const proxyReq = http.request(
     { hostname: "127.0.0.1", port: METRO_PORT, path: req.url, method: req.method, headers: req.headers },
     (proxyRes) => {
-      const headers = { ...proxyRes.headers, ...CORS_HEADERS };
+      const headers = { ...proxyRes.headers };
+      Object.entries(EXTRA_HEADERS).forEach(([k, v]) => { headers[k] = v; });
+      delete headers["x-content-type-options"];
       res.writeHead(proxyRes.statusCode || 200, headers);
       proxyRes.pipe(res);
     }
   );
   proxyReq.on("error", (err) => {
-    res.writeHead(502, CORS_HEADERS);
+    res.writeHead(502, EXTRA_HEADERS);
     res.end("Bad Gateway: " + err.message);
   });
   req.pipe(proxyReq);
