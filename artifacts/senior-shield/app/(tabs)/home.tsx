@@ -1315,7 +1315,13 @@ export default function HomeScreen() {
           />
 
           {/* Ambient glow behind the orb */}
-          <View style={styles.orbGlow} />
+          <View style={[styles.orbGlow, {
+            backgroundColor: isDark ? "rgba(37,99,235,0.08)" : "rgba(224,246,255,0.15)",
+            shadowColor: isDark ? "#60A5FA" : "#E0F6FF",
+            shadowOpacity: isDark ? 0.12 : 0.25,
+            shadowRadius: isDark ? 50 : 60,
+            elevation: isDark ? 25 : 30,
+          }]} />
 
           {/* Orb — compact when idle, full size when active */}
           <FluidOrb
@@ -1552,12 +1558,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: "rgba(37,99,235,0.08)",
-    shadowColor: "#2563EB",
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 22,
-    elevation: 0,
     alignSelf: "center",
   },
   statusRow: {
