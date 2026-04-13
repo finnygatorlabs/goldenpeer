@@ -15,12 +15,6 @@ import { Ionicons } from "@expo/vector-icons";
 const FULL_SIZE = 176;
 const COMPACT_SIZE = 100;
 
-const COLORS = {
-  idle: { accent: "#F59E0B", accentAlt: "#FCD34D", shadow: "#F59E0B", overlay: "#F59E0B" },
-  listening: { accent: "#10B981", accentAlt: "#6EE7B7", shadow: "#10B981", overlay: "#10B981" },
-  speaking: { accent: "#60A5FA", accentAlt: "#93C5FD", shadow: "#3B82F6", overlay: "#60A5FA" },
-};
-
 function PulseRing({ color, delay = 0, borderWidth = 2, duration = 2400 }: { color: string; delay?: number; borderWidth?: number; duration?: number }) {
   const scale = useSharedValue(0.5);
   const opacity = useSharedValue(0.9);
@@ -140,7 +134,8 @@ export default function FluidOrb({ onPress, isListening, isSpeaking, audioReady,
     orbSize.value = withTiming(target, { duration: 320, easing: Easing.inOut(Easing.ease) });
   }, [isIdle]);
 
-  const palette = isListening ? COLORS.listening : isSpeaking ? COLORS.speaking : COLORS.idle;
+  const accent = isListening ? "#10B981" : "#60A5FA";
+  const accentAlt = isListening ? "#6EE7B7" : "#93C5FD";
 
   useEffect(() => {
     cancelAnimation(iconScale);
@@ -152,7 +147,7 @@ export default function FluidOrb({ onPress, isListening, isSpeaking, audioReady,
         -1, false
       );
       glowOpacity.value = withRepeat(
-        withSequence(withTiming(0.28, { duration: 400 }), withTiming(0.10, { duration: 400 })),
+        withSequence(withTiming(0.25, { duration: 400 }), withTiming(0.08, { duration: 400 })),
         -1, false
       );
     } else if (isSpeaking) {
@@ -161,7 +156,7 @@ export default function FluidOrb({ onPress, isListening, isSpeaking, audioReady,
         -1, false
       );
       glowOpacity.value = withRepeat(
-        withSequence(withTiming(0.20, { duration: 700 }), withTiming(0.06, { duration: 700 })),
+        withSequence(withTiming(0.18, { duration: 700 }), withTiming(0.05, { duration: 700 })),
         -1, false
       );
     } else {
@@ -169,10 +164,7 @@ export default function FluidOrb({ onPress, isListening, isSpeaking, audioReady,
         withSequence(withTiming(1.04, { duration: 2500 }), withTiming(0.98, { duration: 2500 })),
         -1, false
       );
-      glowOpacity.value = withRepeat(
-        withSequence(withTiming(0.12, { duration: 2500 }), withTiming(0.04, { duration: 2500 })),
-        -1, false
-      );
+      glowOpacity.value = withTiming(0);
     }
   }, [isListening, isSpeaking]);
 
@@ -191,7 +183,7 @@ export default function FluidOrb({ onPress, isListening, isSpeaking, audioReady,
   }));
 
   const icon: any = isListening ? "stop-circle" : isSpeaking ? "volume-high" : "mic";
-  const iconOpacity = isListening || isSpeaking ? 0.50 : 0.32;
+  const iconOpacity = isListening || isSpeaking ? 0.45 : 0.28;
   const iconSize = isIdle ? 28 : 44;
 
   return (
@@ -199,28 +191,22 @@ export default function FluidOrb({ onPress, isListening, isSpeaking, audioReady,
       onPress={onPress}
       style={({ pressed }) => [{ opacity: pressed ? 0.9 : 1 }]}
     >
-      <Reanimated.View style={[styles.wrapper, wrapperStyle, { shadowColor: palette.shadow }]}>
+      <Reanimated.View style={[styles.wrapper, wrapperStyle]}>
         <OrbVideo size={isIdle ? COMPACT_SIZE : FULL_SIZE} />
 
         <Reanimated.View
           style={[
             StyleSheet.absoluteFillObject,
-            { borderRadius: FULL_SIZE / 2, backgroundColor: palette.overlay },
+            { borderRadius: FULL_SIZE / 2, backgroundColor: accent },
             glowStyle,
           ]}
         />
 
         {(isListening || isSpeaking) && (
           <View style={StyleSheet.absoluteFillObject}>
-            <PulseRing color={palette.accent} delay={0} borderWidth={2.5} duration={2400} />
-            <PulseRing color={palette.accentAlt} delay={800} borderWidth={2} duration={2400} />
-            <PulseRing color={palette.accent} delay={1600} borderWidth={1.5} duration={2400} />
-          </View>
-        )}
-
-        {!isListening && !isSpeaking && (
-          <View style={StyleSheet.absoluteFillObject}>
-            <PulseRing color={palette.accent} delay={0} borderWidth={1.5} duration={5000} />
+            <PulseRing color={accent} delay={0} borderWidth={2.5} duration={2400} />
+            <PulseRing color={accentAlt} delay={800} borderWidth={2} duration={2400} />
+            <PulseRing color={accent} delay={1600} borderWidth={1.5} duration={2400} />
           </View>
         )}
 
@@ -242,10 +228,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     overflow: "hidden",
     backgroundColor: "#04061A",
+    shadowColor: "#3B82F6",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.45,
-    shadowRadius: 18,
-    elevation: 10,
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 8,
   },
   stateOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -269,10 +256,10 @@ const styles = StyleSheet.create({
     borderRadius: 26,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(0,0,0,0.22)",
+    backgroundColor: "rgba(0,0,0,0.25)",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.7,
+    shadowOpacity: 0.8,
     shadowRadius: 6,
   },
   compactLabel: {
