@@ -1,5 +1,4 @@
 uploads = []
-outputs = []
 
 [[generated]]
 id = "gZg8Ccxe9vouU39ULpvyt"
@@ -12,3 +11,15 @@ id = "6txcqRWpCYTaJJZwYrTQg"
 uri = "file://artifacts/senior-shield/assets/abstract-login-bg.png"
 type = "image"
 title = "generated_image"
+
+[[outputs]]
+id = "Qo-6eN1AnSmtSmLBZUCr8"
+uri = "file://exports/FluidOrb.txt"
+type = "text"
+title = "FluidOrb.tsx - Orb Component (full code)"
+
+[[outputs]]
+id = "9qKtRVv_URJKtLphnD4Vr"
+uri = "file://exports/home.txt"
+type = "text"
+title = "home.tsx - Home Screen with voice state & orb integration (full code)"
