@@ -1330,6 +1330,7 @@ export default function HomeScreen() {
             isSpeaking={isSpeaking}
             audioReady={audioReady}
             isIdle={isOrbCompact}
+            isDark={isDark}
           />
 
           {/* "Type instead" — subtle pill button */}

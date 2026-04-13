@@ -122,9 +122,10 @@ interface FluidOrbProps {
   isSpeaking: boolean;
   audioReady: boolean;
   isIdle?: boolean;
+  isDark?: boolean;
 }
 
-export default function FluidOrb({ onPress, isListening, isSpeaking, audioReady, isIdle = false }: FluidOrbProps) {
+export default function FluidOrb({ onPress, isListening, isSpeaking, audioReady, isIdle = false, isDark = true }: FluidOrbProps) {
   const iconScale = useSharedValue(1);
   const glowOpacity = useSharedValue(0);
   const orbSize = useSharedValue(isIdle ? COMPACT_SIZE : FULL_SIZE);
@@ -191,7 +192,14 @@ export default function FluidOrb({ onPress, isListening, isSpeaking, audioReady,
       onPress={onPress}
       style={({ pressed }) => [{ opacity: pressed ? 0.9 : 1 }]}
     >
-      <Reanimated.View style={[styles.wrapper, wrapperStyle]}>
+      <Reanimated.View style={[styles.wrapper, wrapperStyle, {
+        backgroundColor: isDark ? "#04061A" : "#1E3A5F",
+        shadowColor: isDark ? "#3B82F6" : "#87CEEB",
+        shadowOpacity: isDark ? 0.35 : 0.6,
+        shadowRadius: isDark ? 12 : 20,
+        borderWidth: isDark ? 0 : 1.5,
+        borderColor: isDark ? "transparent" : "rgba(135,206,235,0.4)",
+      }]}>
         <OrbVideo size={isIdle ? COMPACT_SIZE : FULL_SIZE} />
 
         <Reanimated.View
@@ -216,7 +224,7 @@ export default function FluidOrb({ onPress, isListening, isSpeaking, audioReady,
       </Reanimated.View>
 
       {isIdle && (
-        <Text style={styles.compactLabel}>Tap to speak</Text>
+        <Text style={[styles.compactLabel, { color: isDark ? "#E2E8F0" : "#1E3A5F" }]}>Tap to speak</Text>
       )}
     </Pressable>
   );
