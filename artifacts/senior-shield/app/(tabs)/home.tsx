@@ -1310,7 +1310,7 @@ export default function HomeScreen() {
 
           {/* Gradient fade — messages dissolve into the orb panel */}
           <LinearGradient
-            colors={["transparent", isDark ? "#0B1A2B" : "#E0F6FF"]}
+            colors={[theme.background, isDark ? "#0B1A2B" : "#87CEEB"]}
             style={[styles.orbFade, { pointerEvents: "none" }]}
           />
 
@@ -1540,10 +1540,11 @@ const styles = StyleSheet.create({
   // Gradient that bleeds upward from the footer, dissolving messages into the panel
   orbFade: {
     position: "absolute",
-    top: -52,
+    top: -80,
     left: 0,
     right: 0,
-    height: 52,
+    height: 80,
+    zIndex: 2,
   },
   orbGlow: {
     position: "absolute",
