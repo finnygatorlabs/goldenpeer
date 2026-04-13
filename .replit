@@ -39,25 +39,3 @@ EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID = "1015174744161-make5srl1ookt5f1cnamodgobhu0jc
 EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID = "1015174744161-u2mnmn87q0hkthe96fms5fq3qs11427s.apps.googleusercontent.com"
 
 [workflows]
-runButton = "Project"
-
-[[workflows.workflow]]
-name = "Project"
-mode = "parallel"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "Start application"
-
-[[workflows.workflow]]
-name = "Start application"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "bash scripts/start-all.sh"
-waitForPort = 22317
-
-[workflows.workflow.metadata]
-outputType = "webview"
