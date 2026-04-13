@@ -195,12 +195,24 @@ export default function FluidOrb({ onPress, isListening, isSpeaking, audioReady,
       <Reanimated.View style={[styles.wrapper, wrapperStyle, {
         backgroundColor: isDark ? "#04061A" : "#1E3A5F",
         shadowColor: isDark ? "#3B82F6" : "#87CEEB",
-        shadowOpacity: isDark ? 0.35 : 0.6,
-        shadowRadius: isDark ? 12 : 20,
-        borderWidth: isDark ? 0 : 1.5,
-        borderColor: isDark ? "transparent" : "rgba(135,206,235,0.4)",
+        shadowOpacity: isDark ? 0.35 : 0.7,
+        shadowRadius: isDark ? 12 : 24,
+        borderWidth: isDark ? 0 : 2.5,
+        borderColor: isDark ? "transparent" : "rgba(135,206,235,0.6)",
       }]}>
         <OrbVideo size={isIdle ? COMPACT_SIZE : FULL_SIZE} />
+
+        {!isDark && (
+          <View
+            style={[
+              StyleSheet.absoluteFillObject,
+              {
+                borderRadius: FULL_SIZE / 2,
+                backgroundColor: "rgba(135,206,235,0.18)",
+              },
+            ]}
+          />
+        )}
 
         <Reanimated.View
           style={[
