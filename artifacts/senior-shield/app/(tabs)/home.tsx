@@ -192,14 +192,12 @@ export default function HomeScreen() {
   const assistantNameRef = useRef(assistantName);
   useEffect(() => { assistantNameRef.current = assistantName; }, [assistantName]);
 
-  const currentHour = new Date().getHours();
-  const isNightTime = currentHour >= 18 || currentHour < 6;
-
   // Time-of-day greeting shown in the header
   const headerGreeting = (() => {
     const firstName = user?.first_name;
     if (!firstName) return undefined;
-    const tod = currentHour < 12 ? "Good morning" : currentHour < 17 ? "Good afternoon" : "Good evening";
+    const hour = new Date().getHours();
+    const tod = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
     return `${tod}, ${firstName}`;
   })();
   const apiBase = API_BASE;
@@ -1308,21 +1306,21 @@ export default function HomeScreen() {
             },
           ]}
         >
-          <DayNightBackground isDark={isNightTime} />
+          <DayNightBackground isDark={isDark} />
 
           {/* Gradient fade — messages dissolve into the orb panel */}
           <LinearGradient
-            colors={[theme.background, isNightTime ? "#0B1A2B" : "#87CEEB"]}
+            colors={[theme.background, isDark ? "#0B1A2B" : "#87CEEB"]}
             style={[styles.orbFade, { pointerEvents: "none" }]}
           />
 
           {/* Ambient glow behind the orb */}
           <View style={[styles.orbGlow, {
-            backgroundColor: isNightTime ? "rgba(37,99,235,0.08)" : "rgba(224,246,255,0.15)",
-            shadowColor: isNightTime ? "#60A5FA" : "#E0F6FF",
-            shadowOpacity: isNightTime ? 0.12 : 0.25,
-            shadowRadius: isNightTime ? 50 : 60,
-            elevation: isNightTime ? 25 : 30,
+            backgroundColor: isDark ? "rgba(37,99,235,0.08)" : "rgba(224,246,255,0.15)",
+            shadowColor: isDark ? "#60A5FA" : "#E0F6FF",
+            shadowOpacity: isDark ? 0.12 : 0.25,
+            shadowRadius: isDark ? 50 : 60,
+            elevation: isDark ? 25 : 30,
           }]} />
 
           {/* Orb — compact when idle, full size when active */}
@@ -1332,7 +1330,6 @@ export default function HomeScreen() {
             isSpeaking={isSpeaking}
             audioReady={audioReady}
             isIdle={isOrbCompact}
-            isDark={isNightTime}
           />
 
           {/* "Type instead" — subtle pill button */}
