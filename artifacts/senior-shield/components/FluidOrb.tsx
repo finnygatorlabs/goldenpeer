@@ -15,18 +15,24 @@ import { Ionicons } from "@expo/vector-icons";
 const FULL_SIZE = 176;
 const COMPACT_SIZE = 100;
 
-function PulseRing({ color, delay = 0, borderWidth = 2 }: { color: string; delay?: number; borderWidth?: number }) {
+const COLORS = {
+  idle: { accent: "#F59E0B", accentAlt: "#FCD34D", shadow: "#F59E0B", overlay: "#F59E0B" },
+  listening: { accent: "#10B981", accentAlt: "#6EE7B7", shadow: "#10B981", overlay: "#10B981" },
+  speaking: { accent: "#60A5FA", accentAlt: "#93C5FD", shadow: "#3B82F6", overlay: "#60A5FA" },
+};
+
+function PulseRing({ color, delay = 0, borderWidth = 2, duration = 2400 }: { color: string; delay?: number; borderWidth?: number; duration?: number }) {
   const scale = useSharedValue(0.5);
   const opacity = useSharedValue(0.9);
 
   useEffect(() => {
     scale.value = withDelay(
       delay,
-      withRepeat(withTiming(1.9, { duration: 2000, easing: Easing.out(Easing.quad) }), -1, false)
+      withRepeat(withTiming(1.9, { duration, easing: Easing.out(Easing.quad) }), -1, false)
     );
     opacity.value = withDelay(
       delay,
-      withRepeat(withTiming(0, { duration: 2000, easing: Easing.out(Easing.quad) }), -1, false)
+      withRepeat(withTiming(0, { duration, easing: Easing.out(Easing.quad) }), -1, false)
     );
     return () => { cancelAnimation(scale); cancelAnimation(opacity); };
   }, []);
@@ -134,8 +140,7 @@ export default function FluidOrb({ onPress, isListening, isSpeaking, audioReady,
     orbSize.value = withTiming(target, { duration: 320, easing: Easing.inOut(Easing.ease) });
   }, [isIdle]);
 
-  const accent = isListening ? "#67E8F9" : "#60A5FA";
-  const accentAlt = isListening ? "#A5F3FC" : "#93C5FD";
+  const palette = isListening ? COLORS.listening : isSpeaking ? COLORS.speaking : COLORS.idle;
 
   useEffect(() => {
     cancelAnimation(iconScale);
@@ -143,28 +148,31 @@ export default function FluidOrb({ onPress, isListening, isSpeaking, audioReady,
 
     if (isListening) {
       iconScale.value = withRepeat(
-        withSequence(withTiming(1.12, { duration: 320 }), withTiming(1.0, { duration: 320 })),
+        withSequence(withTiming(1.10, { duration: 400 }), withTiming(1.0, { duration: 400 })),
         -1, false
       );
       glowOpacity.value = withRepeat(
-        withSequence(withTiming(0.22, { duration: 320 }), withTiming(0.06, { duration: 320 })),
+        withSequence(withTiming(0.28, { duration: 400 }), withTiming(0.10, { duration: 400 })),
         -1, false
       );
     } else if (isSpeaking) {
       iconScale.value = withRepeat(
-        withSequence(withTiming(1.06, { duration: 600 }), withTiming(0.97, { duration: 600 })),
+        withSequence(withTiming(1.05, { duration: 700 }), withTiming(0.97, { duration: 700 })),
         -1, false
       );
       glowOpacity.value = withRepeat(
-        withSequence(withTiming(0.15, { duration: 600 }), withTiming(0.04, { duration: 600 })),
+        withSequence(withTiming(0.20, { duration: 700 }), withTiming(0.06, { duration: 700 })),
         -1, false
       );
     } else {
       iconScale.value = withRepeat(
-        withSequence(withTiming(1.04, { duration: 2000 }), withTiming(0.98, { duration: 2000 })),
+        withSequence(withTiming(1.04, { duration: 2500 }), withTiming(0.98, { duration: 2500 })),
         -1, false
       );
-      glowOpacity.value = withTiming(0);
+      glowOpacity.value = withRepeat(
+        withSequence(withTiming(0.12, { duration: 2500 }), withTiming(0.04, { duration: 2500 })),
+        -1, false
+      );
     }
   }, [isListening, isSpeaking]);
 
@@ -183,7 +191,7 @@ export default function FluidOrb({ onPress, isListening, isSpeaking, audioReady,
   }));
 
   const icon: any = isListening ? "stop-circle" : isSpeaking ? "volume-high" : "mic";
-  const iconOpacity = isListening || isSpeaking ? 0.45 : 0.28;
+  const iconOpacity = isListening || isSpeaking ? 0.50 : 0.32;
   const iconSize = isIdle ? 28 : 44;
 
   return (
@@ -191,22 +199,28 @@ export default function FluidOrb({ onPress, isListening, isSpeaking, audioReady,
       onPress={onPress}
       style={({ pressed }) => [{ opacity: pressed ? 0.9 : 1 }]}
     >
-      <Reanimated.View style={[styles.wrapper, wrapperStyle]}>
+      <Reanimated.View style={[styles.wrapper, wrapperStyle, { shadowColor: palette.shadow }]}>
         <OrbVideo size={isIdle ? COMPACT_SIZE : FULL_SIZE} />
 
         <Reanimated.View
           style={[
             StyleSheet.absoluteFillObject,
-            { borderRadius: FULL_SIZE / 2, backgroundColor: accent },
+            { borderRadius: FULL_SIZE / 2, backgroundColor: palette.overlay },
             glowStyle,
           ]}
         />
 
         {(isListening || isSpeaking) && (
           <View style={StyleSheet.absoluteFillObject}>
-            <PulseRing color={accent} delay={0} borderWidth={2.5} />
-            <PulseRing color={accentAlt} delay={660} borderWidth={2} />
-            <PulseRing color={accent} delay={1320} borderWidth={1.5} />
+            <PulseRing color={palette.accent} delay={0} borderWidth={2.5} duration={2400} />
+            <PulseRing color={palette.accentAlt} delay={800} borderWidth={2} duration={2400} />
+            <PulseRing color={palette.accent} delay={1600} borderWidth={1.5} duration={2400} />
+          </View>
+        )}
+
+        {!isListening && !isSpeaking && (
+          <View style={StyleSheet.absoluteFillObject}>
+            <PulseRing color={palette.accent} delay={0} borderWidth={1.5} duration={5000} />
           </View>
         )}
 
@@ -228,11 +242,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     overflow: "hidden",
     backgroundColor: "#04061A",
-    shadowColor: "#3B82F6",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOpacity: 0.45,
+    shadowRadius: 18,
+    elevation: 10,
   },
   stateOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -256,10 +269,10 @@ const styles = StyleSheet.create({
     borderRadius: 26,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(0,0,0,0.25)",
+    backgroundColor: "rgba(0,0,0,0.22)",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.8,
+    shadowOpacity: 0.7,
     shadowRadius: 6,
   },
   compactLabel: {
