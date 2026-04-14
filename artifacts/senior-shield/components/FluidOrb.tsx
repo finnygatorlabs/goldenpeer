@@ -63,7 +63,7 @@ function OrbVideo({ size }: { size: number }) {
 
   if (Platform.OS === "web") {
     const renderSize = FULL_SIZE;
-    const overflow = renderSize * 0.12;
+    const overflow = renderSize * 0.20;
     return (
       <video
         ref={videoRef}
@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
-    backgroundColor: "transparent",
+    backgroundColor: "#04061A",
     shadowColor: "#3B82F6",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
