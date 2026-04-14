@@ -1290,26 +1290,25 @@ export default function HomeScreen() {
                 </Text>
               </View>
             ) : (
-              <Text
-                style={[
-                  styles.statusLabel,
-                  {
-                    color: isListening
-                      ? (isDark ? "#67E8F9" : "#0E7490")
-                      : isSpeaking
-                      ? (isDark ? "#93C5FD" : "#1D4ED8")
-                      : (isDark ? "#CBD5E1" : "#475569"),
-                    fontSize: ts.base,
-                    fontWeight: "600",
-                    textShadowColor: isDark ? "rgba(0,0,0,0.9)" : "rgba(255,255,255,0.9)",
-                    textShadowOffset: { width: 0, height: 0 },
-                    textShadowRadius: 6,
-                  },
-                ]}
-                numberOfLines={1}
-              >
-                {statusLabel}
-              </Text>
+              <View style={{ backgroundColor: isDark ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.6)", paddingHorizontal: 18, paddingVertical: 6, borderRadius: 20, borderWidth: 1.5, borderColor: isListening ? (isDark ? "#22D3EE" : "#0E7490") : isSpeaking ? (isDark ? "#60A5FA" : "#1D4ED8") : (isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.12)") }}>
+                <Text
+                  style={[
+                    styles.statusLabel,
+                    {
+                      color: isListening
+                        ? (isDark ? "#67E8F9" : "#0E7490")
+                        : isSpeaking
+                        ? (isDark ? "#93C5FD" : "#1D4ED8")
+                        : (isDark ? "#E2E8F0" : "#1E293B"),
+                      fontSize: ts.lg,
+                      fontWeight: "700",
+                    },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {statusLabel}
+                </Text>
+              </View>
             )}
           </View>
 
@@ -1555,11 +1554,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingBottom: 8,
+    paddingBottom: 10,
+    zIndex: 10,
   },
   statusLabel: {
-    fontFamily: "Inter_600SemiBold",
-    letterSpacing: 0.2,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 0.5,
   },
   interimBox: {
     borderWidth: 1, borderRadius: 14,

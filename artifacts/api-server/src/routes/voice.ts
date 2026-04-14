@@ -480,8 +480,9 @@ async function fetchRealTimeContext(userMessage: string, userLocation?: string):
     };
 
     const timeLocMatch = lower.match(/(?:time|clock|right now)\s+(?:in|at|for)\s+([a-z][a-z\s,.\-']{1,40}?)(?:\s*[\?.]|$)/i)
+      || lower.match(/(?:time|clock)\s+(?:\w+\s+){0,3}(?:in|at|for)\s+([a-z][a-z\s,.\-']{1,40}?)(?:\s*[\?.]|$)/i)
       || lower.match(/(?:in|at|for)\s+([a-z][a-z\s,.\-']{1,40}?)\s+(?:right now|time|what time)/i);
-    const timeCityRaw = timeLocMatch ? timeLocMatch[1].trim().toLowerCase().replace(/[?.!,]+$/, "").trim() : "";
+    const timeCityRaw = timeLocMatch ? (timeLocMatch[1] || "").trim().toLowerCase().replace(/[?.!,]+$/, "").replace(/,\s*.+$/, "").trim() : "";
     const COUNTRY_SUFFIXES = /\s+(?:japan|china|uk|england|france|germany|italy|spain|india|australia|brazil|mexico|canada|south korea|korea|nigeria|south africa|kenya|egypt|morocco|thailand|vietnam|philippines|indonesia|malaysia|pakistan|saudi arabia|uae|qatar|israel|turkey|russia|poland|greece|portugal|ireland|scotland|wales|norway|sweden|denmark|finland|netherlands|belgium|switzerland|austria|new zealand|argentina|colombia|peru|chile)$/i;
     const timeCity = timeCityRaw.replace(COUNTRY_SUFFIXES, "").trim() || timeCityRaw;
 
