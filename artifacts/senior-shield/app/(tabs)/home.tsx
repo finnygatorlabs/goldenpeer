@@ -1268,7 +1268,8 @@ export default function HomeScreen() {
 
           {/* Gradient fade — messages dissolve into the orb panel */}
           <LinearGradient
-            colors={[theme.background, isDark ? "#0B1A2B" : "#87CEEB"]}
+            colors={["transparent", isDark ? "#0B1A2B" : "#87CEEB"]}
+            locations={[0, 1]}
             style={[styles.orbFade, { pointerEvents: "none" }]}
           />
 

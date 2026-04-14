@@ -48,8 +48,8 @@ async function fetchRealTimeContext(userMessage: string, userLocation?: string):
   const fetches: Promise<void>[] = [];
 
   const needsWeather = /weather|temperature|forecast|rain|snow|sunny|cold|hot|humid/i.test(lower);
-  const needsSports = /score|who won|game last|game yesterday|game today|next game|upcoming game|playoffs|championship|super bowl|world series|nba|nfl|mlb|nhl|standings|uconn|duke|march madness|ncaa|college basketball|college football|baseball|basketball|football|hockey|soccer|hornets|hawks|lakers|celtics|warriors|cavaliers|knicks|nets|heat|bulls|mavericks|spurs|suns|clippers|nuggets|timberwolves|grizzlies|pelicans|thunder|blazers|kings|pacers|bucks|pistons|wizards|rockets|magic|raptors|76ers|sixers|falcons|panthers|saints|buccaneers|cowboys|eagles|giants|commanders|49ers|seahawks|rams|cardinals|bears|lions|packers|vikings|steelers|ravens|bengals|browns|chiefs|chargers|raiders|broncos|dolphins|patriots|jets|bills|texans|titans|jaguars|colts|braves|mets|yankees|dodgers|astros|phillies|padres|cubs|red sox|white sox|marlins|nationals|pirates|reds|brewers|cardinals|diamondbacks|rockies|twins|royals|rangers|blue jays|rays|orioles|guardians|tigers|mariners|angels|athletics|hurricanes|bruins|penguins|capitals|maple leafs|canadiens|rangers|islanders|panthers|lightning|predators|blues|blackhawks|avalanche|stars|wild|jets|flames|oilers|canucks|kraken|coyotes|senators|red wings|sabres|flyers|devils|blue jackets/i.test(lower);
-  const needsNews = /news|headline|what.s happening|current event|latest/i.test(lower);
+  const needsSports = /score|who won|game last|game yesterday|game today|next game|upcoming game|playoffs|championship|super bowl|world series|nba|wnba|nfl|mlb|nhl|standings|draft|uconn|duke|march madness|ncaa|college basketball|college football|baseball|basketball|football|hockey|soccer|hornets|hawks|lakers|celtics|warriors|cavaliers|knicks|nets|heat|bulls|mavericks|spurs|suns|clippers|nuggets|timberwolves|grizzlies|pelicans|thunder|blazers|kings|pacers|bucks|pistons|wizards|rockets|magic|raptors|76ers|sixers|falcons|panthers|saints|buccaneers|cowboys|eagles|giants|commanders|49ers|seahawks|rams|cardinals|bears|lions|packers|vikings|steelers|ravens|bengals|browns|chiefs|chargers|raiders|broncos|dolphins|patriots|jets|bills|texans|titans|jaguars|colts|braves|mets|yankees|dodgers|astros|phillies|padres|cubs|red sox|white sox|marlins|nationals|pirates|reds|brewers|cardinals|diamondbacks|rockies|twins|royals|rangers|blue jays|rays|orioles|guardians|tigers|mariners|angels|athletics|hurricanes|bruins|penguins|capitals|maple leafs|canadiens|rangers|islanders|panthers|lightning|predators|blues|blackhawks|avalanche|stars|wild|jets|flames|oilers|canucks|kraken|coyotes|senators|red wings|sabres|flyers|devils|blue jackets/i.test(lower);
+  const needsNews = /news|headline|what.s happening|current event|latest|draft/i.test(lower);
   const needsBible = /bible|verse|scripture|psalm|proverb|genesis|exodus|matthew|john|romans|corinthians|revelation/i.test(lower);
   const needsTime = /what time|current time|time in |time is it in|time zone|timezone|clock in|right now in/i.test(lower);
   const needsDictionaryCheck = /define\s+\w|meaning of|what does .+ mean|dictionary|spell|scrabble|word definition/i.test(lower);
@@ -203,6 +203,7 @@ async function fetchRealTimeContext(userMessage: string, userLocation?: string):
     if (resolvedLeague === "NFL" || ((NFL_TEAMS_ONLY.test(lower) || /nfl/i.test(lower) || /football/i.test(lower)) && !/college/i.test(lower) && !ambiguousMatch)) endpoint = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard";
     else if (resolvedLeague === "MLB" || ((MLB_TEAMS_ONLY.test(lower) || /mlb|baseball/i.test(lower)) && !ambiguousMatch)) endpoint = "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard";
     else if (resolvedLeague === "NHL" || ((NHL_TEAMS_ONLY.test(lower) || /nhl|hockey/i.test(lower)) && !ambiguousMatch)) endpoint = "https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard";
+    else if (/wnba|women.s.+basketball/i.test(lower)) endpoint = "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard";
     else if (/uconn|yukon|duke|march madness|ncaa|college basketball|mens.college/i.test(lower)) endpoint = "https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard";
     else if (/college football/i.test(lower)) endpoint = "https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard";
     else if (/soccer|mls/i.test(lower)) endpoint = "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard";
@@ -448,6 +449,16 @@ async function fetchRealTimeContext(userMessage: string, userLocation?: string):
       "chicago": "America/Chicago", "dallas": "America/Chicago", "houston": "America/Chicago",
       "austin": "America/Chicago", "san antonio": "America/Chicago", "minneapolis": "America/Chicago",
       "new orleans": "America/Chicago", "nashville": "America/Chicago", "memphis": "America/Chicago",
+      "kansas city": "America/Chicago", "st louis": "America/Chicago", "saint louis": "America/Chicago",
+      "milwaukee": "America/Chicago", "oklahoma city": "America/Chicago", "omaha": "America/Chicago",
+      "indianapolis": "America/New_York", "columbus": "America/New_York", "cleveland": "America/New_York",
+      "cincinnati": "America/New_York", "richmond": "America/New_York", "baltimore": "America/New_York",
+      "jacksonville": "America/New_York", "tampa": "America/New_York", "orlando": "America/New_York",
+      "raleigh": "America/New_York", "virginia beach": "America/New_York",
+      "san diego": "America/Los_Angeles", "sacramento": "America/Los_Angeles",
+      "tucson": "America/Phoenix", "albuquerque": "America/Denver", "el paso": "America/Denver",
+      "boise": "America/Boise", "little rock": "America/Chicago", "louisville": "America/New_York",
+      "birmingham": "America/Chicago", "savannah": "America/New_York", "charleston": "America/New_York",
       "new york": "America/New_York", "boston": "America/New_York", "philadelphia": "America/New_York",
       "washington": "America/New_York", "atlanta": "America/New_York", "miami": "America/New_York",
       "charlotte": "America/New_York", "detroit": "America/New_York", "pittsburgh": "America/New_York",
@@ -483,11 +494,17 @@ async function fetchRealTimeContext(userMessage: string, userLocation?: string):
       || lower.match(/(?:time|clock)\s+(?:\w+\s+){0,3}(?:in|at|for)\s+([a-z][a-z\s,.\-']{1,40}?)(?:\s*[\?.]|$)/i)
       || lower.match(/(?:in|at|for)\s+([a-z][a-z\s,.\-']{1,40}?)\s+(?:right now|time|what time)/i);
     const timeCityRaw = timeLocMatch ? (timeLocMatch[1] || "").trim().toLowerCase().replace(/[?.!,]+$/, "").replace(/,\s*.+$/, "").trim() : "";
-    const COUNTRY_SUFFIXES = /\s+(?:japan|china|uk|england|france|germany|italy|spain|india|australia|brazil|mexico|canada|south korea|korea|nigeria|south africa|kenya|egypt|morocco|thailand|vietnam|philippines|indonesia|malaysia|pakistan|saudi arabia|uae|qatar|israel|turkey|russia|poland|greece|portugal|ireland|scotland|wales|norway|sweden|denmark|finland|netherlands|belgium|switzerland|austria|new zealand|argentina|colombia|peru|chile)$/i;
-    const timeCity = timeCityRaw.replace(COUNTRY_SUFFIXES, "").trim() || timeCityRaw;
+    const LOCATION_SUFFIXES = /\s+(?:japan|china|uk|england|france|germany|italy|spain|india|australia|brazil|mexico|canada|south korea|korea|nigeria|south africa|kenya|egypt|morocco|thailand|vietnam|philippines|indonesia|malaysia|pakistan|saudi arabia|uae|qatar|israel|turkey|russia|poland|greece|portugal|ireland|scotland|wales|norway|sweden|denmark|finland|netherlands|belgium|switzerland|austria|new zealand|argentina|colombia|peru|chile|alabama|alaska|arizona|arkansas|california|colorado|connecticut|delaware|florida|georgia|hawaii|idaho|illinois|indiana|iowa|kansas|kentucky|louisiana|maine|maryland|massachusetts|michigan|minnesota|mississippi|missouri|montana|nebraska|nevada|new hampshire|new jersey|new mexico|new york|north carolina|north dakota|ohio|oklahoma|oregon|pennsylvania|rhode island|south carolina|south dakota|tennessee|texas|utah|vermont|virginia|washington|west virginia|wisconsin|wyoming|ontario|quebec|british columbia|alberta|manitoba|saskatchewan)$/i;
+    const timeCity = timeCityRaw.replace(LOCATION_SUFFIXES, "").trim() || timeCityRaw;
 
     if (timeCity) {
-      const tz = CITY_TO_TZ[timeCity] || CITY_TO_TZ[timeCityRaw];
+      let tz = CITY_TO_TZ[timeCity] || CITY_TO_TZ[timeCityRaw];
+      if (!tz) {
+        const words = timeCity.split(/\s+/);
+        for (let i = words.length - 1; i >= 1 && !tz; i--) {
+          tz = CITY_TO_TZ[words.slice(0, i).join(" ")];
+        }
+      }
       if (tz) {
         const cityLabel = timeCity.charAt(0).toUpperCase() + timeCity.slice(1);
         console.log(`[fetchRealTimeContext] World time lookup: "${timeCity}" → ${tz}`);
