@@ -103,7 +103,7 @@ export default function PageHeader({ showTagline = false, greeting, screenTitle 
       {/* Tagline */}
       {showTagline && (
         <Text
-          style={[styles.tagline, { marginTop: -6, paddingLeft: 80 }]}
+          style={[styles.tagline, { marginTop: -11, paddingLeft: 80 }]}
           adjustsFontSizeToFit
           minimumFontScale={0.8}
           numberOfLines={1}
