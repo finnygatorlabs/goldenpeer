@@ -1,0 +1,15 @@
+tree 84bfe5146c127408d89debfbd2648c41e53d3c74
+parent 3e5ac1a10f3a1c79f91c25676ead8b872daeb419
+author bswiftent <56406092-bswiftent@users.noreply.replit.com> 1775133046 +0000
+committer bswiftent <56406092-bswiftent@users.noreply.replit.com> 1775133046 +0000
+
+Improve time selection and update wellness check prompt
+
+Update the hour picker to correctly display 1-12 with wrapping layout and modify the wellness check reminder prompt in both the frontend and API preset.
+
+Replit-Commit-Author: Agent
+Replit-Commit-Session-Id: e0bb6ff4-73a7-4e35-a610-6415e328e8d7
+Replit-Commit-Checkpoint-Type: full_checkpoint
+Replit-Commit-Event-Id: dbff58d6-0d93-44cb-9328-238ccdee6b31
+Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/e3da98e5-f0fd-4c08-ad8e-ae0b3aa6f787/e0bb6ff4-73a7-4e35-a610-6415e328e8d7/B97FfI6
+Replit-Helium-Checkpoint-Created: true

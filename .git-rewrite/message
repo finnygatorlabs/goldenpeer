@@ -1,0 +1,10 @@
+Update wellness check prompt and expand time selection options
+
+Updated the "Wellness Check" prompt to list specific vitals and expanded the available hours in the time picker to include 1-12 with an AM/PM toggle.
+
+Replit-Commit-Author: Agent
+Replit-Commit-Session-Id: e0bb6ff4-73a7-4e35-a610-6415e328e8d7
+Replit-Commit-Checkpoint-Type: full_checkpoint
+Replit-Commit-Event-Id: bba58c86-1e15-4cfb-9189-72de79da914a
+Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/e3da98e5-f0fd-4c08-ad8e-ae0b3aa6f787/e0bb6ff4-73a7-4e35-a610-6415e328e8d7/B97FfI6
+Replit-Helium-Checkpoint-Created: true
