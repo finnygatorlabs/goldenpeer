@@ -56,7 +56,6 @@ function OrbVideo({ size }: { size: number }) {
     el.muted = true;
     el.loop = true;
     el.playsInline = true;
-    el.playbackRate = 0.33;
     const p = el.play();
     if (p && p.catch) p.catch(() => {});
     return () => { el.pause(); };
@@ -256,13 +255,11 @@ const styles = StyleSheet.create({
     borderRadius: 26,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.12)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
-    shadowColor: "rgba(135,206,235,0.4)",
+    backgroundColor: "rgba(0,0,0,0.25)",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.5,
-    shadowRadius: 8,
+    shadowOpacity: 0.8,
+    shadowRadius: 6,
   },
   compactLabel: {
     color: "#E2E8F0",
