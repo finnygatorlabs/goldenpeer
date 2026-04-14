@@ -195,9 +195,9 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   logo: {
-    width: 160,
-    height: 160,
-    marginBottom: 0,
+    width: 100,
+    height: 110,
+    marginBottom: 8,
   },
   appName: {
     fontSize: 34,
@@ -207,11 +207,11 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   tagline: {
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: "Inter_400Regular",
     color: "rgba(255,255,255,0.78)",
     textAlign: "center",
-    lineHeight: 20,
+    lineHeight: 18,
   },
   features: {
     gap: 10,

@@ -210,9 +210,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   logoImage: {
-    width: 180,
-    height: 180,
-    marginBottom: 16,
+    width: 120,
+    height: 132,
+    marginBottom: 24,
   },
   iconCircle: {
     width: 140,

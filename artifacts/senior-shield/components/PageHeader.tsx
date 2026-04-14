@@ -103,7 +103,9 @@ export default function PageHeader({ showTagline = false, greeting, screenTitle 
       {/* Tagline */}
       {showTagline && (
         <Text
-          style={[styles.tagline, { marginTop: 2, paddingLeft: 120 }]}
+          style={[styles.tagline, { marginTop: 2, paddingLeft: 58 }]}
+          adjustsFontSizeToFit
+          minimumFontScale={0.8}
           numberOfLines={1}
         >
           Your Daily Companion. Your Family's Peace of Mind.
@@ -152,8 +154,8 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   logo: {
-    width: 110,
-    height: 110,
+    width: 48,
+    height: 54,
     flexShrink: 0,
   },
   brandCol: {

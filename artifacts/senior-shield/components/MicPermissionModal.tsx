@@ -127,8 +127,8 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   logo: {
-    width: 64,
-    height: 64,
+    width: 40,
+    height: 44,
   },
   brand: {
     fontFamily: "Inter_700Bold",

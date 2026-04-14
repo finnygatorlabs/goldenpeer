@@ -135,8 +135,8 @@ function MessageBubble({
       {/* Circular avatar icon */}
       <View style={styles.asstIcon}>
         <Image
-          source={require("@/assets/images/logo-shield.png")}
-          style={{ width: 28, height: 28 }}
+          source={require("@/assets/images/goldenpeer-logo-white.png")}
+          style={{ width: 20, height: 22 }}
           resizeMode="contain"
         />
       </View>
