@@ -89,7 +89,7 @@ export default function PageHeader({ showTagline = false, greeting, screenTitle 
           style={styles.logo}
           resizeMode="contain"
         />
-        <View style={styles.brandCol}>
+        <View style={[styles.brandCol, { marginLeft: -3 }]}>
           <Text
             style={styles.appName}
             numberOfLines={1}
