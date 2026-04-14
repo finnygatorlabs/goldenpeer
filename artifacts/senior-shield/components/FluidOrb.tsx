@@ -63,7 +63,7 @@ function OrbVideo({ size }: { size: number }) {
 
   if (Platform.OS === "web") {
     const renderSize = FULL_SIZE;
-    const overflow = renderSize * 0.20;
+    const overflow = renderSize * 0.18;
     return (
       <video
         ref={videoRef}
