@@ -25,14 +25,14 @@ async function fetchWithRetry(url: string, options: RequestInit & { signal?: Abo
       clearTimeout(timer);
       if (res.ok) return res;
       if (attempt < retries) {
-        console.warn(`[fetchWithRetry] Attempt ${attempt + 1} failed (status ${res.status}) for ${url.substring(0, 80)}, retrying...`);
+        console.warn(`[fetchWithRetry] Attempt ${attempt + 1} failed (status ${res.status}) for ${url.substring(0, 120)}, retrying...`);
         await new Promise(r => setTimeout(r, 300));
         continue;
       }
       return res;
     } catch (err: any) {
       if (attempt < retries) {
-        console.warn(`[fetchWithRetry] Attempt ${attempt + 1} error for ${url.substring(0, 80)}: ${err.message}, retrying...`);
+        console.warn(`[fetchWithRetry] Attempt ${attempt + 1} error for ${url.substring(0, 120)}: ${err.message}, retrying...`);
         await new Promise(r => setTimeout(r, 300));
         continue;
       }
@@ -425,7 +425,7 @@ async function fetchRealTimeContext(userMessage: string, userLocation?: string):
     }
     console.log("[fetchRealTimeContext] News query:", JSON.stringify(q));
     fetches.push(
-      fetchWithRetry(`https://newsdata.io/api/1/latest?apikey=${NEWS_API_KEY}&q=${encodeURIComponent(q)}&language=en&country=us`, {}, 2, 8000)
+      fetchWithRetry(`https://newsdata.io/api/1/latest?apikey=${NEWS_API_KEY}&q=${encodeURIComponent(q)}&language=en&country=us`, {}, 2, 12000)
         .then(r => r.json())
         .then((data: any) => {
           const articles = (data.results || []).slice(0, 3);
@@ -668,7 +668,7 @@ async function fetchRealTimeContext(userMessage: string, userLocation?: string):
     const bookMatch = lower.match(/(?:book|novel|author|reading|read)\s+(?:about|by|called|named|titled)?\s*(.+?)(?:\?|$)/i);
     const query = bookMatch ? bookMatch[1].trim() : "bestseller";
     fetches.push(
-      fetchWithRetry(`https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=5&fields=title,author_name,first_publish_year,subject`, {}, 1, 6000)
+      fetchWithRetry(`https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=5&fields=title,author_name,first_publish_year,subject`, {}, 2, 10000)
         .then(r => r.json())
         .then((data: any) => {
           const docs = (data?.docs || []).slice(0, 5);
@@ -695,7 +695,7 @@ async function fetchRealTimeContext(userMessage: string, userLocation?: string):
     const foodQuery = foodMatch ? foodMatch[1].trim().replace(/^(a|an|the)\s+/i, "") : "";
     if (foodQuery) {
       fetches.push(
-        fetchWithRetry(`https://world.openfoodfacts.org/api/v2/search?search_terms=${encodeURIComponent(foodQuery)}&page_size=3&fields=product_name,nutriments,nutriscore_grade&countries_tags=en:united-states`, { headers: { "User-Agent": "SeniorShield/1.0 (admin@finnygator.com)" } }, 1, 6000)
+        fetchWithRetry(`https://world.openfoodfacts.org/api/v2/search?search_terms=${encodeURIComponent(foodQuery)}&page_size=3&fields=product_name,nutriments,nutriscore_grade&countries_tags=en:united-states`, { headers: { "User-Agent": "SeniorShield/1.0 (admin@finnygator.com)" } }, 2, 10000)
           .then(r => r.json())
           .then((data: any) => {
             const products = (data?.products || []).slice(0, 3);
