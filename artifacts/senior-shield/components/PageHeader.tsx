@@ -114,7 +114,7 @@ export default function PageHeader({ showTagline = false, greeting, screenTitle 
 
       {/* Greeting row */}
       {!!greeting && (
-        <View style={[styles.greetingRow, { marginTop: showTagline ? -2 : 2 }]}>
+        <View style={[styles.greetingRow, { marginTop: showTagline ? 2 : 6 }]}>
           <View style={styles.greetingDivider} />
           <Text
             style={[styles.greeting, { fontSize: ts.md }]}
