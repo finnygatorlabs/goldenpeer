@@ -1066,8 +1066,8 @@ export default function HomeScreen() {
     : isSpeaking
     ? `${assistantName} is speaking`
     : !audioReady
-    ? "Tap to start"
-    : "Tap & speak";
+    ? "Tap to speak"
+    : "Tap to speak";
 
 
   const orbBottomPad = tabBarHeight + insets.bottom + 8;
@@ -1258,7 +1258,6 @@ export default function HomeScreen() {
               bottom: statusRowBottom,
               left: 0,
               right: 0,
-              opacity: isOrbIdle ? 0 : 1,
             },
           ]}
           pointerEvents="none"
