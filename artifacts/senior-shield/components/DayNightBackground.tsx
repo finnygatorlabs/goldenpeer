@@ -211,12 +211,12 @@ export default function DayNightBackground({
   }, []);
 
   const clouds = useMemo(() => [
-    { leftPct: 0.55, topPct: 0.06, scale: 1.1, opacity: 0.30, driftRange: 20, driftDuration: 18000, variant: 0 },
-    { leftPct: -0.05, topPct: 0.22, scale: 0.8, opacity: 0.25, driftRange: 25, driftDuration: 22000, variant: 1 },
-    { leftPct: 0.35, topPct: 0.40, scale: 1.3, opacity: 0.28, driftRange: 18, driftDuration: 20000, variant: 2 },
-    { leftPct: 0.70, topPct: 0.55, scale: 0.7, opacity: 0.22, driftRange: 22, driftDuration: 16000, variant: 3 },
-    { leftPct: 0.10, topPct: 0.70, scale: 1.0, opacity: 0.25, driftRange: 15, driftDuration: 24000, variant: 4 },
-    { leftPct: 0.50, topPct: 0.82, scale: 0.9, opacity: 0.20, driftRange: 20, driftDuration: 19000, variant: 5 },
+    { leftPct: 0.55, topPct: 0.06, scale: 1.1, opacity: 0.50, driftRange: 20, driftDuration: 18000, variant: 0 },
+    { leftPct: -0.05, topPct: 0.22, scale: 0.8, opacity: 0.45, driftRange: 25, driftDuration: 22000, variant: 1 },
+    { leftPct: 0.35, topPct: 0.40, scale: 1.3, opacity: 0.48, driftRange: 18, driftDuration: 20000, variant: 2 },
+    { leftPct: 0.70, topPct: 0.55, scale: 0.7, opacity: 0.42, driftRange: 22, driftDuration: 16000, variant: 3 },
+    { leftPct: 0.10, topPct: 0.70, scale: 1.0, opacity: 0.45, driftRange: 15, driftDuration: 24000, variant: 4 },
+    { leftPct: 0.50, topPct: 0.82, scale: 0.9, opacity: 0.40, driftRange: 20, driftDuration: 19000, variant: 5 },
   ], []);
 
   const bgOpacity = useSharedValue(isDark ? 1 : 0);
