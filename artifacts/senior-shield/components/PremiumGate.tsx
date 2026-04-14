@@ -180,8 +180,8 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   logo: {
-    width: 36,
-    height: 36,
+    width: 64,
+    height: 64,
   },
   brand: {
     fontFamily: "Inter_700Bold",

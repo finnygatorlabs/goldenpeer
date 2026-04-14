@@ -103,10 +103,10 @@ export default function PageHeader({ showTagline = false, greeting, screenTitle 
       {/* Tagline */}
       {showTagline && (
         <Text
-          style={[styles.tagline, { marginTop: 2, paddingLeft: 74 }]}
+          style={[styles.tagline, { marginTop: 2, paddingLeft: 120 }]}
           numberOfLines={1}
         >
-          Your voice assistant for tech help & scam protection
+          Your Daily Companion. Your Family's Peace of Mind.
         </Text>
       )}
 
@@ -152,8 +152,8 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   logo: {
-    width: 62,
-    height: 62,
+    width: 110,
+    height: 110,
     flexShrink: 0,
   },
   brandCol: {

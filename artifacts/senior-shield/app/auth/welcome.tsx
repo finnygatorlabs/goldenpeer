@@ -110,7 +110,7 @@ export default function WelcomeScreen() {
             resizeMode="contain"
           />
           <Text style={styles.appName}>GoldenPeer{"\u2122"}</Text>
-          <Text style={styles.tagline}>Your voice assistant for tech help & scam protection</Text>
+          <Text style={styles.tagline}>Your Daily Companion. Your Family's Peace of Mind.</Text>
         </View>
 
         <View style={styles.features}>
@@ -195,9 +195,9 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   logo: {
-    width: 70,
-    height: 70,
-    marginBottom: 12,
+    width: 160,
+    height: 160,
+    marginBottom: 0,
   },
   appName: {
     fontSize: 34,

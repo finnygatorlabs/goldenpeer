@@ -12,6 +12,7 @@ import {
   AppState,
   Animated,
   Dimensions,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -133,7 +134,11 @@ function MessageBubble({
     <View style={styles.asstRow}>
       {/* Circular avatar icon */}
       <View style={styles.asstIcon}>
-        <Ionicons name="shield-checkmark" size={15} color="#fff" />
+        <Image
+          source={require("@/assets/images/logo-shield.png")}
+          style={{ width: 28, height: 28 }}
+          resizeMode="contain"
+        />
       </View>
       {/* Card bubble with left blue accent + shadow */}
       <View style={[styles.asstBubble, { backgroundColor: theme.card }]}>
