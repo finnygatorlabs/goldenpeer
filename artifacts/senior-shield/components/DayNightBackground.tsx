@@ -15,19 +15,33 @@ interface DayNightBackgroundProps {
   children?: React.ReactNode;
 }
 
+function CloudPuff({ cx, cy, r }: { cx: number; cy: number; r: number }) {
+  return (
+    <View
+      style={{
+        position: "absolute",
+        left: cx - r,
+        top: cy - r,
+        width: r * 2,
+        height: r * 2,
+        borderRadius: r,
+        backgroundColor: "rgba(255, 255, 255, 0.85)",
+      }}
+    />
+  );
+}
+
 function Cloud({
   left,
   top,
-  width = 120,
-  height = 50,
-  opacity = 0.25,
+  scale = 1,
+  opacity = 0.8,
   driftRange = 8,
   driftDuration = 8000,
 }: {
   left: number;
   top: number;
-  width?: number;
-  height?: number;
+  scale?: number;
   opacity?: number;
   driftRange?: number;
   driftDuration?: number;
@@ -38,7 +52,7 @@ function Cloud({
   useEffect(() => {
     cloudOpacity.value = withRepeat(
       withSequence(
-        withTiming(opacity * 0.5, { duration: driftDuration * 0.8, easing: Easing.inOut(Easing.ease) }),
+        withTiming(opacity * 0.6, { duration: driftDuration * 0.8, easing: Easing.inOut(Easing.ease) }),
         withTiming(opacity, { duration: driftDuration * 0.8, easing: Easing.inOut(Easing.ease) })
       ),
       -1,
@@ -56,7 +70,7 @@ function Cloud({
 
   const cloudStyle = useAnimatedStyle(() => ({
     opacity: cloudOpacity.value,
-    transform: [{ translateX: translateX.value }],
+    transform: [{ translateX: translateX.value }, { scale }],
   }));
 
   return (
@@ -64,16 +78,22 @@ function Cloud({
       style={[
         {
           position: "absolute",
-          width,
-          height,
-          borderRadius: height / 2,
-          backgroundColor: "rgba(255, 255, 255, 0.7)",
           left,
           top,
+          width: 120,
+          height: 60,
         },
         cloudStyle,
       ]}
-    />
+    >
+      <CloudPuff cx={20} cy={35} r={18} />
+      <CloudPuff cx={40} cy={25} r={22} />
+      <CloudPuff cx={60} cy={20} r={26} />
+      <CloudPuff cx={82} cy={24} r={20} />
+      <CloudPuff cx={100} cy={32} r={16} />
+      <CloudPuff cx={50} cy={38} r={20} />
+      <CloudPuff cx={72} cy={36} r={18} />
+    </Reanimated.View>
   );
 }
 
@@ -138,13 +158,12 @@ export default function DayNightBackground({
   }, []);
 
   const clouds = useMemo(() => [
-    { leftPct: -0.05, topPct: 0.05, width: 140, height: 45, opacity: 0.85, driftRange: 12, driftDuration: 10000 },
-    { leftPct: 0.50, topPct: 0.12, width: 100, height: 35, opacity: 0.70, driftRange: 8, driftDuration: 9000 },
-    { leftPct: 0.15, topPct: 0.30, width: 160, height: 55, opacity: 0.80, driftRange: 15, driftDuration: 12000 },
-    { leftPct: 0.65, topPct: 0.42, width: 90, height: 30, opacity: 0.60, driftRange: 6, driftDuration: 7000 },
-    { leftPct: 0.30, topPct: 0.55, width: 130, height: 42, opacity: 0.75, driftRange: 10, driftDuration: 11000 },
-    { leftPct: 0.75, topPct: 0.68, width: 110, height: 38, opacity: 0.65, driftRange: 9, driftDuration: 8500 },
-    { leftPct: 0.02, topPct: 0.75, width: 80, height: 28, opacity: 0.55, driftRange: 5, driftDuration: 7500 },
+    { leftPct: -0.08, topPct: 0.05, scale: 1.2, opacity: 0.85, driftRange: 12, driftDuration: 10000 },
+    { leftPct: 0.50, topPct: 0.15, scale: 0.8, opacity: 0.70, driftRange: 8, driftDuration: 9000 },
+    { leftPct: 0.12, topPct: 0.35, scale: 1.4, opacity: 0.75, driftRange: 15, driftDuration: 12000 },
+    { leftPct: 0.62, topPct: 0.50, scale: 0.7, opacity: 0.60, driftRange: 6, driftDuration: 7000 },
+    { leftPct: 0.28, topPct: 0.65, scale: 1.0, opacity: 0.70, driftRange: 10, driftDuration: 11000 },
+    { leftPct: 0.72, topPct: 0.78, scale: 0.9, opacity: 0.55, driftRange: 9, driftDuration: 8500 },
   ], []);
 
   const bgOpacity = useSharedValue(isDark ? 1 : 0);
@@ -178,8 +197,7 @@ export default function DayNightBackground({
               key={i}
               left={screenW * c.leftPct}
               top={300 * c.topPct}
-              width={c.width}
-              height={c.height}
+              scale={c.scale}
               opacity={c.opacity}
               driftRange={c.driftRange}
               driftDuration={c.driftDuration}
