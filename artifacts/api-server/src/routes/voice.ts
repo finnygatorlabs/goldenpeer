@@ -16,7 +16,7 @@ function sanitizeExternalText(text: string): string {
     .slice(0, 2000);
 }
 
-async function fetchWithRetry(url: string, options: RequestInit & { signal?: AbortSignal } = {}, retries = 2, timeoutMs = 5000): Promise<Response> {
+async function fetchWithRetry(url: string, options: RequestInit & { signal?: AbortSignal } = {}, retries = 1, timeoutMs = 4000): Promise<Response> {
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       const controller = new AbortController();
@@ -26,14 +26,14 @@ async function fetchWithRetry(url: string, options: RequestInit & { signal?: Abo
       if (res.ok) return res;
       if (attempt < retries) {
         console.warn(`[fetchWithRetry] Attempt ${attempt + 1} failed (status ${res.status}) for ${url.substring(0, 80)}, retrying...`);
-        await new Promise(r => setTimeout(r, 500 * (attempt + 1)));
+        await new Promise(r => setTimeout(r, 300));
         continue;
       }
       return res;
     } catch (err: any) {
       if (attempt < retries) {
         console.warn(`[fetchWithRetry] Attempt ${attempt + 1} error for ${url.substring(0, 80)}: ${err.message}, retrying...`);
-        await new Promise(r => setTimeout(r, 500 * (attempt + 1)));
+        await new Promise(r => setTimeout(r, 300));
         continue;
       }
       throw err;
@@ -1127,8 +1127,8 @@ Always end responses with either a check-in question ("Does that make sense?", "
             body: JSON.stringify({
               model: "gpt-4o-mini",
               messages,
-              max_tokens: 450,
-              temperature: 0.72,
+              max_tokens: 350,
+              temperature: 0.7,
             }),
           });
           const data = await aiRes.json() as any;
@@ -1205,7 +1205,7 @@ router.post("/tts", requireAuth, async (req: AuthRequest, res) => {
             Authorization: `Bearer ${openaiKey}`,
           },
           body: JSON.stringify({
-            model: "tts-1-hd",
+            model: "tts-1",
             input: processedText,
             voice: safeVoice,
             speed: safeVoice === "sage" ? 0.80 : safeVoice === "fable" ? 0.88 : 1.0,
