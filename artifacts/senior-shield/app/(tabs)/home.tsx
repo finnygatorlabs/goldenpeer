@@ -1077,11 +1077,20 @@ export default function HomeScreen() {
 
 
   const orbBottomPad = tabBarHeight + insets.bottom + 8;
-  // Orb is compact once the conversation starts and stays compact for the entire session.
-  // Full size is only shown before the first tap — it invites the senior to begin.
-  // Keeping it compact through listening/speaking/idle maximises message visibility.
-  const isOrbCompact = greeted;
-  // Idle = compact + not actively listening/speaking (used for status row + "Type instead" logic)
+  const [orbFullOverride, setOrbFullOverride] = useState(false);
+  const orbIdleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (orbIdleTimerRef.current) { clearTimeout(orbIdleTimerRef.current); orbIdleTimerRef.current = null; }
+    if (greeted && !isListening && !isSpeaking && !isSending) {
+      orbIdleTimerRef.current = setTimeout(() => { setOrbFullOverride(true); }, 30000);
+    } else if (isListening || isSpeaking || isSending) {
+      setOrbFullOverride(false);
+    }
+    return () => { if (orbIdleTimerRef.current) clearTimeout(orbIdleTimerRef.current); };
+  }, [greeted, isListening, isSpeaking, isSending]);
+
+  const isOrbCompact = greeted && !orbFullOverride;
   const isOrbIdle = greeted && !isListening && !isSpeaking;
   const ORB_FOOTER_HEIGHT = isOrbCompact ? 160 : 210;
 
@@ -1266,12 +1275,7 @@ export default function HomeScreen() {
         >
           <DayNightBackground isDark={isDark} />
 
-          {/* Gradient fade — messages dissolve into the orb panel */}
-          <LinearGradient
-            colors={["transparent", isDark ? "rgba(11,26,43,0.6)" : "rgba(135,206,235,0.6)", isDark ? "#0B1A2B" : "#87CEEB"]}
-            locations={[0, 0.4, 1]}
-            style={[styles.orbFade, { pointerEvents: "none" }]}
-          />
+          
 
           {/* Ambient glow behind the orb */}
           <View style={[styles.orbGlow, {
@@ -1535,14 +1539,7 @@ const styles = StyleSheet.create({
     gap: 0,
   },
   // Gradient that bleeds upward from the footer, dissolving messages into the panel
-  orbFade: {
-    position: "absolute",
-    top: -80,
-    left: 0,
-    right: 0,
-    height: 80,
-    zIndex: 2,
-  },
+  
   orbGlow: {
     position: "absolute",
     top: 8,

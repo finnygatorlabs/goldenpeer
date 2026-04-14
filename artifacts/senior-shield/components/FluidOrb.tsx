@@ -215,9 +215,7 @@ export default function FluidOrb({ onPress, isListening, isSpeaking, audioReady,
         </Reanimated.View>
       </Reanimated.View>
 
-      {isIdle && (
-        <Text style={styles.compactLabel}>Tap to speak</Text>
-      )}
+      
     </Pressable>
   );
 }

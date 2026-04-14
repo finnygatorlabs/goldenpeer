@@ -406,8 +406,13 @@ async function fetchRealTimeContext(userMessage: string, userLocation?: string):
   if (needsNews && NEWS_API_KEY) {
     const queryMatch = lower.match(/news\s+(?:about|on|regarding)\s+(.+)/i)
       || lower.match(/(?:about|regarding)\s+(?:the\s+)?(.+?)(?:\?|$)/i)
-      || lower.match(/(?:tell me about|what about|what happened|who won|results?)\s+(?:the\s+)?(.+?)(?:\?|$)/i);
-    const q = queryMatch ? queryMatch[1].trim().replace(/\s+today$|\s+tonight$|\s+yesterday$/i, "") : "latest";
+      || lower.match(/(?:tell me about|what about|what happened|who won|results?)\s+(?:the\s+)?(.+?)(?:\?|$)/i)
+      || lower.match(/(?:who was|who got|what were)\s+(?:the\s+)?(.+?)(?:\?|$)/i);
+    let q = queryMatch ? queryMatch[1].trim().replace(/\s+today$|\s+tonight$|\s+yesterday$/i, "").replace(/^(?:at|in|during|with)\s+(?:the\s+)?/i, "") : "";
+    if (!q || q === "latest") {
+      const sportsTerms = lower.match(/\b(wnba|nba|nfl|mlb|nhl|draft|trade|playoff|championship)\b/gi);
+      q = sportsTerms ? sportsTerms.join(" ") : "latest";
+    }
     fetches.push(
       fetchWithRetry(`https://newsdata.io/api/1/latest?apikey=${NEWS_API_KEY}&q=${encodeURIComponent(q)}&language=en&country=us`, {}, 2, 8000)
         .then(r => r.json())
