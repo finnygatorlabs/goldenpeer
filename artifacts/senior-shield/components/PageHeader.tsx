@@ -103,7 +103,7 @@ export default function PageHeader({ showTagline = false, greeting, screenTitle 
       {/* Tagline */}
       {showTagline && (
         <Text
-          style={[styles.tagline, { marginTop: 2, paddingLeft: 71 }]}
+          style={[styles.tagline, { marginTop: 2, paddingLeft: 87 }]}
           adjustsFontSizeToFit
           minimumFontScale={0.8}
           numberOfLines={1}
@@ -154,8 +154,8 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   logo: {
-    width: 53,
-    height: 58,
+    width: 69,
+    height: 75,
     flexShrink: 0,
     marginRight: 4,
   },
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
   greetingRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingLeft: 71,
+    paddingLeft: 87,
     gap: 0,
   },
   greetingDivider: {
