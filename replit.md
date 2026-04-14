@@ -1,8 +1,8 @@
-# SeniorShield
+# GoldenPeer
 
 ## Overview
 
-SeniorShield is a full-stack mobile application designed to enhance digital safety and provide accessible tech support for seniors (65+). It offers voice-guided assistance, AI-powered scam detection with risk scoring, and a family alert system for high-risk threats. Key features include an emergency SOS, a structured onboarding process, and subscription billing for premium functionalities. The project aims to empower seniors with technology, ensure their digital safety, and strengthen their family support network.
+GoldenPeer is a full-stack mobile application designed to enhance digital safety and provide accessible tech support for seniors (65+). It offers voice-guided assistance, AI-powered scam detection with risk scoring, and a family alert system for high-risk threats. Key features include an emergency SOS, a structured onboarding process, and subscription billing for premium functionalities. The project aims to empower seniors with technology, ensure their digital safety, and strengthen their family support network.
 
 ## User Preferences
 
@@ -16,7 +16,7 @@ Do not make changes to the file `artifacts/senior-shield/app/emergency.tsx`.
 
 The project is structured as a pnpm monorepo using Node.js 24 and TypeScript 5.9.
 
-**Mobile Application (SeniorShield)**:
+**Mobile Application (GoldenPeer)**:
 - Developed with Expo (React Native) and Expo Router v6, targeting iOS with an Airbnb-inspired design.
 - UI/UX features a clean blue color scheme (`#2563EB`) and the Inter font.
 - Core screens include authentication (hero banner signup with seniors photo, no user type selection — all users are seniors), onboarding, main tabs (home, scam check, reminders, family, history, settings), subscription management, and an emergency screen.
@@ -33,7 +33,7 @@ The project is structured as a pnpm monorepo using Node.js 24 and TypeScript 5.9
 - Built with Express 5, PostgreSQL, and Drizzle ORM, using Zod for validation.
 - API codegen is handled by Orval from an OpenAPI specification, generating React Query hooks and Zod schemas.
 - Comprehensive API endpoints support authentication, user management, voice assistance (AI queries, TTS), scam detection, family management, billing (Stripe), emergency services, and various integrations.
-- Family Member Invitation Email: Notifies family members upon being added, explaining SeniorShield's purpose and expected notifications.
+- Family Member Invitation Email: Notifies family members upon being added, explaining GoldenPeer's purpose and expected notifications.
 - Family Scam Alerts: Sends branded email alerts to family members for medium or high-risk scam detections.
 - Scam Detection Engine: Features a 76-category framework, 600+ keywords, 250+ red flags, category-specific trigger scores, and 16 senior vulnerability multipliers. It employs a 5-layer analysis pipeline (Industry Category, Cross-Cutting Pattern, Link, Sender, Senior Vulnerability Analysis) with post-layer adjustments and a legitimate service whitelist.
 - Voice AI system: Dynamically injects user's active daily reminders into conversation context and is enriched with real-time data from external APIs and user interests. AI assistant names are configurable (Ida/Clay). The system prompt emphasizes proactive engagement, health awareness acknowledgment, and interest integration. All real-time API calls use `fetchWithRetry()` with fallback context messages. Integrated APIs: OpenWeatherMap (weather), Open-Meteo (air quality/AQI), ESPN (sports incl. WNBA), NewsData.io (news, also triggered by draft queries), Node.js Intl API (world time via CITY_TO_TZ map with US state/country suffix stripping and progressive fallback), Wikipedia (knowledge), Bible API (verses), Open Trivia DB (trivia/quizzes), JokeAPI (clean jokes), Free Dictionary API (word definitions/Scrabble), Open Library (book search), Open Food Facts (nutrition info), MusicBrainz (artist/album/song lookup).

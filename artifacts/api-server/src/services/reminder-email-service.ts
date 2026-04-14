@@ -2,7 +2,7 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const FROM_EMAIL = "SeniorShield <onboarding@resend.dev>";
+const FROM_EMAIL = "GoldenPeer <onboarding@resend.dev>";
 
 function escapeHtml(str: string): string {
   return str
@@ -38,7 +38,7 @@ export async function sendReminderNotificationEmail(
     const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
     const formattedTime = `${displayHours}:${minutes.toString().padStart(2, "0")} ${period}`;
 
-    const subject = `SeniorShield Reminder: ${reminderLabel} at ${formattedTime}`;
+    const subject = `GoldenPeer Reminder: ${reminderLabel} at ${formattedTime}`;
     const htmlContent = `
 <!DOCTYPE html>
 <html>
@@ -50,7 +50,7 @@ export async function sendReminderNotificationEmail(
         <table width="560" cellpadding="0" cellspacing="0" style="background:#FFFFFF;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
           <tr>
             <td style="background:linear-gradient(135deg,#0F2D52 0%,#1E3A5F 100%);padding:32px 40px;text-align:center;">
-              <h1 style="margin:0;color:#FFFFFF;font-size:24px;">SeniorShield</h1>
+              <h1 style="margin:0;color:#FFFFFF;font-size:24px;">GoldenPeer</h1>
               <p style="margin:8px 0 0;color:rgba(255,255,255,0.7);font-size:14px;">Reminder Notification</p>
             </td>
           </tr>
@@ -72,7 +72,7 @@ export async function sendReminderNotificationEmail(
               </table>
 
               <p style="margin:24px 0 0;color:#94A3B8;font-size:12px;text-align:center;">
-                SeniorShield &mdash; Helping seniors stay safe and connected
+                GoldenPeer &mdash; Helping seniors stay safe and connected
               </p>
             </td>
           </tr>

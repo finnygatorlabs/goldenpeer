@@ -4,8 +4,8 @@ import Constants from "expo-constants";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const PUSH_TOKEN_KEY = "seniorshield_push_token";
-const EXPO_TOKEN_KEY = "seniorshield_expo_token";
+const PUSH_TOKEN_KEY = "goldenpeer_push_token";
+const EXPO_TOKEN_KEY = "goldenpeer_expo_token";
 
 function isExpoGo(): boolean {
   return Constants.appOwnership === "expo";

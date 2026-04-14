@@ -2,8 +2,8 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const FROM_EMAIL = "SeniorShield <onboarding@resend.dev>";
-const APP_NAME = "SeniorShield";
+const FROM_EMAIL = "GoldenPeer <onboarding@resend.dev>";
+const APP_NAME = "GoldenPeer";
 
 export async function sendVerificationEmail(email: string, token: string, firstName?: string | null) {
   const domain = process.env.REPLIT_DEV_DOMAIN || "localhost:8080";

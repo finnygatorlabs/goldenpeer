@@ -730,7 +730,7 @@ export default function ScamScreen() {
               <View style={styles.helpStepContent}>
                 <Text style={[styles.helpStepTitle, { color: theme.text, fontSize: ts.sm }]}>From a Text Message</Text>
                 <Text style={[styles.helpStepDesc, { color: theme.textSecondary, fontSize: ts.xs }]}>
-                  Open the suspicious text. Tap and hold the message bubble. Tap "Copy." Come back to SeniorShield and paste it in the box above.
+                  Open the suspicious text. Tap and hold the message bubble. Tap "Copy." Come back to GoldenPeer and paste it in the box above.
                 </Text>
               </View>
             </View>

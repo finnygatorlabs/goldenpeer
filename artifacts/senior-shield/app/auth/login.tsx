@@ -116,7 +116,7 @@ export default function LoginScreen() {
     iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || FALLBACK_ID,
     androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || FALLBACK_ID,
     redirectUri: makeRedirectUri({
-      scheme: "senior-shield",
+      scheme: "goldenpeer",
       path: "auth/google-callback",
     }),
   });
@@ -275,7 +275,7 @@ export default function LoginScreen() {
             resizeMode="contain"
           />
           <Text style={styles.heroTitle}>Welcome Back</Text>
-          <Text style={styles.heroSubtitle}>Sign in to SeniorShield</Text>
+          <Text style={styles.heroSubtitle}>Sign in to GoldenPeer</Text>
         </View>
 
         {!showEmailForm ? (

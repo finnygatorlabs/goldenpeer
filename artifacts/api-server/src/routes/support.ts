@@ -10,7 +10,7 @@ const FAQ_ITEMS = [
   {
     id: "1",
     question: "How do I use the voice assistant?",
-    answer: "Tap the large microphone button on the home screen and speak your question. SeniorShield will listen and guide you step by step. You can ask things like \"How do I send a text?\" or \"How do I connect to WiFi?\"",
+    answer: "Tap the large microphone button on the home screen and speak your question. GoldenPeer will listen and guide you step by step. You can ask things like \"How do I send a text?\" or \"How do I connect to WiFi?\"",
     category: "voice",
   },
   {
@@ -22,7 +22,7 @@ const FAQ_ITEMS = [
   {
     id: "3",
     question: "What does the scam analyzer do?",
-    answer: "The Scam Analyzer checks messages, emails, or texts for signs of fraud. Paste the suspicious text and SeniorShield will tell you if it looks safe, suspicious, or high-risk — and explain why.",
+    answer: "The Scam Analyzer checks messages, emails, or texts for signs of fraud. Paste the suspicious text and GoldenPeer will tell you if it looks safe, suspicious, or high-risk — and explain why.",
     category: "scam",
   },
   {
@@ -46,7 +46,7 @@ const FAQ_ITEMS = [
   {
     id: "7",
     question: "Is my information private and secure?",
-    answer: "Yes. SeniorShield uses bank-level encryption to protect your data. We never sell your personal information. You can control what data is collected in Settings under Privacy & Security.",
+    answer: "Yes. GoldenPeer uses bank-level encryption to protect your data. We never sell your personal information. You can control what data is collected in Settings under Privacy & Security.",
     category: "privacy",
   },
   {

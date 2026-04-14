@@ -95,7 +95,7 @@ export default function PageHeader({ showTagline = false, greeting, screenTitle 
             numberOfLines={1}
             adjustsFontSizeToFit
           >
-            SeniorShield{"\u2122"}
+            GoldenPeer{"\u2122"}
           </Text>
         </View>
       </View>

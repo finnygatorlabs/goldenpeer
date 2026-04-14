@@ -109,7 +109,7 @@ export default function WelcomeScreen() {
             style={styles.logo}
             resizeMode="contain"
           />
-          <Text style={styles.appName}>SeniorShield{"\u2122"}</Text>
+          <Text style={styles.appName}>GoldenPeer{"\u2122"}</Text>
           <Text style={styles.tagline}>Your voice assistant for tech help & scam protection</Text>
         </View>
 

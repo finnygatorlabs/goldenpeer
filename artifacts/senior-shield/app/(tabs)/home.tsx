@@ -1134,9 +1134,9 @@ export default function HomeScreen() {
                   <Text style={styles.switchBadgeNum}>1</Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.switchStepTitle, { color: theme.text }]}>Leave SeniorShield</Text>
+                  <Text style={[styles.switchStepTitle, { color: theme.text }]}>Leave GoldenPeer</Text>
                   <Text style={[styles.switchStepDesc, { color: theme.textSecondary }]}>
-                    Press the Home button (round button at the bottom of your phone) or swipe up from the bottom edge. SeniorShield stays open in the background.
+                    Press the Home button (round button at the bottom of your phone) or swipe up from the bottom edge. GoldenPeer stays open in the background.
                   </Text>
                 </View>
               </View>
@@ -1162,7 +1162,7 @@ export default function HomeScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.switchStepTitle, { color: theme.text }]}>Come back</Text>
                   <Text style={[styles.switchStepDesc, { color: theme.textSecondary }]}>
-                    Tap the SeniorShield icon on your home screen. Or double-press the Home button (or swipe up slowly and pause on newer phones) to see all open apps, then tap SeniorShield.
+                    Tap the GoldenPeer icon on your home screen. Or double-press the Home button (or swipe up slowly and pause on newer phones) to see all open apps, then tap GoldenPeer.
                   </Text>
                 </View>
               </View>

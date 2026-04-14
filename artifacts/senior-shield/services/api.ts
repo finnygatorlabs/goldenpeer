@@ -7,7 +7,7 @@ const getApiBase = () => {
 };
 
 const API_BASE = getApiBase();
-const STORAGE_KEY = "seniorshield_user";
+const STORAGE_KEY = "goldenpeer_user";
 
 type SessionListener = () => void;
 const sessionExpiredListeners: SessionListener[] = [];

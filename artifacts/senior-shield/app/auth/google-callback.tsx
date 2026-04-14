@@ -3,8 +3,8 @@ import { View, ActivityIndicator, Text, Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 
-const STORAGE_KEY = "seniorshield_user";
-const AUTH_SIGNAL_KEY = "seniorshield_google_auth_complete";
+const STORAGE_KEY = "goldenpeer_user";
+const AUTH_SIGNAL_KEY = "goldenpeer_google_auth_complete";
 
 export default function GoogleCallbackScreen() {
   const [error, setError] = useState("");

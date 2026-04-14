@@ -473,7 +473,7 @@ router.post("/webhook", async (req, res) => {
 function billingPage(title: string, message: string, icon: string, autoClose: boolean) {
   return `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${title} - SeniorShield</title>
+<title>${title} - GoldenPeer</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#0A1628 0%,#0E2D6B 50%,#1A3F7A 100%);color:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh}
@@ -496,7 +496,7 @@ ${autoClose ? '<script>setTimeout(function(){window.close()},3000);</script>' : 
 router.get("/success", (req, res) => {
   res.send(billingPage(
     "Payment Successful!",
-    "Your SeniorShield subscription is now active. Thank you for subscribing!",
+    "Your GoldenPeer subscription is now active. Thank you for subscribing!",
     "✅",
     true
   ));

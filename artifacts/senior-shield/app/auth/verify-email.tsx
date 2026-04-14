@@ -127,7 +127,7 @@ export default function VerifyEmailScreen() {
         <View style={styles.tipCard}>
           <Ionicons name="information-circle" size={20} color="#34D399" />
           <Text style={styles.tipText}>
-            You can still use SeniorShield while waiting to verify your email.
+            You can still use GoldenPeer while waiting to verify your email.
           </Text>
         </View>
 

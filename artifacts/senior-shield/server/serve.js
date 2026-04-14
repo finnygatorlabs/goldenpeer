@@ -31,7 +31,7 @@ if (hasWebBuild) {
     '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />',
     '<meta name="mobile-web-app-capable" content="yes" />',
     '<meta name="theme-color" content="#0A1628" />',
-    '<meta name="apple-mobile-web-app-title" content="SeniorShield" />',
+    '<meta name="apple-mobile-web-app-title" content="GoldenPeer" />',
     '<link rel="apple-touch-icon" href="/logo-shield.png" />',
   ].join("\n    ");
   webIndexHtml = webIndexHtml.replace("</head>", `    ${extraMeta}\n  </head>`);

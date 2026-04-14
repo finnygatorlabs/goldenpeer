@@ -395,7 +395,7 @@ export default function HearingAidScreen() {
                 No Hearing Aid Connected
               </Text>
               <Text style={[sty.disconnectedSubtitle, { color: theme.textSecondary, fontSize: ts.sm }]}>
-                Connect your hearing aid for the best audio experience with SeniorShield
+                Connect your hearing aid for the best audio experience with GoldenPeer
               </Text>
               <Pressable
                 onPress={startScan}
@@ -613,7 +613,7 @@ export default function HearingAidScreen() {
             SUPPORTED HEARING AIDS
           </Text>
           <Text style={[sty.brandsIntro, { color: theme.textSecondary, fontSize: ts.xs }]}>
-            SeniorShield supports 8 major brands covering 85% of the hearing aid market. Works with MFi (iOS) and ASHA (Android).
+            GoldenPeer supports 8 major brands covering 85% of the hearing aid market. Works with MFi (iOS) and ASHA (Android).
           </Text>
           <View style={sty.brandsGrid}>
             {brands.map((brand) => (

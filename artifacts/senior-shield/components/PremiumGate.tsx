@@ -79,7 +79,7 @@ export default function PremiumGate({
               style={styles.logo}
               resizeMode="contain"
             />
-            <Text style={[styles.brand, { fontSize: ts.lg }]}>SeniorShield</Text>
+            <Text style={[styles.brand, { fontSize: ts.lg }]}>GoldenPeer</Text>
           </LinearGradient>
 
           <View style={styles.iconCircle}>

@@ -183,7 +183,7 @@ export default function SettingsScreen() {
           if (status !== "granted") {
             Alert.alert(
               "Photo Access Needed",
-              "SeniorShield needs permission to access your photo library so you can set a profile picture. You can enable this in your phone's Settings app.",
+              "GoldenPeer needs permission to access your photo library so you can set a profile picture. You can enable this in your phone's Settings app.",
               [
                 { text: "OK", style: "default" },
                 {
@@ -411,7 +411,7 @@ export default function SettingsScreen() {
           <InfoRow label="Account Type" value={profileData?.user_type === "senior" ? "Senior" : profileData?.user_type === "family" ? "Family Member" : profileData?.user_type || "Senior"} theme={theme} ts={ts} />
           <InfoRow label="Device" value={deviceLabel} theme={theme} ts={ts} />
           <InfoRow label="Plan" value="Free (No Expiration)" theme={theme} ts={ts} />
-          <InfoRow label="App Version" value={`SeniorShield v${APP_VERSION}`} theme={theme} ts={ts} />
+          <InfoRow label="App Version" value={`GoldenPeer v${APP_VERSION}`} theme={theme} ts={ts} />
         </View>
       </View>
 
@@ -765,7 +765,7 @@ export default function SettingsScreen() {
         <SettingRow
           icon="analytics"
           label="Usage Analytics"
-          subtitle="Help us improve SeniorShield"
+          subtitle="Help us improve GoldenPeer"
           rightContent={
             <Switch
               value={prefs.data_collection_enabled}
@@ -847,7 +847,7 @@ export default function SettingsScreen() {
       )}
 
       <Text style={[styles.version, { color: theme.textTertiary, fontSize: ts.xs }]}>
-        SeniorShield™ v{APP_VERSION}
+        GoldenPeer™ v{APP_VERSION}
       </Text>
     </ScrollView>
     </View>

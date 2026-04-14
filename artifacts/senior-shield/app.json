@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "SeniorShield",
+    "name": "GoldenPeer",
     "slug": "senior-shield",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -15,10 +15,10 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.seniorshield.app"
+      "bundleIdentifier": "com.goldenpeer.app"
     },
     "android": {
-      "package": "com.seniorshield.app"
+      "package": "com.goldenpeer.app"
     },
     "web": {
       "favicon": "./assets/images/icon.png"

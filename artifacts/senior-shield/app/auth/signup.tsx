@@ -263,7 +263,7 @@ export default function SignupScreen() {
         >
           <View style={styles.heroSection}>
             <Image source={shieldLogo} style={styles.heroLogo} resizeMode="contain" />
-            <Text style={styles.heroTitle}>Welcome to SeniorShield</Text>
+            <Text style={styles.heroTitle}>Welcome to GoldenPeer</Text>
             <Text style={styles.heroSubtitle}>Please Sign In</Text>
           </View>
 

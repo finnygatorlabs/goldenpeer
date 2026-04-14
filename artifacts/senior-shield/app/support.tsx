@@ -29,7 +29,7 @@ const FAQ = [
   },
   {
     question: "How do family alerts work?",
-    answer: "When SeniorShield detects a high-risk scam directed at you, it automatically sends a message to all your family members so they can help you stay safe.",
+    answer: "When GoldenPeer detects a high-risk scam directed at you, it automatically sends a message to all your family members so they can help you stay safe.",
   },
   {
     question: "Is my information private?",
@@ -37,7 +37,7 @@ const FAQ = [
   },
   {
     question: "How do I add a family member?",
-    answer: "Go to the Family tab and tap the + button. Enter your family member's email address and they will receive an invitation to join your SeniorShield network.",
+    answer: "Go to the Family tab and tap the + button. Enter your family member's email address and they will receive an invitation to join your GoldenPeer network.",
   },
   {
     question: "How do reminders work?",
@@ -131,7 +131,7 @@ export default function SupportScreen() {
         </View>
         <View style={styles.contactRow}>
           <Ionicons name="mail" size={20} color="#2563EB" />
-          <Text style={[styles.contactText, { color: "#1D4ED8" }]}>support@seniorshield.app</Text>
+          <Text style={[styles.contactText, { color: "#1D4ED8" }]}>support@goldenpeer.app</Text>
         </View>
       </View>
 

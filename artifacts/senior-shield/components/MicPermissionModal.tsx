@@ -52,7 +52,7 @@ export default function MicPermissionModal({
               style={styles.logo}
               resizeMode="contain"
             />
-            <Text style={[styles.brand, { fontSize: ts.lg }]}>SeniorShield</Text>
+            <Text style={[styles.brand, { fontSize: ts.lg }]}>GoldenPeer</Text>
           </LinearGradient>
 
           {/* Mic icon */}

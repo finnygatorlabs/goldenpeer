@@ -353,7 +353,7 @@ router.post("/alert-family", requireAuth, async (req: AuthRequest, res) => {
 
     const senderName = sender?.first_name
       ? `${sender.first_name}${sender.last_name ? " " + sender.last_name : ""}`
-      : sender?.email || "A SeniorShield user";
+      : sender?.email || "A GoldenPeer user";
 
     const relationships = await db.select().from(familyRelationshipsTable)
       .where(and(

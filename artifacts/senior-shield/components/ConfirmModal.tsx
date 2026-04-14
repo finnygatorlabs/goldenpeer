@@ -62,7 +62,7 @@ export default function ConfirmModal({
               style={styles.logo}
               resizeMode="contain"
             />
-            <Text style={[styles.brand, { fontSize: ts.lg }]}>SeniorShield</Text>
+            <Text style={[styles.brand, { fontSize: ts.lg }]}>GoldenPeer</Text>
           </LinearGradient>
 
           {/* Icon */}
