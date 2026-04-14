@@ -103,7 +103,7 @@ export default function PageHeader({ showTagline = false, greeting, screenTitle 
       {/* Tagline */}
       {showTagline && (
         <Text
-          style={[styles.tagline, { marginTop: 2, paddingLeft: 80 }]}
+          style={[styles.tagline, { marginTop: -6, paddingLeft: 80 }]}
           adjustsFontSizeToFit
           minimumFontScale={0.8}
           numberOfLines={1}
@@ -114,7 +114,7 @@ export default function PageHeader({ showTagline = false, greeting, screenTitle 
 
       {/* Greeting row */}
       {!!greeting && (
-        <View style={[styles.greetingRow, { marginTop: showTagline ? 6 : 10 }]}>
+        <View style={[styles.greetingRow, { marginTop: showTagline ? -2 : 2 }]}>
           <View style={styles.greetingDivider} />
           <Text
             style={[styles.greeting, { fontSize: ts.md }]}
