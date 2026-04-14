@@ -1565,7 +1565,7 @@ const styles = StyleSheet.create({
     top: -100,
     left: 0,
     right: 0,
-    height: 100,
+    height: 120,
     zIndex: 1,
   },
   orbGlow: {
