@@ -30,7 +30,7 @@ const { width } = Dimensions.get("window");
 const GRADIENT: [string, string, string] = ["#06102E", "#0E2D6B", "#0B5FAA"];
 const userType = "senior";
 
-const shieldLogo = require("@/assets/seniorshield-logo-nobg.png");
+const shieldLogo = require("@/assets/images/logo-shield.png");
 
 function InlineError({ message, onDismiss }: { message: string; onDismiss: () => void }) {
   return (
