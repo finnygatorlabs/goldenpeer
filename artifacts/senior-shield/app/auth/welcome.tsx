@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
     width: 133,
     height: 147,
     marginBottom: 8,
-    marginRight: 7,
+    marginRight: 12,
   },
   appName: {
     fontSize: 34,
