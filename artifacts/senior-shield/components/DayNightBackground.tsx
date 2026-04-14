@@ -31,6 +31,59 @@ function CloudPuff({ cx, cy, r }: { cx: number; cy: number; r: number }) {
   );
 }
 
+const CLOUD_SHAPES: { cx: number; cy: number; r: number }[][] = [
+  [
+    { cx: 18, cy: 36, r: 16 },
+    { cx: 38, cy: 26, r: 22 },
+    { cx: 62, cy: 20, r: 26 },
+    { cx: 86, cy: 25, r: 18 },
+    { cx: 50, cy: 38, r: 20 },
+    { cx: 74, cy: 35, r: 17 },
+  ],
+  [
+    { cx: 15, cy: 30, r: 14 },
+    { cx: 35, cy: 22, r: 20 },
+    { cx: 55, cy: 18, r: 24 },
+    { cx: 78, cy: 22, r: 22 },
+    { cx: 100, cy: 28, r: 16 },
+    { cx: 45, cy: 34, r: 18 },
+    { cx: 68, cy: 32, r: 20 },
+    { cx: 90, cy: 34, r: 14 },
+  ],
+  [
+    { cx: 22, cy: 32, r: 20 },
+    { cx: 48, cy: 22, r: 28 },
+    { cx: 75, cy: 26, r: 22 },
+    { cx: 36, cy: 38, r: 18 },
+    { cx: 60, cy: 36, r: 22 },
+  ],
+  [
+    { cx: 12, cy: 28, r: 12 },
+    { cx: 28, cy: 20, r: 18 },
+    { cx: 48, cy: 16, r: 22 },
+    { cx: 68, cy: 20, r: 20 },
+    { cx: 85, cy: 26, r: 15 },
+    { cx: 38, cy: 30, r: 16 },
+    { cx: 58, cy: 30, r: 18 },
+    { cx: 76, cy: 32, r: 13 },
+  ],
+  [
+    { cx: 20, cy: 34, r: 18 },
+    { cx: 42, cy: 24, r: 24 },
+    { cx: 66, cy: 20, r: 20 },
+    { cx: 54, cy: 36, r: 16 },
+  ],
+  [
+    { cx: 16, cy: 30, r: 15 },
+    { cx: 34, cy: 22, r: 20 },
+    { cx: 56, cy: 18, r: 26 },
+    { cx: 80, cy: 22, r: 20 },
+    { cx: 98, cy: 30, r: 14 },
+    { cx: 44, cy: 34, r: 18 },
+    { cx: 70, cy: 32, r: 20 },
+  ],
+];
+
 function Cloud({
   left,
   top,
@@ -38,6 +91,7 @@ function Cloud({
   opacity = 0.8,
   driftRange = 8,
   driftDuration = 8000,
+  variant = 0,
 }: {
   left: number;
   top: number;
@@ -45,6 +99,7 @@ function Cloud({
   opacity?: number;
   driftRange?: number;
   driftDuration?: number;
+  variant?: number;
 }) {
   const cloudOpacity = useSharedValue(opacity);
   const translateX = useSharedValue(0);
@@ -73,6 +128,8 @@ function Cloud({
     transform: [{ translateX: translateX.value }, { scale }],
   }));
 
+  const puffs = CLOUD_SHAPES[variant % CLOUD_SHAPES.length];
+
   return (
     <Reanimated.View
       style={[
@@ -86,13 +143,9 @@ function Cloud({
         cloudStyle,
       ]}
     >
-      <CloudPuff cx={20} cy={35} r={18} />
-      <CloudPuff cx={40} cy={25} r={22} />
-      <CloudPuff cx={60} cy={20} r={26} />
-      <CloudPuff cx={82} cy={24} r={20} />
-      <CloudPuff cx={100} cy={32} r={16} />
-      <CloudPuff cx={50} cy={38} r={20} />
-      <CloudPuff cx={72} cy={36} r={18} />
+      {puffs.map((p, i) => (
+        <CloudPuff key={i} cx={p.cx} cy={p.cy} r={p.r} />
+      ))}
     </Reanimated.View>
   );
 }
@@ -158,12 +211,12 @@ export default function DayNightBackground({
   }, []);
 
   const clouds = useMemo(() => [
-    { leftPct: -0.08, topPct: 0.05, scale: 1.2, opacity: 0.85, driftRange: 12, driftDuration: 10000 },
-    { leftPct: 0.50, topPct: 0.15, scale: 0.8, opacity: 0.70, driftRange: 8, driftDuration: 9000 },
-    { leftPct: 0.12, topPct: 0.35, scale: 1.4, opacity: 0.75, driftRange: 15, driftDuration: 12000 },
-    { leftPct: 0.62, topPct: 0.50, scale: 0.7, opacity: 0.60, driftRange: 6, driftDuration: 7000 },
-    { leftPct: 0.28, topPct: 0.65, scale: 1.0, opacity: 0.70, driftRange: 10, driftDuration: 11000 },
-    { leftPct: 0.72, topPct: 0.78, scale: 0.9, opacity: 0.55, driftRange: 9, driftDuration: 8500 },
+    { leftPct: -0.08, topPct: 0.05, scale: 1.2, opacity: 0.55, driftRange: 12, driftDuration: 10000, variant: 0 },
+    { leftPct: 0.50, topPct: 0.15, scale: 0.8, opacity: 0.45, driftRange: 8, driftDuration: 9000, variant: 1 },
+    { leftPct: 0.12, topPct: 0.35, scale: 1.4, opacity: 0.50, driftRange: 15, driftDuration: 12000, variant: 2 },
+    { leftPct: 0.62, topPct: 0.50, scale: 0.7, opacity: 0.40, driftRange: 6, driftDuration: 7000, variant: 3 },
+    { leftPct: 0.28, topPct: 0.65, scale: 1.0, opacity: 0.50, driftRange: 10, driftDuration: 11000, variant: 4 },
+    { leftPct: 0.72, topPct: 0.78, scale: 0.9, opacity: 0.40, driftRange: 9, driftDuration: 8500, variant: 5 },
   ], []);
 
   const bgOpacity = useSharedValue(isDark ? 1 : 0);
@@ -201,6 +254,7 @@ export default function DayNightBackground({
               opacity={c.opacity}
               driftRange={c.driftRange}
               driftDuration={c.driftDuration}
+              variant={c.variant}
             />
           ))}
         </LinearGradient>
