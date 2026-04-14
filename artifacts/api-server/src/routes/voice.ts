@@ -503,29 +503,7 @@ async function fetchRealTimeContext(userMessage: string, userLocation?: string):
           return `\n[WORLD TIME for ${cityLabel} (${timezone})]:\nCurrent time: ${formatted}\nDate: ${dateFormatted}\nTimezone: ${abbr}`;
         }
 
-        fetches.push(
-          fetchWithRetry(`https://timeapi.io/api/time/current/zone?timeZone=${encodeURIComponent(tz)}`, {}, 1, 5000)
-            .then(r => r.json())
-            .then((data: any) => {
-              if (data?.dateTime) {
-                const dt = new Date(data.dateTime);
-                const formatted = dt.toLocaleTimeString("en-US", {
-                  hour: "numeric", minute: "2-digit", hour12: true, timeZone: tz,
-                });
-                const dateFormatted = dt.toLocaleDateString("en-US", {
-                  weekday: "long", month: "long", day: "numeric", timeZone: tz,
-                });
-                const abbr = dt.toLocaleTimeString("en-US", { timeZoneName: "short", timeZone: tz }).split(" ").pop() || tz;
-                context += `\n[WORLD TIME for ${cityLabel} (${data.timeZone})]:\nCurrent time: ${formatted}\nDate: ${dateFormatted}\nTimezone: ${abbr}`;
-              } else {
-                context += formatTimeFromTZ(tz);
-              }
-            })
-            .catch(() => {
-              console.warn("[fetchRealTimeContext] TimeAPI.io failed, using JS Date fallback for", tz);
-              context += formatTimeFromTZ(tz);
-            })
-        );
+        context += formatTimeFromTZ(tz);
       } else {
         context += `\n[WORLD TIME] Could not find timezone for "${timeCity}". Ask the user to try a major city name, like "What time is it in London?" or "What time is it in Tokyo?"`;
       }

@@ -107,7 +107,7 @@ interface ConvTurn {
 }
 
 // ── Message bubble ─────────────────────────────────────────────────────────
-const MAX_LINES = 4;
+const MAX_LINES = 5;
 
 function MessageBubble({
   message, theme, ts, onSpeak,
@@ -115,7 +115,8 @@ function MessageBubble({
   message: Message; theme: any; ts: any; onSpeak?: (t: string) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const isLong = message.text.length > 180;
+  const [isTruncated, setIsTruncated] = useState(false);
+  const isLong = message.text.length > 120 || isTruncated;
 
   if (message.isUser) {
     return (
@@ -148,6 +149,11 @@ function MessageBubble({
             <>
               <Text
                 numberOfLines={expanded ? undefined : MAX_LINES}
+                onTextLayout={(e) => {
+                  if (!expanded && e.nativeEvent.lines.length >= MAX_LINES) {
+                    setIsTruncated(true);
+                  }
+                }}
                 style={{ color: theme.text, fontSize: ts.base, lineHeight: ts.base * 1.6, fontFamily: "Inter_400Regular" }}
               >
                 {message.text}
@@ -1077,9 +1083,7 @@ export default function HomeScreen() {
   const isOrbCompact = greeted;
   // Idle = compact + not actively listening/speaking (used for status row + "Type instead" logic)
   const isOrbIdle = greeted && !isListening && !isSpeaking;
-  const ORB_FOOTER_HEIGHT = isOrbCompact ? 150 : 200;
-  // The floating status row sits just above the footer
-  const statusRowBottom = orbBottomPad + ORB_FOOTER_HEIGHT + 8;
+  const ORB_FOOTER_HEIGHT = isOrbCompact ? 160 : 210;
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -1240,56 +1244,13 @@ export default function HomeScreen() {
 
       {/* ── Welcome back banner ── */}
       {welcomeBack && (
-        <View style={[styles.welcomeBackBanner, { bottom: statusRowBottom + 30 }]}>
+        <View style={[styles.welcomeBackBanner, { bottom: orbBottomPad + ORB_FOOTER_HEIGHT + 38 }]}>
           <Ionicons name="arrow-up-circle" size={18} color="#2563EB" />
           <Text style={styles.welcomeBackText}>Welcome back! Your instructions are above.</Text>
         </View>
       )}
 
-      {/* ── Status label floats above the orb (no layout impact on orb position) ── */}
-      {!showText && (
-        <View
-          style={[
-            styles.statusRow,
-            {
-              position: "absolute",
-              bottom: statusRowBottom,
-              left: 0,
-              right: 0,
-            },
-          ]}
-          pointerEvents="none"
-        >
-          {isListening && interimText ? (
-            <View style={[styles.interimBox, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-              <Text style={{ fontSize: ts.sm, fontFamily: "Inter_400Regular", color: theme.text, fontStyle: "italic" }} numberOfLines={3}>
-                "{interimText}"
-              </Text>
-            </View>
-          ) : (
-            <Text
-              style={[
-                styles.statusLabel,
-                {
-                  color: isListening
-                    ? (isDark ? "#67E8F9" : "#0E7490")
-                    : isSpeaking
-                    ? (isDark ? "#93C5FD" : "#1D4ED8")
-                    : (isDark ? "#CBD5E1" : "#475569"),
-                  fontSize: ts.sm,
-                  fontWeight: "600",
-                  textShadowColor: isDark ? "rgba(0,0,0,0.9)" : "rgba(255,255,255,0.9)",
-                  textShadowOffset: { width: 0, height: 0 },
-                  textShadowRadius: 6,
-                },
-              ]}
-              numberOfLines={1}
-            >
-              {statusLabel}
-            </Text>
-          )}
-        </View>
-      )}
+      
 
       {/* ── Voice orb footer (above floating tab bar) ── */}
       {!showText && (
@@ -1319,6 +1280,38 @@ export default function HomeScreen() {
             shadowRadius: isDark ? 50 : 60,
             elevation: isDark ? 25 : 30,
           }]} />
+
+          {/* Status label above the orb */}
+          <View style={styles.statusRow} pointerEvents="none">
+            {isListening && interimText ? (
+              <View style={[styles.interimBox, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+                <Text style={{ fontSize: ts.sm, fontFamily: "Inter_400Regular", color: theme.text, fontStyle: "italic" }} numberOfLines={3}>
+                  "{interimText}"
+                </Text>
+              </View>
+            ) : (
+              <Text
+                style={[
+                  styles.statusLabel,
+                  {
+                    color: isListening
+                      ? (isDark ? "#67E8F9" : "#0E7490")
+                      : isSpeaking
+                      ? (isDark ? "#93C5FD" : "#1D4ED8")
+                      : (isDark ? "#CBD5E1" : "#475569"),
+                    fontSize: ts.base,
+                    fontWeight: "600",
+                    textShadowColor: isDark ? "rgba(0,0,0,0.9)" : "rgba(255,255,255,0.9)",
+                    textShadowOffset: { width: 0, height: 0 },
+                    textShadowRadius: 6,
+                  },
+                ]}
+                numberOfLines={1}
+              >
+                {statusLabel}
+              </Text>
+            )}
+          </View>
 
           {/* Orb — compact when idle, full size when active */}
           <FluidOrb
