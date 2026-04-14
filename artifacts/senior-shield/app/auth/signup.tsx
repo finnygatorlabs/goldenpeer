@@ -485,8 +485,8 @@ const styles = StyleSheet.create({
   },
 
   heroLogo: {
-    width: 90,
-    height: 100,
+    width: 108,
+    height: 120,
     marginBottom: 8,
     zIndex: 2,
   },
