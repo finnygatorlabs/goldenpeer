@@ -67,7 +67,7 @@ function Cloud({
           width,
           height,
           borderRadius: height / 2,
-          backgroundColor: "rgba(255, 255, 255, 0.35)",
+          backgroundColor: "rgba(255, 255, 255, 0.7)",
           left,
           top,
         },
@@ -138,13 +138,13 @@ export default function DayNightBackground({
   }, []);
 
   const clouds = useMemo(() => [
-    { leftPct: -0.05, topPct: 0.05, width: 140, height: 45, opacity: 0.30, driftRange: 12, driftDuration: 10000 },
-    { leftPct: 0.50, topPct: 0.12, width: 100, height: 35, opacity: 0.22, driftRange: 8, driftDuration: 9000 },
-    { leftPct: 0.15, topPct: 0.30, width: 160, height: 55, opacity: 0.28, driftRange: 15, driftDuration: 12000 },
-    { leftPct: 0.65, topPct: 0.42, width: 90, height: 30, opacity: 0.18, driftRange: 6, driftDuration: 7000 },
-    { leftPct: 0.30, topPct: 0.55, width: 130, height: 42, opacity: 0.25, driftRange: 10, driftDuration: 11000 },
-    { leftPct: 0.75, topPct: 0.68, width: 110, height: 38, opacity: 0.20, driftRange: 9, driftDuration: 8500 },
-    { leftPct: 0.02, topPct: 0.75, width: 80, height: 28, opacity: 0.15, driftRange: 5, driftDuration: 7500 },
+    { leftPct: -0.05, topPct: 0.05, width: 140, height: 45, opacity: 0.85, driftRange: 12, driftDuration: 10000 },
+    { leftPct: 0.50, topPct: 0.12, width: 100, height: 35, opacity: 0.70, driftRange: 8, driftDuration: 9000 },
+    { leftPct: 0.15, topPct: 0.30, width: 160, height: 55, opacity: 0.80, driftRange: 15, driftDuration: 12000 },
+    { leftPct: 0.65, topPct: 0.42, width: 90, height: 30, opacity: 0.60, driftRange: 6, driftDuration: 7000 },
+    { leftPct: 0.30, topPct: 0.55, width: 130, height: 42, opacity: 0.75, driftRange: 10, driftDuration: 11000 },
+    { leftPct: 0.75, topPct: 0.68, width: 110, height: 38, opacity: 0.65, driftRange: 9, driftDuration: 8500 },
+    { leftPct: 0.02, topPct: 0.75, width: 80, height: 28, opacity: 0.55, driftRange: 5, driftDuration: 7500 },
   ], []);
 
   const bgOpacity = useSharedValue(isDark ? 1 : 0);
