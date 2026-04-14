@@ -1275,7 +1275,19 @@ export default function HomeScreen() {
         >
           <DayNightBackground isDark={isDark} />
 
-          
+          {/* Gradient fade — feathers the top edge so the footer blends into the message area */}
+          <LinearGradient
+            colors={[
+              "transparent",
+              isDark ? "rgba(11,26,43,0.15)" : "rgba(135,206,235,0.15)",
+              isDark ? "rgba(11,26,43,0.5)" : "rgba(135,206,235,0.5)",
+              isDark ? "rgba(11,26,43,0.85)" : "rgba(135,206,235,0.85)",
+              isDark ? "#0B1A2B" : "#87CEEB",
+            ]}
+            locations={[0, 0.25, 0.5, 0.75, 1]}
+            style={styles.orbFade}
+            pointerEvents="none"
+          />
 
           {/* Ambient glow behind the orb */}
           <View style={[styles.orbGlow, {
@@ -1538,8 +1550,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 0,
   },
-  // Gradient that bleeds upward from the footer, dissolving messages into the panel
-  
+  orbFade: {
+    position: "absolute",
+    top: -100,
+    left: 0,
+    right: 0,
+    height: 100,
+    zIndex: 1,
+  },
   orbGlow: {
     position: "absolute",
     top: 8,
