@@ -95,9 +95,15 @@ export default function DayNightBackground({
   return (
     <View style={styles.container}>
       <Reanimated.View style={[styles.background, dayStyle]}>
+        <LinearGradient
+          colors={["#87CEEB", "#B8E4F9", "#D4EFFC"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={StyleSheet.absoluteFillObject}
+        />
         <Image
           source={require("../public/clouds.png")}
-          style={StyleSheet.absoluteFillObject}
+          style={[StyleSheet.absoluteFillObject, { opacity: 0.7 }]}
           resizeMode="cover"
         />
       </Reanimated.View>
