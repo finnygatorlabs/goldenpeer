@@ -82,42 +82,6 @@ function CloudLayer({
   );
 }
 
-function Star({ x, y, duration = 3000 }: { x: number; y: number; duration?: number }) {
-  const starOpacity = useSharedValue(0.3 + Math.random() * 0.4);
-
-  useEffect(() => {
-    starOpacity.value = withRepeat(
-      withSequence(
-        withTiming(0.9 + Math.random() * 0.1, { duration, easing: Easing.inOut(Easing.ease) }),
-        withTiming(0.2, { duration, easing: Easing.inOut(Easing.ease) })
-      ),
-      -1,
-      false
-    );
-  }, []);
-
-  const starStyle = useAnimatedStyle(() => ({
-    opacity: starOpacity.value,
-  }));
-
-  return (
-    <Reanimated.View
-      style={[
-        {
-          position: "absolute",
-          width: 2,
-          height: 2,
-          borderRadius: 1,
-          backgroundColor: "#FFFFFF",
-          left: x,
-          top: y,
-        },
-        starStyle,
-      ]}
-    />
-  );
-}
-
 export default function DayNightBackground({
   isDark: isDarkProp,
   children,
@@ -126,32 +90,16 @@ export default function DayNightBackground({
 
   const isDark = useMemo(() => {
     if (isDarkProp !== undefined) return isDarkProp;
-    const hour = new Date().getHours();
-    return hour >= 18 || hour < 6;
+    return false;
   }, [isDarkProp]);
 
-  const stars = useMemo(() => {
-    const arr = [];
-    for (let i = 0; i < 35; i++) {
-      arr.push({
-        xPct: Math.random(),
-        yPct: Math.random() * 0.7,
-        duration: 2500 + Math.random() * 2500,
-      });
-    }
-    return arr;
-  }, []);
-
-  const cloudLayers = useMemo(() => {
-    const layerH = 90;
-    return [
-      { leftPct: -0.15, topPct: 0.02, widthPct: 0.85, opacity: 0.45, driftRange: 12, driftDuration: 28000, flipX: false, flipY: false },
-      { leftPct: 0.35, topPct: 0.18, widthPct: 0.80, opacity: 0.38, driftRange: 18, driftDuration: 32000, flipX: true, flipY: false },
-      { leftPct: -0.05, topPct: 0.40, widthPct: 0.75, opacity: 0.35, driftRange: 14, driftDuration: 25000, flipX: false, flipY: true },
-      { leftPct: 0.30, topPct: 0.60, widthPct: 0.70, opacity: 0.30, driftRange: 16, driftDuration: 30000, flipX: true, flipY: true },
-      { leftPct: 0.10, topPct: 0.80, widthPct: 0.65, opacity: 0.28, driftRange: 10, driftDuration: 26000, flipX: false, flipY: false },
-    ];
-  }, []);
+  const cloudLayers = useMemo(() => [
+    { leftPct: -0.15, topPct: 0.02, widthPct: 0.85, lightOpacity: 0.45, darkOpacity: 0.15, driftRange: 12, driftDuration: 28000, flipX: false, flipY: false },
+    { leftPct: 0.35, topPct: 0.18, widthPct: 0.80, lightOpacity: 0.38, darkOpacity: 0.12, driftRange: 18, driftDuration: 32000, flipX: true, flipY: false },
+    { leftPct: -0.05, topPct: 0.40, widthPct: 0.75, lightOpacity: 0.35, darkOpacity: 0.10, driftRange: 14, driftDuration: 25000, flipX: false, flipY: true },
+    { leftPct: 0.30, topPct: 0.60, widthPct: 0.70, lightOpacity: 0.30, darkOpacity: 0.08, driftRange: 16, driftDuration: 30000, flipX: true, flipY: true },
+    { leftPct: 0.10, topPct: 0.80, widthPct: 0.65, lightOpacity: 0.28, darkOpacity: 0.07, driftRange: 10, driftDuration: 26000, flipX: false, flipY: false },
+  ], []);
 
   const bgOpacity = useSharedValue(isDark ? 1 : 0);
 
@@ -178,22 +126,7 @@ export default function DayNightBackground({
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
           style={StyleSheet.absoluteFillObject}
-        >
-          {cloudLayers.map((c, i) => (
-            <CloudLayer
-              key={i}
-              left={screenW * c.leftPct}
-              top={300 * c.topPct}
-              width={screenW * c.widthPct}
-              height={90}
-              opacity={c.opacity}
-              driftRange={c.driftRange}
-              driftDuration={c.driftDuration}
-              flipX={c.flipX}
-              flipY={c.flipY}
-            />
-          ))}
-        </LinearGradient>
+        />
       </Reanimated.View>
 
       <Reanimated.View style={[styles.background, nightStyle]}>
@@ -202,17 +135,23 @@ export default function DayNightBackground({
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
           style={StyleSheet.absoluteFillObject}
-        >
-          {stars.map((s, i) => (
-            <Star
-              key={i}
-              x={screenW * s.xPct}
-              y={300 * s.yPct}
-              duration={s.duration}
-            />
-          ))}
-        </LinearGradient>
+        />
       </Reanimated.View>
+
+      {cloudLayers.map((c, i) => (
+        <CloudLayer
+          key={i}
+          left={screenW * c.leftPct}
+          top={300 * c.topPct}
+          width={screenW * c.widthPct}
+          height={90}
+          opacity={isDark ? c.darkOpacity : c.lightOpacity}
+          driftRange={c.driftRange}
+          driftDuration={c.driftDuration}
+          flipX={c.flipX}
+          flipY={c.flipY}
+        />
+      ))}
 
       {children}
     </View>
