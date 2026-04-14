@@ -202,6 +202,20 @@ export default function FluidOrb({ onPress, isListening, isSpeaking, audioReady,
           ]}
         />
 
+        {Platform.OS === "web" && (
+          <View
+            style={[
+              StyleSheet.absoluteFillObject,
+              {
+                borderRadius: FULL_SIZE / 2,
+                borderWidth: 1.5,
+                borderColor: "rgba(100,180,255,0.25)",
+                boxShadow: "inset 0 -8px 20px 4px rgba(0,0,0,0.45), inset 0 6px 14px 2px rgba(140,200,255,0.2), inset 0 0 30px 6px rgba(0,0,0,0.2)",
+              } as any,
+            ]}
+          />
+        )}
+
         {(isListening || isSpeaking) && (
           <View style={StyleSheet.absoluteFillObject}>
             <PulseRing color={accent} delay={0} borderWidth={2.5} duration={2400} />
