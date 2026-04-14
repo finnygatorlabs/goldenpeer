@@ -404,15 +404,26 @@ async function fetchRealTimeContext(userMessage: string, userLocation?: string):
   }
 
   if (needsNews && NEWS_API_KEY) {
-    const queryMatch = lower.match(/news\s+(?:about|on|regarding)\s+(.+)/i)
-      || lower.match(/(?:about|regarding)\s+(?:the\s+)?(.+?)(?:\?|$)/i)
-      || lower.match(/(?:tell me about|what about|what happened|who won|results?)\s+(?:the\s+)?(.+?)(?:\?|$)/i)
-      || lower.match(/(?:who was|who got|what were)\s+(?:the\s+)?(.+?)(?:\?|$)/i);
-    let q = queryMatch ? queryMatch[1].trim().replace(/\s+today$|\s+tonight$|\s+yesterday$/i, "").replace(/^(?:at|in|during|with)\s+(?:the\s+)?/i, "") : "";
-    if (!q || q === "latest") {
-      const sportsTerms = lower.match(/\b(wnba|nba|nfl|mlb|nhl|draft|trade|playoff|championship)\b/gi);
-      q = sportsTerms ? sportsTerms.join(" ") : "latest";
+    const queryMatch = lower.match(/news\s+(?:about|on|regarding|for)\s+(.+)/i)
+      || lower.match(/(?:tell me about|what about|what happened with|who won|results? for|results? of|update on|updates? on|updates? about)\s+(?:the\s+)?(.+)/i)
+      || lower.match(/(?:about|regarding)\s+(?:the\s+)?(.+)/i)
+      || lower.match(/(?:who was|who got|what were|what's going on with|whats going on with)\s+(?:the\s+)?(.+)/i);
+    let q = queryMatch
+      ? (queryMatch[2] || queryMatch[1] || "").trim()
+          .replace(/[?.!]+$/, "")
+          .replace(/\s+today$|\s+tonight$|\s+yesterday$|\s+right now$/i, "")
+          .replace(/^(?:at|in|during|with)\s+(?:the\s+)?/i, "")
+      : "";
+    if (!q || q.length < 2 || q === "latest") {
+      const sportsTerms = lower.match(/\b(wnba|nba|nfl|mlb|nhl|draft|trade|trades|playoff|playoffs|championship|free agency|free agent)\b/gi);
+      if (sportsTerms) {
+        q = sportsTerms.join(" ");
+      } else {
+        const topicWords = lower.replace(/\b(can you|could you|please|tell me|give me|show me|what's|whats|what is|the|a|an|any|some|me|i|my|from|for|right now|today|yesterday|tonight)\b/gi, "").trim();
+        q = topicWords.length >= 3 ? topicWords.split(/\s+/).slice(0, 4).join(" ") : "top stories";
+      }
     }
+    console.log("[fetchRealTimeContext] News query:", JSON.stringify(q));
     fetches.push(
       fetchWithRetry(`https://newsdata.io/api/1/latest?apikey=${NEWS_API_KEY}&q=${encodeURIComponent(q)}&language=en&country=us`, {}, 2, 8000)
         .then(r => r.json())

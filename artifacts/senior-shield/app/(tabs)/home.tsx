@@ -291,6 +291,8 @@ export default function HomeScreen() {
   const scrollRef = useRef<ScrollView>(null);
   const recognitionRef = useRef<any>(null);
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const maxListenTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const MAX_LISTEN_DURATION = 15_000;
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const shouldListenAfterSpeak = useRef(false);
   // Tracks whether we've already triggered the silence prompt to avoid double-fire
@@ -610,6 +612,7 @@ export default function HomeScreen() {
     conversationActiveRef.current = false;
     shouldListenAfterSpeak.current = false;
     if (silenceTimerRef.current) { clearTimeout(silenceTimerRef.current); silenceTimerRef.current = null; }
+    if (maxListenTimerRef.current) { clearTimeout(maxListenTimerRef.current); maxListenTimerRef.current = null; }
     recognitionRef.current?.stop();
     recognitionRef.current = null;
     setIsListening(false);
@@ -659,6 +662,11 @@ export default function HomeScreen() {
         setIsListening(true);
         setInterimText("");
         if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        if (maxListenTimerRef.current) clearTimeout(maxListenTimerRef.current);
+        maxListenTimerRef.current = setTimeout(() => {
+          maxListenTimerRef.current = null;
+          recognitionRef.current?.stop();
+        }, MAX_LISTEN_DURATION);
       };
 
       r.onresult = (e: any) => {
@@ -689,6 +697,7 @@ export default function HomeScreen() {
         setIsListening(false);
         recognitionRef.current = null;
         if (silenceTimerRef.current) { clearTimeout(silenceTimerRef.current); silenceTimerRef.current = null; }
+        if (maxListenTimerRef.current) { clearTimeout(maxListenTimerRef.current); maxListenTimerRef.current = null; }
         setInterimText(prev => {
           if (prev.trim()) {
             // Silence timer fired (or recognition ended naturally) — send what was said
