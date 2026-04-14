@@ -136,7 +136,7 @@ function MessageBubble({
       <View style={styles.asstIcon}>
         <Image
           source={require("@/assets/images/goldenpeer-logo-white.png")}
-          style={{ width: 20, height: 22 }}
+          style={{ width: 18, height: 20 }}
           resizeMode="contain"
         />
       </View>
