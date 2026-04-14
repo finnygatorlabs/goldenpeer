@@ -15,14 +15,14 @@ import { Ionicons } from "@expo/vector-icons";
 const FULL_SIZE = 176;
 const COMPACT_SIZE = 100;
 
-function PulseRing({ color, delay = 0, borderWidth = 2, duration = 2400 }: { color: string; delay?: number; borderWidth?: number; duration?: number }) {
+function PulseRing({ color, delay = 0, borderWidth = 1.5, duration = 2400 }: { color: string; delay?: number; borderWidth?: number; duration?: number }) {
   const scale = useSharedValue(0.5);
-  const opacity = useSharedValue(0.9);
+  const opacity = useSharedValue(0.6);
 
   useEffect(() => {
     scale.value = withDelay(
       delay,
-      withRepeat(withTiming(1.9, { duration, easing: Easing.out(Easing.quad) }), -1, false)
+      withRepeat(withTiming(2.2, { duration, easing: Easing.out(Easing.quad) }), -1, false)
     );
     opacity.value = withDelay(
       delay,
@@ -204,9 +204,9 @@ export default function FluidOrb({ onPress, isListening, isSpeaking, audioReady,
 
         {(isListening || isSpeaking) && (
           <View style={StyleSheet.absoluteFillObject}>
-            <PulseRing color={accent} delay={0} borderWidth={2.5} duration={2400} />
-            <PulseRing color={accentAlt} delay={800} borderWidth={2} duration={2400} />
-            <PulseRing color={accent} delay={1600} borderWidth={1.5} duration={2400} />
+            <PulseRing color={accentAlt} delay={0} borderWidth={1} duration={2800} />
+            <PulseRing color={accent} delay={900} borderWidth={0.8} duration={2800} />
+            <PulseRing color={accentAlt} delay={1800} borderWidth={0.6} duration={2800} />
           </View>
         )}
 
@@ -251,16 +251,12 @@ const styles = StyleSheet.create({
   },
   iconWrap: {
     position: "absolute",
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(0,0,0,0.25)",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.8,
-    shadowRadius: 6,
+    backgroundColor: "rgba(0,0,0,0.08)",
   },
   compactLabel: {
     color: "#E2E8F0",

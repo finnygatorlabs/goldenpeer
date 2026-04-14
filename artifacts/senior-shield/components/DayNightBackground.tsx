@@ -15,23 +15,39 @@ interface DayNightBackgroundProps {
   children?: React.ReactNode;
 }
 
-function Cloud({ left, top, opacity = 0.25 }: { left: number; top: number; opacity?: number }) {
+function Cloud({
+  left,
+  top,
+  width = 120,
+  height = 50,
+  opacity = 0.25,
+  driftRange = 8,
+  driftDuration = 8000,
+}: {
+  left: number;
+  top: number;
+  width?: number;
+  height?: number;
+  opacity?: number;
+  driftRange?: number;
+  driftDuration?: number;
+}) {
   const cloudOpacity = useSharedValue(opacity);
-  const cloudScale = useSharedValue(1);
+  const translateX = useSharedValue(0);
 
   useEffect(() => {
     cloudOpacity.value = withRepeat(
       withSequence(
-        withTiming(opacity * 0.6, { duration: 6000, easing: Easing.inOut(Easing.ease) }),
-        withTiming(opacity, { duration: 6000, easing: Easing.inOut(Easing.ease) })
+        withTiming(opacity * 0.5, { duration: driftDuration * 0.8, easing: Easing.inOut(Easing.ease) }),
+        withTiming(opacity, { duration: driftDuration * 0.8, easing: Easing.inOut(Easing.ease) })
       ),
       -1,
       false
     );
-    cloudScale.value = withRepeat(
+    translateX.value = withRepeat(
       withSequence(
-        withTiming(1.05, { duration: 6000, easing: Easing.inOut(Easing.ease) }),
-        withTiming(1, { duration: 6000, easing: Easing.inOut(Easing.ease) })
+        withTiming(driftRange, { duration: driftDuration, easing: Easing.inOut(Easing.ease) }),
+        withTiming(-driftRange, { duration: driftDuration, easing: Easing.inOut(Easing.ease) })
       ),
       -1,
       false
@@ -40,7 +56,7 @@ function Cloud({ left, top, opacity = 0.25 }: { left: number; top: number; opaci
 
   const cloudStyle = useAnimatedStyle(() => ({
     opacity: cloudOpacity.value,
-    transform: [{ scale: cloudScale.value }],
+    transform: [{ translateX: translateX.value }],
   }));
 
   return (
@@ -48,10 +64,10 @@ function Cloud({ left, top, opacity = 0.25 }: { left: number; top: number; opaci
       style={[
         {
           position: "absolute",
-          width: 120,
-          height: 50,
-          borderRadius: 25,
-          backgroundColor: "rgba(255, 255, 255, 0.3)",
+          width,
+          height,
+          borderRadius: height / 2,
+          backgroundColor: "rgba(255, 255, 255, 0.35)",
           left,
           top,
         },
@@ -122,10 +138,13 @@ export default function DayNightBackground({
   }, []);
 
   const clouds = useMemo(() => [
-    { leftPct: 0.05, topPct: 0.10, opacity: 0.15 },
-    { leftPct: 0.55, topPct: 0.25, opacity: 0.12 },
-    { leftPct: 0.20, topPct: 0.50, opacity: 0.18 },
-    { leftPct: 0.70, topPct: 0.65, opacity: 0.10 },
+    { leftPct: -0.05, topPct: 0.05, width: 140, height: 45, opacity: 0.30, driftRange: 12, driftDuration: 10000 },
+    { leftPct: 0.50, topPct: 0.12, width: 100, height: 35, opacity: 0.22, driftRange: 8, driftDuration: 9000 },
+    { leftPct: 0.15, topPct: 0.30, width: 160, height: 55, opacity: 0.28, driftRange: 15, driftDuration: 12000 },
+    { leftPct: 0.65, topPct: 0.42, width: 90, height: 30, opacity: 0.18, driftRange: 6, driftDuration: 7000 },
+    { leftPct: 0.30, topPct: 0.55, width: 130, height: 42, opacity: 0.25, driftRange: 10, driftDuration: 11000 },
+    { leftPct: 0.75, topPct: 0.68, width: 110, height: 38, opacity: 0.20, driftRange: 9, driftDuration: 8500 },
+    { leftPct: 0.02, topPct: 0.75, width: 80, height: 28, opacity: 0.15, driftRange: 5, driftDuration: 7500 },
   ], []);
 
   const bgOpacity = useSharedValue(isDark ? 1 : 0);
@@ -155,7 +174,16 @@ export default function DayNightBackground({
           style={StyleSheet.absoluteFillObject}
         >
           {clouds.map((c, i) => (
-            <Cloud key={i} left={screenW * c.leftPct} top={300 * c.topPct} opacity={c.opacity} />
+            <Cloud
+              key={i}
+              left={screenW * c.leftPct}
+              top={300 * c.topPct}
+              width={c.width}
+              height={c.height}
+              opacity={c.opacity}
+              driftRange={c.driftRange}
+              driftDuration={c.driftDuration}
+            />
           ))}
         </LinearGradient>
       </Reanimated.View>
