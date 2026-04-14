@@ -82,6 +82,7 @@ function OrbVideo({ size }: { size: number }) {
           transform: "translate(-50%, -50%)",
         }}
       >
+        <source src="/orb.webm" type="video/webm" />
         <source src="/orb.mp4" type="video/mp4" />
       </video>
     );
