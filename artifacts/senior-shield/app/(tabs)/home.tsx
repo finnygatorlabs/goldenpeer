@@ -1268,8 +1268,8 @@ export default function HomeScreen() {
 
           {/* Gradient fade — messages dissolve into the orb panel */}
           <LinearGradient
-            colors={["transparent", isDark ? "#0B1A2B" : "#87CEEB"]}
-            locations={[0, 1]}
+            colors={["transparent", isDark ? "rgba(11,26,43,0.6)" : "rgba(135,206,235,0.6)", isDark ? "#0B1A2B" : "#87CEEB"]}
+            locations={[0, 0.4, 1]}
             style={[styles.orbFade, { pointerEvents: "none" }]}
           />
 
@@ -1291,25 +1291,26 @@ export default function HomeScreen() {
                 </Text>
               </View>
             ) : (
-              <View style={{ backgroundColor: isDark ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.6)", paddingHorizontal: 18, paddingVertical: 6, borderRadius: 20, borderWidth: 1.5, borderColor: isListening ? (isDark ? "#22D3EE" : "#0E7490") : isSpeaking ? (isDark ? "#60A5FA" : "#1D4ED8") : (isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.12)") }}>
-                <Text
-                  style={[
-                    styles.statusLabel,
-                    {
-                      color: isListening
-                        ? (isDark ? "#67E8F9" : "#0E7490")
-                        : isSpeaking
-                        ? (isDark ? "#93C5FD" : "#1D4ED8")
-                        : (isDark ? "#E2E8F0" : "#1E293B"),
-                      fontSize: ts.lg,
-                      fontWeight: "700",
-                    },
-                  ]}
-                  numberOfLines={1}
-                >
-                  {statusLabel}
-                </Text>
-              </View>
+              <Text
+                style={[
+                  styles.statusLabel,
+                  {
+                    color: isListening
+                      ? (isDark ? "#67E8F9" : "#0E7490")
+                      : isSpeaking
+                      ? (isDark ? "#93C5FD" : "#1D4ED8")
+                      : (isDark ? "#E2E8F0" : "#1E293B"),
+                    fontSize: ts.lg,
+                    fontWeight: "700",
+                    textShadowColor: isDark ? "rgba(0,0,0,0.8)" : "rgba(255,255,255,0.95)",
+                    textShadowOffset: { width: 0, height: 0 },
+                    textShadowRadius: 8,
+                  },
+                ]}
+                numberOfLines={1}
+              >
+                {statusLabel}
+              </Text>
             )}
           </View>
 

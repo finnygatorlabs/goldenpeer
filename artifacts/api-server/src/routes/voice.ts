@@ -375,11 +375,39 @@ async function fetchRealTimeContext(userMessage: string, userLocation?: string):
           })
       );
     }
+
+    const isDraftOrNewsQuery = /draft|trade|sign|free agent|roster|injury|suspend|retir/i.test(lower);
+    if (isDraftOrNewsQuery) {
+      let newsLeague = "nba";
+      if (/wnba|women.s.+basketball/i.test(lower)) newsLeague = "wnba";
+      else if (/nfl|football/i.test(lower) && !/college/i.test(lower)) newsLeague = "nfl";
+      else if (/mlb|baseball/i.test(lower)) newsLeague = "mlb";
+      else if (/nhl|hockey/i.test(lower)) newsLeague = "nhl";
+      const sportPath = newsLeague === "nfl" ? "football/nfl" : newsLeague === "mlb" ? "baseball/mlb" : newsLeague === "nhl" ? "hockey/nhl" : newsLeague === "wnba" ? "basketball/wnba" : "basketball/nba";
+      const espnNewsUrl = `https://site.api.espn.com/apis/site/v2/sports/${sportPath}/news`;
+      console.log(`[fetchRealTimeContext] ESPN News lookup: ${espnNewsUrl}`);
+      fetches.push(
+        fetchWithRetry(espnNewsUrl, {}, 2, 6000)
+          .then(r => r.json())
+          .then((data: any) => {
+            const articles = (data.articles || []).slice(0, 5);
+            if (articles.length > 0) {
+              context += `\n[ESPN ${newsLeague.toUpperCase()} NEWS as of ${new Date().toLocaleDateString()}]:\n` +
+                articles.map((a: any, i: number) => `${i + 1}. "${sanitizeExternalText(a.headline || "")}" (${a.published ? new Date(a.published).toLocaleDateString() : "recent"})`).join("\n");
+            }
+          })
+          .catch((err) => {
+            console.error("[fetchRealTimeContext] ESPN news fetch error:", err.message);
+          })
+      );
+    }
   }
 
   if (needsNews && NEWS_API_KEY) {
-    const queryMatch = lower.match(/news\s+(?:about|on|regarding)\s+(.+)/i);
-    const q = queryMatch ? queryMatch[1].trim() : "latest";
+    const queryMatch = lower.match(/news\s+(?:about|on|regarding)\s+(.+)/i)
+      || lower.match(/(?:about|regarding)\s+(?:the\s+)?(.+?)(?:\?|$)/i)
+      || lower.match(/(?:tell me about|what about|what happened|who won|results?)\s+(?:the\s+)?(.+?)(?:\?|$)/i);
+    const q = queryMatch ? queryMatch[1].trim().replace(/\s+today$|\s+tonight$|\s+yesterday$/i, "") : "latest";
     fetches.push(
       fetchWithRetry(`https://newsdata.io/api/1/latest?apikey=${NEWS_API_KEY}&q=${encodeURIComponent(q)}&language=en&country=us`, {}, 2, 8000)
         .then(r => r.json())
