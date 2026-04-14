@@ -15,82 +15,110 @@ interface DayNightBackgroundProps {
   children?: React.ReactNode;
 }
 
-function CloudPuff({ cx, cy, r }: { cx: number; cy: number; r: number }) {
-  return (
-    <View
-      style={{
-        position: "absolute",
-        left: cx - r,
-        top: cy - r,
-        width: r * 2,
-        height: r * 2,
-        borderRadius: r,
-        backgroundColor: "rgba(255, 255, 255, 0.6)",
-      }}
-    />
-  );
+interface WispStroke {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  rotate: number;
+  opacity: number;
 }
 
-const CLOUD_SHAPES: { cx: number; cy: number; r: number }[][] = [
-  [
-    { cx: 18, cy: 36, r: 16 },
-    { cx: 38, cy: 26, r: 22 },
-    { cx: 62, cy: 20, r: 26 },
-    { cx: 86, cy: 25, r: 18 },
-    { cx: 50, cy: 38, r: 20 },
-    { cx: 74, cy: 35, r: 17 },
-  ],
-  [
-    { cx: 15, cy: 30, r: 14 },
-    { cx: 35, cy: 22, r: 20 },
-    { cx: 55, cy: 18, r: 24 },
-    { cx: 78, cy: 22, r: 22 },
-    { cx: 100, cy: 28, r: 16 },
-    { cx: 45, cy: 34, r: 18 },
-    { cx: 68, cy: 32, r: 20 },
-    { cx: 90, cy: 34, r: 14 },
-  ],
-  [
-    { cx: 22, cy: 32, r: 20 },
-    { cx: 48, cy: 22, r: 28 },
-    { cx: 75, cy: 26, r: 22 },
-    { cx: 36, cy: 38, r: 18 },
-    { cx: 60, cy: 36, r: 22 },
-  ],
-  [
-    { cx: 12, cy: 28, r: 12 },
-    { cx: 28, cy: 20, r: 18 },
-    { cx: 48, cy: 16, r: 22 },
-    { cx: 68, cy: 20, r: 20 },
-    { cx: 85, cy: 26, r: 15 },
-    { cx: 38, cy: 30, r: 16 },
-    { cx: 58, cy: 30, r: 18 },
-    { cx: 76, cy: 32, r: 13 },
-  ],
-  [
-    { cx: 20, cy: 34, r: 18 },
-    { cx: 42, cy: 24, r: 24 },
-    { cx: 66, cy: 20, r: 20 },
-    { cx: 54, cy: 36, r: 16 },
-  ],
-  [
-    { cx: 16, cy: 30, r: 15 },
-    { cx: 34, cy: 22, r: 20 },
-    { cx: 56, cy: 18, r: 26 },
-    { cx: 80, cy: 22, r: 20 },
-    { cx: 98, cy: 30, r: 14 },
-    { cx: 44, cy: 34, r: 18 },
-    { cx: 70, cy: 32, r: 20 },
-  ],
+interface CirrusWisp {
+  strokes: WispStroke[];
+  width: number;
+  height: number;
+}
+
+const CIRRUS_WISPS: CirrusWisp[] = [
+  {
+    width: 200, height: 60,
+    strokes: [
+      { x: 0, y: 28, w: 80, h: 6, rotate: -12, opacity: 0.5 },
+      { x: 30, y: 22, w: 90, h: 5, rotate: -8, opacity: 0.6 },
+      { x: 70, y: 18, w: 100, h: 7, rotate: -15, opacity: 0.45 },
+      { x: 110, y: 25, w: 70, h: 4, rotate: -5, opacity: 0.4 },
+      { x: 50, y: 35, w: 60, h: 5, rotate: -10, opacity: 0.35 },
+      { x: 140, y: 20, w: 55, h: 4, rotate: -18, opacity: 0.3 },
+    ],
+  },
+  {
+    width: 180, height: 70,
+    strokes: [
+      { x: 10, y: 40, w: 70, h: 5, rotate: -20, opacity: 0.55 },
+      { x: 40, y: 30, w: 100, h: 6, rotate: -10, opacity: 0.5 },
+      { x: 80, y: 22, w: 80, h: 5, rotate: -25, opacity: 0.45 },
+      { x: 20, y: 50, w: 50, h: 4, rotate: -5, opacity: 0.35 },
+      { x: 100, y: 35, w: 65, h: 4, rotate: -15, opacity: 0.4 },
+    ],
+  },
+  {
+    width: 220, height: 50,
+    strokes: [
+      { x: 0, y: 25, w: 110, h: 5, rotate: -6, opacity: 0.5 },
+      { x: 60, y: 18, w: 90, h: 6, rotate: -12, opacity: 0.55 },
+      { x: 120, y: 22, w: 80, h: 4, rotate: -8, opacity: 0.4 },
+      { x: 30, y: 32, w: 70, h: 5, rotate: -3, opacity: 0.35 },
+      { x: 160, y: 15, w: 55, h: 4, rotate: -18, opacity: 0.3 },
+      { x: 90, y: 30, w: 60, h: 3, rotate: -10, opacity: 0.3 },
+      { x: 10, y: 38, w: 45, h: 4, rotate: -14, opacity: 0.25 },
+    ],
+  },
+  {
+    width: 160, height: 55,
+    strokes: [
+      { x: 5, y: 35, w: 60, h: 5, rotate: -22, opacity: 0.5 },
+      { x: 35, y: 25, w: 80, h: 6, rotate: -15, opacity: 0.55 },
+      { x: 75, y: 18, w: 70, h: 5, rotate: -28, opacity: 0.4 },
+      { x: 50, y: 40, w: 55, h: 4, rotate: -8, opacity: 0.35 },
+      { x: 100, y: 30, w: 50, h: 3, rotate: -12, opacity: 0.3 },
+    ],
+  },
+  {
+    width: 240, height: 65,
+    strokes: [
+      { x: 0, y: 35, w: 100, h: 6, rotate: -10, opacity: 0.5 },
+      { x: 50, y: 25, w: 120, h: 5, rotate: -8, opacity: 0.55 },
+      { x: 100, y: 18, w: 90, h: 6, rotate: -14, opacity: 0.45 },
+      { x: 150, y: 25, w: 75, h: 4, rotate: -6, opacity: 0.4 },
+      { x: 30, y: 42, w: 80, h: 4, rotate: -4, opacity: 0.3 },
+      { x: 120, y: 35, w: 60, h: 4, rotate: -18, opacity: 0.35 },
+      { x: 180, y: 20, w: 50, h: 3, rotate: -20, opacity: 0.25 },
+      { x: 70, y: 48, w: 55, h: 3, rotate: -12, opacity: 0.25 },
+    ],
+  },
+  {
+    width: 170, height: 50,
+    strokes: [
+      { x: 10, y: 30, w: 75, h: 5, rotate: -18, opacity: 0.5 },
+      { x: 50, y: 20, w: 85, h: 5, rotate: -12, opacity: 0.5 },
+      { x: 90, y: 15, w: 65, h: 4, rotate: -22, opacity: 0.4 },
+      { x: 30, y: 38, w: 50, h: 4, rotate: -6, opacity: 0.35 },
+      { x: 110, y: 28, w: 55, h: 3, rotate: -15, opacity: 0.3 },
+      { x: 60, y: 40, w: 40, h: 3, rotate: -8, opacity: 0.25 },
+    ],
+  },
+  {
+    width: 190, height: 60,
+    strokes: [
+      { x: 5, y: 38, w: 85, h: 5, rotate: -16, opacity: 0.5 },
+      { x: 45, y: 28, w: 95, h: 6, rotate: -10, opacity: 0.55 },
+      { x: 90, y: 20, w: 80, h: 5, rotate: -20, opacity: 0.45 },
+      { x: 130, y: 28, w: 55, h: 4, rotate: -8, opacity: 0.35 },
+      { x: 20, y: 45, w: 60, h: 4, rotate: -5, opacity: 0.3 },
+      { x: 70, y: 42, w: 50, h: 3, rotate: -14, opacity: 0.28 },
+      { x: 150, y: 22, w: 38, h: 3, rotate: -25, opacity: 0.25 },
+    ],
+  },
 ];
 
-function Cloud({
+function CirrusCloud({
   left,
   top,
   scale = 1,
   opacity = 0.8,
-  driftRange = 8,
-  driftDuration = 8000,
+  driftRange = 15,
+  driftDuration = 20000,
   variant = 0,
 }: {
   left: number;
@@ -101,34 +129,24 @@ function Cloud({
   driftDuration?: number;
   variant?: number;
 }) {
-  const cloudOpacity = useSharedValue(opacity);
   const translateX = useSharedValue(0);
 
   useEffect(() => {
-    cloudOpacity.value = withRepeat(
-      withSequence(
-        withTiming(opacity * 0.6, { duration: driftDuration * 0.8, easing: Easing.inOut(Easing.ease) }),
-        withTiming(opacity, { duration: driftDuration * 0.8, easing: Easing.inOut(Easing.ease) })
-      ),
-      -1,
-      false
-    );
     translateX.value = withRepeat(
       withSequence(
         withTiming(driftRange, { duration: driftDuration, easing: Easing.inOut(Easing.ease) }),
-        withTiming(-driftRange, { duration: driftDuration, easing: Easing.inOut(Easing.ease) })
+        withTiming(-driftRange, { duration: driftDuration * 1.1, easing: Easing.inOut(Easing.ease) })
       ),
       -1,
       false
     );
   }, []);
 
-  const cloudStyle = useAnimatedStyle(() => ({
-    opacity: cloudOpacity.value,
+  const animStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }, { scale }],
   }));
 
-  const puffs = CLOUD_SHAPES[variant % CLOUD_SHAPES.length];
+  const wisp = CIRRUS_WISPS[variant % CIRRUS_WISPS.length];
 
   return (
     <Reanimated.View
@@ -137,14 +155,27 @@ function Cloud({
           position: "absolute",
           left,
           top,
-          width: 120,
-          height: 60,
+          width: wisp.width,
+          height: wisp.height,
+          opacity,
         },
-        cloudStyle,
+        animStyle,
       ]}
     >
-      {puffs.map((p, i) => (
-        <CloudPuff key={i} cx={p.cx} cy={p.cy} r={p.r} />
+      {wisp.strokes.map((s, i) => (
+        <View
+          key={i}
+          style={{
+            position: "absolute",
+            left: s.x,
+            top: s.y,
+            width: s.w,
+            height: s.h,
+            borderRadius: s.h,
+            backgroundColor: `rgba(255, 255, 255, ${s.opacity})`,
+            transform: [{ rotate: `${s.rotate}deg` }],
+          }}
+        />
       ))}
     </Reanimated.View>
   );
@@ -210,13 +241,14 @@ export default function DayNightBackground({
     return arr;
   }, []);
 
-  const clouds = useMemo(() => [
-    { leftPct: 0.55, topPct: 0.06, scale: 1.1, opacity: 0.50, driftRange: 20, driftDuration: 18000, variant: 0 },
-    { leftPct: -0.05, topPct: 0.22, scale: 0.8, opacity: 0.45, driftRange: 25, driftDuration: 22000, variant: 1 },
-    { leftPct: 0.35, topPct: 0.40, scale: 1.3, opacity: 0.48, driftRange: 18, driftDuration: 20000, variant: 2 },
-    { leftPct: 0.70, topPct: 0.55, scale: 0.7, opacity: 0.42, driftRange: 22, driftDuration: 16000, variant: 3 },
-    { leftPct: 0.10, topPct: 0.70, scale: 1.0, opacity: 0.45, driftRange: 15, driftDuration: 24000, variant: 4 },
-    { leftPct: 0.50, topPct: 0.82, scale: 0.9, opacity: 0.40, driftRange: 20, driftDuration: 19000, variant: 5 },
+  const wisps = useMemo(() => [
+    { leftPct: 0.50, topPct: 0.02, scale: 1.0, opacity: 0.55, driftRange: 18, driftDuration: 22000, variant: 0 },
+    { leftPct: -0.10, topPct: 0.15, scale: 0.85, opacity: 0.50, driftRange: 22, driftDuration: 26000, variant: 1 },
+    { leftPct: 0.25, topPct: 0.30, scale: 1.2, opacity: 0.50, driftRange: 16, driftDuration: 20000, variant: 2 },
+    { leftPct: 0.60, topPct: 0.45, scale: 0.75, opacity: 0.45, driftRange: 20, driftDuration: 18000, variant: 3 },
+    { leftPct: 0.05, topPct: 0.58, scale: 1.1, opacity: 0.48, driftRange: 14, driftDuration: 28000, variant: 4 },
+    { leftPct: 0.40, topPct: 0.72, scale: 0.9, opacity: 0.45, driftRange: 18, driftDuration: 24000, variant: 5 },
+    { leftPct: 0.70, topPct: 0.85, scale: 0.8, opacity: 0.42, driftRange: 20, driftDuration: 21000, variant: 6 },
   ], []);
 
   const bgOpacity = useSharedValue(isDark ? 1 : 0);
@@ -245,16 +277,16 @@ export default function DayNightBackground({
           end={{ x: 0, y: 1 }}
           style={StyleSheet.absoluteFillObject}
         >
-          {clouds.map((c, i) => (
-            <Cloud
+          {wisps.map((w, i) => (
+            <CirrusCloud
               key={i}
-              left={screenW * c.leftPct}
-              top={300 * c.topPct}
-              scale={c.scale}
-              opacity={c.opacity}
-              driftRange={c.driftRange}
-              driftDuration={c.driftDuration}
-              variant={c.variant}
+              left={screenW * w.leftPct}
+              top={300 * w.topPct}
+              scale={w.scale}
+              opacity={w.opacity}
+              driftRange={w.driftRange}
+              driftDuration={w.driftDuration}
+              variant={w.variant}
             />
           ))}
         </LinearGradient>
