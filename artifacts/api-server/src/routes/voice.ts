@@ -393,7 +393,10 @@ async function fetchRealTimeContext(userMessage: string, userLocation?: string):
             const articles = (data.articles || []).slice(0, 5);
             if (articles.length > 0) {
               context += `\n[ESPN ${newsLeague.toUpperCase()} NEWS as of ${new Date().toLocaleDateString()}]:\n` +
-                articles.map((a: any, i: number) => `${i + 1}. "${sanitizeExternalText(a.headline || "")}" (${a.published ? new Date(a.published).toLocaleDateString() : "recent"})`).join("\n");
+                articles.map((a: any, i: number) => {
+                  const desc = a.description ? ` — ${sanitizeExternalText(a.description).substring(0, 200)}` : "";
+                  return `${i + 1}. "${sanitizeExternalText(a.headline || "")}"${desc} (${a.published ? new Date(a.published).toLocaleDateString() : "recent"})`;
+                }).join("\n");
             }
           })
           .catch((err) => {
@@ -431,7 +434,10 @@ async function fetchRealTimeContext(userMessage: string, userLocation?: string):
           const articles = (data.results || []).slice(0, 3);
           if (articles.length > 0) {
             context += `\n[REAL-TIME NEWS as of ${new Date().toLocaleDateString()}]:\n` +
-              articles.map((a: any, i: number) => `${i + 1}. "${sanitizeExternalText(a.title || "")}" - ${sanitizeExternalText(a.source_id || "")} (${a.pubDate})`).join("\n");
+              articles.map((a: any, i: number) => {
+                const desc = a.description ? ` — ${sanitizeExternalText(a.description).substring(0, 300)}` : "";
+                return `${i + 1}. "${sanitizeExternalText(a.title || "")}"${desc} - ${sanitizeExternalText(a.source_id || "")} (${a.pubDate})`;
+              }).join("\n");
           } else {
             context += `\n[NEWS] No news articles found for that topic right now. Tell the user you couldn't find any recent news on that topic.`;
           }
